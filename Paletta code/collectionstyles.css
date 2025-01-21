@@ -1,0 +1,130 @@
+/* 基本布局样式 */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .layout {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+  }
+  
+  .sidebar {
+    width: 200px;
+    background-color: #f4f4f4;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    overflow-y: auto;
+  }
+  
+  .sidebar h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+  
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .sidebar li {
+    margin-bottom: 10px;
+  }
+  
+  .sidebar li a {
+    text-decoration: none;
+    color: #333;
+    font-size: 16px;
+  }
+  
+  .sidebar li.active a {
+    font-weight: bold;
+    color: green;
+  }
+  
+  /* 主内容区域 */
+  .content {
+    margin-left: 220px; /* 给侧边栏留出空间 */
+    padding: 20px;
+    width: calc(100% - 220px);
+    overflow-y: auto;
+  }
+  
+  header h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .clips-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  /* 单个 Clip 样式 */
+  .clip {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #fff;
+  }
+  
+  .clip img {
+    width: 150px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 5px;
+  }
+  
+  .clip-details {
+    flex: 1;
+  }
+  
+  .clip-details h2 {
+    font-size: 18px;
+    margin: 0 0 10px;
+  }
+  
+  .clip-details p {
+    margin: 5px 0;
+  }
+  
+  .tags {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .tag {
+    display: inline-block;
+    padding: 5px 10px;
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-radius: 15px;
+    font-size: 12px;
+  }
+  
+  /* Footer 样式 */
+  .footer {
+    position: fixed;
+    bottom: 0;
+    left: 220px;
+    width: calc(100% - 220px);
+    background-color: #f4f4f4;
+    text-align: center;
+    padding: 10px;
+    font-size: 14px;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+  }
+  

@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clip Store</title>
+  <link href="footer.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <script src="scripts.js" defer></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Montserrat';
+    }
+
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #ffffff;
+      padding: 10px 20px;
+      z-index: 1000;
+      /*box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1)*/;
+    }
+
+    .logo-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .logo img {
+      max-height: 100px;
+    }
+
+    .search-bar {
+      
+      margin-left: 100px;
+      width: 500px; 
+      display: flex;
+      align-items: center;
+      border: 2px solid #80B824;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .search-bar input {
+      width: 100%; 
+      padding: 10px;
+      border: none;
+      outline: none;
+      font-family: 'Montserrat';
+    }
+
+    .search-bar button {
+      background-color: white;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .search-bar button svg {
+      width: 20px;
+      height: 20px;
+      fill: #80B824;
+    }
+
+    .user-actions button {
+      margin-left: 10px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+
+    .actions {
+      position: absolute; 
+      right: 50px; 
+      top: 50%; 
+      transform: translateY(-50%);
+      display: flex;
+      gap: 15px;
+    }
+
+    .actions button {
+      background-color: #ffffff;
+      color: #80B824;
+      border: 2px solid #80B824;
+      padding: 8px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'Montserrat';
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .actions button svg {
+      width: 25px;
+      height: 25px;
+      fill: #80B824;
+    }
+
+    .actions button:hover {
+      background-color: #6a9a1d;
+    }
+
+    .filter{
+       position: absolute; 
+      right: 50px; 
+      height:50px;
+      
+
+    }
+    .popup {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    border: 2px solid #80B824;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    width: 200px;
+    z-index: 2000; 
+    
+    }
+
+
+    #popupMenu{
+      top:100%
+    }
+
+    .popup a {
+      display: block;
+      padding: 10px;
+      color: #80B824;
+      text-decoration: none;
+      font-weight: bold;
+      border-bottom: 1px solid #80B824;
+    }
+
+    .popup a:last-child {
+      border-bottom: none;
+    }
+
+    .popup a:hover {
+      background-color: #f9f9f9;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      height: calc(100% - 60px);
+      width: 200px;
+      background: white;
+      border-right: 1px solid #ddd;
+      padding: 20px;
+      box-sizing: border-box;
+      margin-top: 50px;
+    }
+
+
+    .backbutton svg{
+      width: 20px;
+      height: 20px;
+      fill: black;
+
+    }
+    .backbutton span{
+      color: #000;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+        
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .sidebar ul li {
+      padding: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .sidebar ul li.active, .sidebar ul li:hover {
+      background-color: #7bbd42;
+      color: white;
+    }
+
+    main {
+      margin-left: 220px;
+      padding: 20px;
+      margin-top:50px
+    }
+
+    .main-content {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .clips-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-top: 20px;
+      z-index: -1
+    }
+
+    .clip {
+      border: 2px solid #7bbd42;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .clip img {
+      width: 100%;
+      height: auto;
+      border-radius: 5px;
+    }
+
+    .clip svg{
+      fill:white;
+      height:20px;
+      width:20px;
+      vertical-align: middle;
+
+    }
+
+    .clipactions button {
+      margin: 5px;
+      padding: 10px;
+      border: none;
+      background-color: #7bbd42;
+      color: white;
+      cursor: pointer;
+    }
+    .clipactions span{
+      margin-top: 5px;
+      vertical-align: middle;
+    }
+
+    .clipactions button:hover {
+      background-color: #6aa839;
+    }
+
+
+    .category-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .category-actions input {
+      padding: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 300px;
+    }
+
+    .filters button {
+      margin-left: 10px;
+      padding: 5px 10px;
+      background-color: #7bbd42;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .filters button:hover {
+      background-color: #6aa839;
+    }
+
+    .banner {
+      position: relative;
+      text-align: left;
+      margin-bottom: 20px;
+      margin-top: 40px;
+    }
+
+    .banner img {
+      width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .banner-title {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+      background-color: #7bbd42;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 24px;
+      margin: 0;
+    }
+
+    .scroll-container {
+       
+      max-height: calc(100vh - 140px);
+      overflow-y: auto;
+      
+    }
+
+    .scroll-container::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .scroll-container::-webkit-scrollbar-thumb {
+      background-color: #7bbd42;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo-container">
+          <a href="homepage external.html" style="text-decoration: none;">
+            <div class="logo">
+                <img src="./picture/logo.jpg" alt="Logo">
+            </div>
+        </a>
+      <div class="search-bar">
+        <input type="text" placeholder="Search in the whole store">
+        <button>
+          <svg id="Icons" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+            <path class="cls-1" d="M18.856,14.624a10.022,10.022,0,1,0-4.234,4.234l4.254,4.255a2.994,2.994,0,1,0,4.239-4.23ZM2,10a8,8,0,1,1,8,8A8.009,8.009,0,0,1,2,10ZM21.7,21.708a1,1,0,0,1-1.4,0l-3.967-3.968a10.092,10.092,0,0,0,1.4-1.406L21.705,20.3a.976.976,0,0,1-.009,1.407Z" />
+            <path class="cls-1" d="M10,4a6.006,6.006,0,0,0-6,6,1,1,0,0,0,2,0,4,4,0,0,1,4-4,1,1,0,0,0,0-2Z" />
+          </svg>
+        </button>
+      </div>
+      <div class="actions">
+        <button id="centerButton">
+          <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+            <g data-name="Layer 2" id="Layer_2">
+              <path d="M16,29A13,13,0,1,1,29,16,13,13,0,0,1,16,29ZM16,5A11,11,0,1,0,27,16,11,11,0,0,0,16,5Z" />
+              <path d="M16,17a5,5,0,1,1,5-5A5,5,0,0,1,16,17Zm0-8a3,3,0,1,0,3,3A3,3,0,0,0,16,9Z" />
+              <path d="M25.55,24a1,1,0,0,1-.74-.32A11.35,11.35,0,0,0,16.46,20h-.92a11.27,11.27,0,0,0-7.85,3.16,1,1,0,0,1-1.38-1.44A13.24,13.24,0,0,1,15.54,18h.92a13.39,13.39,0,0,1,9.82,4.32A1,1,0,0,1,25.55,24Z" />
+            </g>
+          </svg>
+          My Center
+        </button>
+        <div class="popup" id="popupMenu">
+          <a href="myprofileinternal.html">My Profile</a>
+          <a href="collection.html">My Collection</a>
+          <a href="cart.html">My Cart</a>
+          <a href="my order.html">My Order</a>
+          <a href="#">Log Out</a>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main>
+    <aside class="sidebar">
+      <div class="backbutton">
+        <a href="homepage external.html"> 
+          
+          <svg baseProfile="tiny" height="24px" id="Layer_1" version="1.2" viewBox="0 0 24 24" width="24px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g>
+            <path d="M19.164,19.547c-1.641-2.5-3.669-3.285-6.164-3.484v1.437c0,0.534-0.208,1.036-0.586,1.414   c-0.756,0.756-2.077,0.751-2.823,0.005l-6.293-6.207C3.107,12.523,3,12.268,3,11.999s0.107-0.524,0.298-0.712l6.288-6.203   c0.754-0.755,2.073-0.756,2.829,0.001C12.792,5.463,13,5.965,13,6.499v1.704c4.619,0.933,8,4.997,8,9.796v1   c0,0.442-0.29,0.832-0.714,0.958c-0.095,0.027-0.19,0.042-0.286,0.042C19.669,19.999,19.354,19.834,19.164,19.547z M12.023,14.011   c2.207,0.056,4.638,0.394,6.758,2.121c-0.768-3.216-3.477-5.702-6.893-6.08C11.384,9.996,11,10,11,10V6.503l-5.576,5.496l5.576,5.5   V14C11,14,11.738,14.01,12.023,14.011z"/></g></svg>
+          <span>Back</span>
+        </a>
+      </div>
+
+
+       <ul>
+        <li class="active">All</li>
+        <li>Buildings</li>
+        <li>Humanities</li>
+        <li>People</li>
+        <li>Science</li>
+        <li>Transport</li>
+      </ul>
+    </aside>
+    <section class="main-content">
+      <div class="banner">
+        <img src="./picture/All title.png" alt="Library Banner">
+        <h1 class="banner-title">All clips</h1>
+      </div>
+      <div class="category-actions">
+        <input type="text" placeholder="Search in this category">
+        <div class="filters">
+            <button id="tagsFilterButton" style="position: relative;">Tags Filter (<span id="tagsCount">0</span>)</button>
+            <div class="popup" id="tagsFilterPopup">
+              <label><input type="checkbox" value="Drone"> Drone</label><br>
+              <label><input type="checkbox" value="UCL"> UCL</label><br>
+              <label><input type="checkbox" value="IOE"> IOE</label><br>
+              <button id="applyTagsFilter">Apply</button>
+            </div>
+            <button id="sortByButton" style="position: relative;">Sort by ▼</button>
+            <div class="popup" id="sortByPopup">
+              <a href="#" data-sort="asc">Time: Ascending</a>
+              <a href="#" data-sort="desc">Time: Descending</a>
+              <a href="#" data-sort="price-asc">Title: A to Z</a>
+              <a href="#" data-sort="price-desc">Title: Z to A</a>
+            </div>
+          </div>
+      </div>
+      <div class="scroll-container">
+        <div class="clips-grid">
+          <!-- Clips will be dynamically loaded here -->
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="footer">
+    <div class="divider"></div>
+  <div class="footer-content">
+    <!-- Logo Section -->
+    <div class="footer-logo">
+      <img src="./picture/logo.jpg" alt="PALETTA Logo" style="width: 100px;">
+      <p>&copy; FILMBRIGHT LTD. 2024</p>
+    </div>
+
+    <!-- Company Section -->
+    <div class="footer-column">
+      <h4>Company</h4>
+      <ul>
+        <li><a href="aboutus.html">About us</a></li>
+        <li><a href="contactus.html">Contact us</a></li>
+      </ul>
+    </div>
+
+    <!-- Support Section -->
+    <div class="footer-column">
+      <h4>Support</h4>
+      <ul>
+        <li><a href="Q&A.html">Help & Support</a></li>
+        <li><a href="#">Terms & Conditions</a></li>
+        <li><a href="#">Privacy</a></li>
+      </ul>
+    </div>
+
+    <!-- Social Media Section -->
+    <div class="footer-column">
+      <h4>Find us</h4>
+      <div class="social-icon" >
+        <a href="https://www.instagram.com/filmbright/" >
+            <svg data-name="Layer 1" id="Layer_1" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg"><defs><style>.cls-1{fill:#80B824;}</style></defs><title/>
+                <path class="cls-1" d="M83,23a22,22,0,0,1,22,22V83a22,22,0,0,1-22,22H45A22,22,0,0,1,23,83V45A22,22,0,0,1,45,23H83m0-8H45A30.09,30.09,0,0,0,15,45V83a30.09,30.09,0,0,0,30,30H83a30.09,30.09,0,0,0,30-30V45A30.09,30.09,0,0,0,83,15Z"/>
+                <path class="cls-1" d="M90.14,32a5.73,5.73,0,1,0,5.73,5.73A5.73,5.73,0,0,0,90.14,32Z"/>
+                <path class="cls-1" d="M64.27,46.47A17.68,17.68,0,1,1,46.6,64.14,17.7,17.7,0,0,1,64.27,46.47m0-8A25.68,25.68,0,1,0,90,64.14,25.68,25.68,0,0,0,64.27,38.47Z"/>
+            </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+  
+</footer>
+
+  <script>
+   const tagsFilterButton = document.getElementById('tagsFilterButton');
+const tagsFilterPopup = document.getElementById('tagsFilterPopup');
+const applyTagsFilterButton = document.getElementById('applyTagsFilter');
+const sortByButton = document.getElementById('sortByButton');
+const sortByPopup = document.getElementById('sortByPopup');
+const tagsCount = document.getElementById('tagsCount');
+
+const clips = [
+  { id: 1, title: "Drone upwards from UCL Quad", tags: ["Drone", "UCL"], image: "./picture/All title.png", time: 1 },
+  { id: 2, title: "Drone/Aquatic Centre", tags: ["Drone"], image: "./picture/All title.png",  time: 2 },
+  { id: 3, title: "Gower Street Sign", tags: ["UCL"], image: "./picture/All title.png",  time: 3 },
+  { id: 4, title: "High angle shot of UCL East Campus", tags: ["UCL", "IOE"], image: "./picture/All title.png",  time: 4 },
+  { id: 5, title: "Slow Zoom into IOE From UCL Quad", tags: ["Drone", "IOE"], image: "./picture/All title.png",  time: 5 },
+];
+
+let openPopup = null;
+
+// initialize
+document.addEventListener("DOMContentLoaded", () => {
+  renderClips(clips);
+});
+
+// list of the videos
+function renderClips(data) {
+  const clipsGrid = document.querySelector(".clips-grid");
+  clipsGrid.innerHTML = '';
+  data.forEach((clip) => {
+    const clipCard = document.createElement("div");
+    clipCard.className = "clip";
+    clipCard.innerHTML = `
+      <img src="${clip.image}" alt="${clip.title}">
+      <h2>${clip.title}</h2>
+      <div class="clipactions">
+        <button class="like" data-id="${clip.id}">
+          <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><rect fill="none" height="256" width="256"/><path d="M224.6,51.9a59.5,59.5,0,0,0-43-19.9,60.5,60.5,0,0,0-44,17.6L128,59.1l-7.5-7.4C97.2,28.3,59.2,26.3,35.9,47.4a59.9,59.9,0,0,0-2.3,87l83.1,83.1a15.9,15.9,0,0,0,22.6,0l81-81C243.7,113.2,245.6,75.2,224.6,51.9Z"/></svg>
+          <span>add to collection</span>
+          </button>
+        <button class="add-to-cart" data-id="${clip.id}"> 
+          <svg baseProfile="tiny" height="24px" version="1.2" viewBox="0 0 24 24" width="24px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g id="Layer_1"><g>
+            <path d="M20.756,5.345C20.565,5.126,20.29,5,20,5H6.181L5.986,3.836C5.906,3.354,5.489,3,5,3H2.75c-0.553,0-1,0.447-1,1    s0.447,1,1,1h1.403l1.86,11.164c0.008,0.045,0.031,0.082,0.045,0.124c0.016,0.053,0.029,0.103,0.054,0.151    c0.032,0.066,0.075,0.122,0.12,0.179c0.031,0.039,0.059,0.078,0.095,0.112c0.058,0.054,0.125,0.092,0.193,0.13    c0.038,0.021,0.071,0.049,0.112,0.065C6.748,16.972,6.87,17,6.999,17C7,17,18,17,18,17c0.553,0,1-0.447,1-1s-0.447-1-1-1H7.847    l-0.166-1H19c0.498,0,0.92-0.366,0.99-0.858l1-7C21.031,5.854,20.945,5.563,20.756,5.345z M18.847,7l-0.285,2H15V7H18.847z M14,7    v2h-3V7H14z M14,10v2h-3v-2H14z M10,7v2H7C6.947,9,6.899,9.015,6.852,9.03L6.514,7H10z M7.014,10H10v2H7.347L7.014,10z M15,12v-2    h3.418l-0.285,2H15z"/><circle cx="8.5" cy="19.5" r="1.5"/><circle cx="17.5" cy="19.5" r="1.5"/></g></g></svg>
+           <span>add to cart</span>
+            </button>
+      </div>`;
+    clipsGrid.appendChild(clipCard);
+  });
+
+  // add listener for each add to cart
+  document.querySelectorAll('.add-to-cart').forEach(button => {
+    button.addEventListener('click', (event) => {
+      const clipId = parseInt(event.target.getAttribute('data-id'));
+      addToCart(clipId);
+    });
+  });
+}
+
+// add into cart
+function addToCart(clipId) {
+  const clip = clips.find(item => item.id === clipId);
+  if (!clip) return;
+
+  // get the data from the cart
+  const cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+  // check whether exist in the cart
+  const existingItem = cart.find(item => item.id === clip.id);
+  if (existingItem) {
+    existingItem.quantity += 1; // add one
+  } else {
+    cart.push({ ...clip, quantity: 1 }); // add new clip
+  }
+
+  // update cart date to localStorage
+  localStorage.setItem('cart', JSON.stringify(cart));
+  alert(`${clip.title} has been added to the cart!`);
+}
+
+// initialize the pop up function
+function togglePopup(button, popup) {
+  button.addEventListener('click', (event) => {
+    event.stopPropagation();
+    if (openPopup && openPopup !== popup) {
+      openPopup.style.display = 'none';
+    }
+    popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+    openPopup = popup.style.display === 'block' ? popup : null;
+  });
+}
+
+// Tags Filter popup
+applyTagsFilterButton.addEventListener('click', () => {
+  const selectedTags = Array.from(tagsFilterPopup.querySelectorAll('input:checked')).map(input => input.value);
+  const filteredClips = selectedTags.length
+    ? clips.filter(clip => clip.tags.some(tag => selectedTags.includes(tag)))
+    : clips;
+  renderClips(filteredClips);
+  tagsCount.textContent = selectedTags.length; // count
+  closePopups();
+});
+
+// Sort By popup
+sortByPopup.addEventListener('click', (event) => {
+  if (event.target.tagName === 'A') {
+    const sortType = event.target.getAttribute('data-sort');
+    const sortedClips = [...clips];
+    if (sortType === 'asc') sortedClips.sort((a, b) => a.time - b.time);
+    if (sortType === 'desc') sortedClips.sort((a, b) => b.time - a.time);
+    if (sortType === 'title-asc') sortedClips.sort((a, b) => a.title - b.title);
+    if (sortType === 'title-desc') sortedClips.sort((a, b) => b.title - a.title);
+    renderClips(sortedClips);
+    closePopups();
+  }
+});
+
+// do not close when clicking inside popup
+tagsFilterPopup.addEventListener('click', (event) => event.stopPropagation());
+sortByPopup.addEventListener('click', (event) => event.stopPropagation());
+
+// close popup
+document.addEventListener('click', closePopups);
+
+function closePopups() {
+  if (openPopup) {
+    openPopup.style.display = 'none';
+    openPopup = null;
+  }
+}
+
+togglePopup(tagsFilterButton, tagsFilterPopup);
+togglePopup(sortByButton, sortByPopup);
+
+
+
+
+
+
+const centerButton = document.getElementById('centerButton');
+    const popupMenu = document.getElementById('popupMenu');
+
+    centerButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      popupMenu.style.display = popupMenu.style.display === 'block' ? 'none' : 'block';
+    });
+
+    document.addEventListener('click', () => {
+      popupMenu.style.display = 'none';
+    });
+
+    popupMenu.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+
+
+    // initialize collection function
+function addToFavorites(clipId) {
+  const clip = clips.find(item => item.id === clipId);
+  if (!clip) return;
+
+  // get the list of favourites
+  const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+
+  // check whether exist in favourites
+  if (!favorites.some(item => item.id === clip.id)) {
+    favorites.push(clip);
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+    alert(`${clip.title} has been added to favorites!`);
+  } else {
+    alert(`${clip.title} is already in your favorites.`);
+  }
+}
+
+// add listener to favourate
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.like').forEach(button => {
+    button.addEventListener('click', (event) => {
+      const clipId = parseInt(event.target.getAttribute('data-id'));
+      addToFavorites(clipId);
+    });
+  });
+});
+
+// facourate content
+function renderFavorites() {
+  const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+  const collectionGrid = document.querySelector(".clips-grid");
+  if (!collectionGrid) return;
+
+  collectionGrid.innerHTML = '';
+  favorites.forEach((clip) => {
+    const clipCard = document.createElement("div");
+    clipCard.className = "clip";
+    clipCard.innerHTML = `
+      <img src="${clip.image}" alt="${clip.title}">
+      <h2>${clip.title}</h2>
+      <p>Price: £${clip.price.toFixed(2)}</p>
+    `;
+    collectionGrid.appendChild(clipCard);
+  });
+}
+
+
+    
+  </script>
+  
+</body>
+</html>
