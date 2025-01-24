@@ -1,11 +1,126 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Title 属性测试</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Video</title>
+    <link href="navigation internal.css" rel="stylesheet">
+    <link href="footer.css" rel="stylesheet">
+    <link href="./css/upload.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <script src="navigation scripts.js" defer></script>
 </head>
 <body>
-<a href="https://example.com" title="这是一个提示标签">悬停查看提示</a>
+    <div class="container">
+        <div class="menu">
+            <a href="#" class="active">Upload</a>
+            <a href="#">History</a>
+        </div>
+        <div class="main-content">
+            <h1>Upload your clip</h1>
+            <div class="upload-box" id="upload-box">
+                <p>MPEG, MOV, MP4, AVI videos no larger than 300MB and no larger than 1920x800px</p>
+                <input type="file" id="file-input" accept="video/*" required>
+                <button class="button" id="select-file">Select Video</button>
+            </div>
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input type="text" id="title" maxlength="150" required>
+                <div class="word-count" id="title-word-count">0/25 words</div>
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" maxlength="600" required></textarea>
+                <div class="word-count" id="description-word-count">0/100 words</div>
+            </div>
+            <div class="form-group">
+                <label for="category">Category</label>
+                <div class="select-wrapper">
+                    <select id="category" required>
+                        <option value="">Select Category</option>
+                        <option value="buildings">Buildings</option>
+                        <option value="nature">Nature</option>
+                        <option value="people">People</option>
+                        <option value="science">Science</option>
+                        <option value="transport">Transport</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Attribute</label>
+                <div class="attribute-group">
+                    <span>Duration</span>
+                    <input type="text" placeholder="Duration" required>
+                    <span>Frame Rate</span>
+                    <input type="text" placeholder="Frame Rate" required>
+                    <span>All Supportive Resolution</span>
+                    <input type="text" placeholder="All Supportive Resolution" required>
+                    <span>Format</span>
+                    <input type="text" placeholder="Format" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="tags">Tags</label>
+                <div class="tags-input-wrapper" id="tags-input-wrapper">
+                    <input type="text" id="tags" class="tags-input" placeholder="Type and press enter">
+                </div>
+                <div class="tag-limit">You can add up to 10 tags.</div>
+            </div>
+            <button class="button" id="upload-button">Upload</button>
+            <div class="footer">© Filmbright LTD 2024</div>
+        </div>
+    </div>
+
+    <script>
+        const uploadButton = document.getElementById('upload-button');
+
+        uploadButton.addEventListener('click', (event) => {
+            event.preventDefault(); // 阻止默认表单提交行为
+
+            const fileInput = document.getElementById('file-input');
+            const title = document.getElementById('title');
+            const description = document.getElementById('description');
+            const category = document.getElementById('category');
+            const attributes = document.querySelectorAll('.attribute-group input');
+
+            let isValid = true;
+
+            // 检查文件是否选择
+            if (!fileInput.value) {
+                alert('Please select a video file.');
+                isValid = false;
+            }
+
+            // 检查标题是否填写
+            if (!title.value.trim()) {
+                alert('Please enter a title.');
+                isValid = false;
+            }
+
+            // 检查描述是否填写
+            if (!description.value.trim()) {
+                alert('Please enter a description.');
+                isValid = false;
+            }
+
+            // 检查类别是否选择
+            if (!category.value) {
+                alert('Please select a category.');
+                isValid = false;
+            }
+
+            // 检查属性是否填写
+            attributes.forEach(attribute => {
+                if (!attribute.value.trim()) {
+                    alert('Please fill out all attributes.');
+                    isValid = false;
+                }
+            });
+
+            if (isValid) {
+                alert('Form submitted successfully!');
+            }
+        });
+    </script>
 </body>
 </html>
