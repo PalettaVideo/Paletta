@@ -6,7 +6,7 @@
   <title>Clip Store</title>
   <link href="../css/clip store all.css" rel="stylesheet">
   <link href="../css/navigation external.css" rel="stylesheet">
-  <link href="../css/footer.css" rel="stylesheet">
+  <link href="../css/footer clipstore.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <script src="../js/clip store all.js" defer></script>
   <script src="../js/navigation scripts.js" defer></script>
@@ -77,7 +77,15 @@
         <h1 class="banner-title">All clips</h1>
       </div>
       <div class="category-actions">
-        <input type="text" placeholder="Search in this category">
+        <div class="categorysearch">
+          <input type="text" placeholder="Search in this category">
+          <button>
+            <svg id="Icons" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+              <path class="cls-1" d="M18.856,14.624a10.022,10.022,0,1,0-4.234,4.234l4.254,4.255a2.994,2.994,0,1,0,4.239-4.23ZM2,10a8,8,0,1,1,8,8A8.009,8.009,0,0,1,2,10ZM21.7,21.708a1,1,0,0,1-1.4,0l-3.967-3.968a10.092,10.092,0,0,0,1.4-1.406L21.705,20.3a.976.976,0,0,1-.009,1.407Z" />
+              <path class="cls-1" d="M10,4a6.006,6.006,0,0,0-6,6,1,1,0,0,0,2,0,4,4,0,0,1,4-4,1,1,0,0,0,0-2Z" />
+            </svg>
+          </button>
+        </div>
         <div class="filters">
             <button id="tagsFilterButton" style="position: relative;">Tags Filter (<span id="tagsCount">0</span>)</button>
             <div class="popup" id="tagsFilterPopup">
