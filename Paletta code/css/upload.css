@@ -83,6 +83,37 @@
             margin-bottom: 20px;
         }
 
+        .preview-container {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .preview-container img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .preview-container button {
+            background-color: #80B824;
+            color: white;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        input[type="file"]::file-selector-button {
+            background-color: #80B824;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
         label {
             display: block;
             font-weight: bold;
@@ -238,3 +269,29 @@
             color: #666;
             margin-top: 5px;
         }
+
+
+
+        /* 添加表单样式 */
+#upload-form {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* 优化错误状态显示 */
+input:invalid {
+    border-color: #80B824;
+}
+
+.error-message {
+    color: #80B824;
+    font-size: 0.8em;
+    margin-top: 5px;
+    display: none;
+}
+
+input:invalid + .error-message {
+    display: block;
+}
