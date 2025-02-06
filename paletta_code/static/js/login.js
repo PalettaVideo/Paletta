@@ -6,7 +6,6 @@ document
     e.preventDefault();
 
     const email = document.getElementById("email").value.trim();
-
     const password = document.getElementById("password").value.trim();
 
     if (!email || !password) {
@@ -32,7 +31,6 @@ document
         const data = await response.json();
 
         // Check if data.detail is an array or object and handle accordingly
-
         const errorMessage = Array.isArray(data.detail)
           ? data.detail.map((err) => err.msg || JSON.stringify(err)).join(", ")
           : data.detail.msg || JSON.stringify(data.detail);

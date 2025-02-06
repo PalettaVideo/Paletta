@@ -28,6 +28,7 @@ document
     const email = document.getElementById("email").value.trim();
     const name = document.getElementById("name").value.trim();
     const password = document.getElementById("password").value.trim();
+    const company = document.getElementById("company").value.trim() || "";
     const confirmPassword = document
       .getElementById("confirm-password")
       .value.trim();
@@ -51,13 +52,22 @@ document
         .getElementById(`${checkbox.id}-input`)
         .value.trim();
       if (!input) {
-        alert(
-          "Please fill in the institution details for all selected options."
-        );
+        alert("Please fill in the institution details.");
         return;
       }
       institutions.push(input);
     }
+    // const company = [];
+    // for (const checkbox of institutionCheckboxes) {
+    //   const input = document
+    //     .getElementById(`${checkbox.id}-input`)
+    //     .value.trim();
+    //   if (!input) {
+    //     alert("Please fill in the company details.");
+    //     return;
+    //   }
+    //   institutions.push(input);
+    // }
 
     try {
       const response = await fetch("http://127.0.0.1:8000/users/", {
@@ -68,14 +78,16 @@ document
         body: JSON.stringify({
           email: email,
           password: password,
-          role: "user", // Assuming a default role
+          role: "customer",
           username: name,
           institution: institutions.join(", "),
+          company: company,
         }),
       });
 
       if (response.ok) {
         alert("User created successfully!");
+        window.location.href = "/static/html/homepage_internal.html";
       } else {
         const errorData = await response.json();
         console.error("Error data:", errorData);
