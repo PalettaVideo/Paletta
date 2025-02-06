@@ -48,8 +48,8 @@ body {
   width: 20px;
   height: 20px;
   background-color: #4CAF50;
-  mask: url('arrow-icon-placeholder.png') no-repeat center;
-  -webkit-mask: url('arrow-icon-placeholder.png') no-repeat center;
+  mask: url('/static/images/arrow-icon-placeholder.png') no-repeat center;
+  -webkit-mask: url('/static/images/arrow-icon-placeholder.png') no-repeat center;
   mask-size: contain;
   -webkit-mask-size: contain;
   margin-right: 10px;
