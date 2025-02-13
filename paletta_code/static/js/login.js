@@ -1,45 +1,58 @@
-document
+document.addEventListener("DOMContentLoaded", () => {
+  document
+    .querySelector(".login-form")
+    .addEventListener("submit", async function (e) {
+      e.preventDefault();
 
-  .querySelector(".login-form")
+      // get user input
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
 
-  .addEventListener("submit", async function (e) {
-    e.preventDefault();
-
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
-
-    if (!email || !password) {
-      alert("Please fill in all required fields.");
-
-      return;
-    }
-
-    try {
-      const response = await fetch("http://127.0.0.1:8000/login/", {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({ email: email, password: password }),
-      });
-
-      if (response.ok) {
-        window.location.href = "/static/html/homepage_internal.html";
-      } else {
-        const data = await response.json();
-
-        // Check if data.detail is an array or object and handle accordingly
-        const errorMessage = Array.isArray(data.detail)
-          ? data.detail.map((err) => err.msg || JSON.stringify(err)).join(", ")
-          : data.detail.msg || JSON.stringify(data.detail);
-
-        alert(`Login failed: ${errorMessage}`);
+      if (!email || !password) {
+        alert("Please fill in all required fields.");
+        return;
       }
-    } catch (error) {
-      console.error("Error:", error);
 
-      alert("An error occurred during login.");
-    }
-  });
+      try {
+        // prepare form data as URL-encoded format for OAuth2PasswordRequestForm.
+        // send the email value under the "username" key.
+        const formData = new URLSearchParams();
+        formData.append("username", email);
+        formData.append("password", password);
+
+        // send login request
+        const response = await fetch("http://127.0.0.1:8000/token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+          },
+          body: formData.toString(),
+        });
+
+        if (!response.ok) {
+          // attempt to parse error response
+          const errorData = await response.json();
+          console.error("Login failed:", errorData);
+          alert(`Login failed: ${errorData.detail || "Invalid credentials"}`);
+          return;
+        }
+
+        // parse token response
+        const data = await response.json();
+        console.log("Token response:", data);
+
+        if (data.access_token) {
+          // store token in localStorage
+          localStorage.setItem("access_token", data.access_token);
+          console.log("Storing token:", data.access_token);
+          // redirect user to homepage
+          window.location.href = "/static/html/homepage_external.html";
+        } else {
+          alert("Login succeeded, but no token received.");
+        }
+      } catch (error) {
+        console.error("Error during login:", error);
+        alert("An error occurred. Please try again.");
+      }
+    });
+});

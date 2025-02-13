@@ -64,8 +64,8 @@
         <a href="../html/collection.html">My Collection</a>
         <a href="../html/cart.html">My Cart</a>
         <a href="../html/my_order.html">My Order</a>
-        <a href="#">Log Out</a>
-    </div>
+        <a href="/">Log Out</a>
+      </div>
     </div>
   </div>
 </header>
@@ -81,11 +81,11 @@
             </ul>
         </div>
         <div class="content">
-            <div id="view-mode" class="profile-box">
+              <div id="view-mode" class="profile-box">
                 <h2>My Profile</h2>
-                <p><strong>My Email:</strong> <span id="email-display">abc@gmail.com</span></p>
-                <p><strong>My Name:</strong> <span id="name-display">Primrose</span></p>
-                <p><strong>My Institution:</strong> <span id="institution-display">University College London</span></p>
+                <p><strong>My Email:</strong> <span id="email-display">Loading...</span></p>
+                <p><strong>My Name:</strong> <span id="name-display">Loading...</span></p>
+                <p><strong>My Institution:</strong> <span id="institution-display">Loading...</span></p>
                 <button class="btn" onclick="enableEdit()">Edit</button>
             </div>
 
@@ -93,10 +93,10 @@
                 <h2>Edit My Profile</h2>
                 <form onsubmit="saveChanges(); return false;">
                     <label for="email-input">My Email</label>
-                    <input type="email" id="email-input" value="abc@gmail.com" required>
+                    <input type="email" id="email-input" required>
 
                     <label for="name-input">My Name</label>
-                    <input type="text" id="name-input" value="Primrose" required>
+                    <input type="text" id="name-input" required>
 
                     <label>My Institution</label>
                     <div class="institution-options">
