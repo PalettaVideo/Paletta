@@ -1,3 +1,5 @@
+// TODO: add a logout button
+
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     const token = localStorage.getItem("access_token");

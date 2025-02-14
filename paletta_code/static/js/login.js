@@ -15,13 +15,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         // prepare form data as URL-encoded format for OAuth2PasswordRequestForm.
-        // send the email value under the "username" key.
+        // Note: send the email value under the "username" key
         const formData = new URLSearchParams();
         formData.append("username", email);
         formData.append("password", password);
 
         // send login request
-        const response = await fetch("http://127.0.0.1:8000/token", {
+        const response = await fetch("http://127.0.0.1:8000/auth/token", {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
@@ -42,11 +42,11 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("Token response:", data);
 
         if (data.access_token) {
-          // store token in localStorage
           localStorage.setItem("access_token", data.access_token);
-          console.log("Storing token:", data.access_token);
+          console.log("Token stored successfully.");
+
           // redirect user to homepage
-          window.location.href = "/static/html/homepage_external.html";
+          window.location.href = "/static/html/homepage_internal.html";
         } else {
           alert("Login succeeded, but no token received.");
         }
