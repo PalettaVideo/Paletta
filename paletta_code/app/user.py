@@ -19,7 +19,7 @@ class UserRole(str, Enum):
 # user creation schema
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str = Field(..., min_length=12)
+    password: str = Field(..., min_length=8)
     username: str = Field(..., min_length=3, max_length=50)
     institution: str | None = None
     company: str | None = None

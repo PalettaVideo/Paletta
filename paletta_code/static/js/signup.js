@@ -1,11 +1,13 @@
-document.querySelectorAll(".institution-checkbox").forEach((checkbox) => {
-  checkbox.addEventListener("change", function () {
-    const input = document.getElementById(`${this.id}-input`);
-    input.disabled = !this.checked;
-    input.required = this.checked;
-  });
-});
+import {
+  validatePassword,
+  updatePasswordRequirements,
+  initialisePasswordValidation,
+} from "./passwordVerification.js";
 
+// initialise password validation for real-time password validation
+document.addEventListener("DOMContentLoaded", initialisePasswordValidation);
+
+// toggle password visibility
 document.querySelectorAll(".toggle-password").forEach((button) => {
   button.addEventListener("click", function () {
     const targetId = this.getAttribute("data-target");
@@ -20,6 +22,14 @@ document.querySelectorAll(".toggle-password").forEach((button) => {
   });
 });
 
+// enable/disable company name input based on checkbox selection
+document.getElementById("company").addEventListener("change", function () {
+  const companyInput = document.getElementById("company-input");
+  companyInput.disabled = !this.checked;
+  companyInput.required = this.checked;
+});
+
+// form submission logic
 document
   .querySelector(".signup-form")
   .addEventListener("submit", async function (e) {
@@ -28,10 +38,14 @@ document
     const email = document.getElementById("email").value.trim();
     const name = document.getElementById("name").value.trim();
     const password = document.getElementById("password").value.trim();
-    const company = document.getElementById("company").value.trim() || "";
     const confirmPassword = document
       .getElementById("confirm-password")
       .value.trim();
+    const institution = document.getElementById("institution").value;
+    const companyCheckbox = document.getElementById("company");
+    const company = companyCheckbox.checked
+      ? document.getElementById("company-input").value.trim()
+      : "";
 
     if (!email || !name || !password || !confirmPassword) {
       alert("Please fill in all required fields.");
@@ -43,31 +57,23 @@ document
       return;
     }
 
-    const institutionCheckboxes = document.querySelectorAll(
-      ".institution-checkbox:checked"
-    );
-    const institutions = [];
-    for (const checkbox of institutionCheckboxes) {
-      const input = document
-        .getElementById(`${checkbox.id}-input`)
-        .value.trim();
-      if (!input) {
-        alert("Please fill in the institution details.");
-        return;
-      }
-      institutions.push(input);
+    const strength = validatePassword(password).strength;
+    if (strength !== "Medium" && strength !== "Strong") {
+      alert(
+        "Your password must be at least Medium strength to create an account."
+      );
+      return;
     }
-    // const company = [];
-    // for (const checkbox of institutionCheckboxes) {
-    //   const input = document
-    //     .getElementById(`${checkbox.id}-input`)
-    //     .value.trim();
-    //   if (!input) {
-    //     alert("Please fill in the company details.");
-    //     return;
-    //   }
-    //   institutions.push(input);
-    // }
+
+    if (!institution) {
+      alert("Please select an institution.");
+      return;
+    }
+
+    if (companyCheckbox.checked && !company) {
+      alert("Please enter the company name.");
+      return;
+    }
 
     try {
       const response = await fetch("http://127.0.0.1:8000/users", {
@@ -80,14 +86,14 @@ document
           password: password,
           role: "customer",
           username: name,
-          institution: institutions.join(", "),
+          institution: institution,
           company: company,
         }),
       });
 
       if (response.ok) {
-        alert("User created successfully!");
-        window.location.href = "/static/html/homepage_internal.html";
+        alert("User created successfully! Please log in to continue.");
+        window.location.href = "/";
       } else {
         const errorData = await response.json();
         console.error("Error data:", errorData);

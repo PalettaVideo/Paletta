@@ -14,7 +14,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(100), unique=True, nullable=False)
-    institution = Column(String(50), nullable=True)  # explicitly allows NULL
+    institution = Column(String(50)) 
     company = Column(String(50), nullable=True)  # explicitly allows NULL
     role = Column(Enum(UserRoleEnum), nullable=False, default=UserRoleEnum.customer) 
     username = Column(String(20), nullable=False)  # matches Pydantic's required username
