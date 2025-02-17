@@ -30,7 +30,7 @@ templates = Jinja2Templates(directory="templates")
 app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 app.include_router(user_router, prefix="/users", tags=["Users"])
 
-# serve index.html
+# serve index.html as the application root page
 @app.get("/", response_class=HTMLResponse)
 def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
