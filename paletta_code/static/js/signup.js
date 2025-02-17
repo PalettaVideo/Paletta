@@ -104,3 +104,8 @@ document
       alert("An error occurred while creating the user.");
     }
   });
+
+// update password requirements for real-time password validation
+document.getElementById("password").addEventListener("input", function () {
+  updatePasswordRequirements(this.value);
+});

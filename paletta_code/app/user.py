@@ -57,11 +57,21 @@ async def update_user_profile(
     db: Session = Depends(get_db),
     email: EmailStr = Body(...),
     username: str = Body(...),
-    institution: str = Body(...)
+    company: str = Body(...),
+    password: str | None = Body(None)
 ):
     current_user.email = email
     current_user.username = username
-    current_user.institution = institution
+    current_user.company = company
+
+    # Check if a new password is provided and hash it
+    if password:
+        current_user.password_hash = hash_password(password)
+        # Invalidate the current session or token
+        # This is a placeholder for token invalidation logic
+        # You might need to implement this based on your authentication setup
+        # For example, remove the token from a database or cache
+
     db.commit()
     db.refresh(current_user)
     return current_user

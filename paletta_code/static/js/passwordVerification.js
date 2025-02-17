@@ -29,11 +29,16 @@ export function updatePasswordRequirements(password) {
   document.getElementById("length").className = requirements.length
     ? "valid"
     : "invalid";
+  document.getElementById("specialChar").className = requirements.specialChar
+    ? "valid"
+    : "invalid";
 
   const passwordError = document.getElementById("password-error");
-  passwordError.textContent = `Password Strength: ${strength}`;
-  passwordError.style.color = strength === "Strong" ? "green" : "orange";
-  passwordError.style.display = "block";
+  if (passwordError) {
+    passwordError.textContent = `Password Strength: ${strength}`;
+    passwordError.style.color = strength === "Strong" ? "green" : "orange";
+    passwordError.style.display = "block";
+  }
 
   return strength;
 }
