@@ -35,6 +35,7 @@ document
   .addEventListener("submit", async function (e) {
     e.preventDefault();
 
+    // get the values of the form fields
     const email = document.getElementById("email").value.trim();
     const name = document.getElementById("name").value.trim();
     const password = document.getElementById("password").value.trim();
@@ -47,16 +48,19 @@ document
       ? document.getElementById("company-input").value.trim()
       : "";
 
+    // check if all required fields are filled
     if (!email || !name || !password || !confirmPassword) {
       alert("Please fill in all required fields.");
       return;
     }
 
+    // check if the passwords match
     if (password !== confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
 
+    // check if the password is strong enough
     const strength = validatePassword(password).strength;
     if (strength !== "Medium" && strength !== "Strong") {
       alert(
@@ -65,16 +69,19 @@ document
       return;
     }
 
+    // check if the institution is selected
     if (!institution) {
       alert("Please select an institution.");
       return;
     }
 
+    // check if the company name is entered if the company checkbox is checked
     if (companyCheckbox.checked && !company) {
       alert("Please enter the company name.");
       return;
     }
 
+    // send the POST request to the server to create the user
     try {
       const response = await fetch("http://127.0.0.1:8000/users", {
         method: "POST",

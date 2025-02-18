@@ -25,9 +25,11 @@ class UserCreate(BaseModel):
     company: str | None = None
     role: UserRole = UserRole.customer
 
+# get the user by email from the database
 def get_user(db: Session, email: str):
     return db.query(User).filter(User.email == email).first()
 
+# create a new POST user server endpoint
 @user_router.post("/")
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     if get_user(db, user.email):
@@ -47,10 +49,12 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return db_user
 
+# get the current user
 @user_router.get("/me")
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
 
+# PUT request to update the user profile
 @user_router.put("/me")
 async def update_user_profile(
     current_user: User = Depends(get_current_user),
@@ -67,10 +71,7 @@ async def update_user_profile(
     # Check if a new password is provided and hash it
     if password:
         current_user.password_hash = hash_password(password)
-        # Invalidate the current session or token
-        # This is a placeholder for token invalidation logic
-        # You might need to implement this based on your authentication setup
-        # For example, remove the token from a database or cache
+
 
     db.commit()
     db.refresh(current_user)

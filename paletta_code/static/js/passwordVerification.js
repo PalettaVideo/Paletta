@@ -48,7 +48,7 @@ export function initialisePasswordValidation() {
   const passwordInput = document.getElementById("password");
   const messageBox = document.getElementById("message");
 
-  if (!passwordInput || !messageBox) return; // ensure elements exist before adding listeners
+  if (!passwordInput || !messageBox) return;
 
   passwordInput.addEventListener("focus", () => {
     messageBox.style.display = "block";

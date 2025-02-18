@@ -1,9 +1,16 @@
-import { updatePasswordRequirements } from "./passwordVerification.js";
+import {
+  validatePassword,
+  updatePasswordRequirements,
+  initialisePasswordValidation,
+} from "./passwordVerification.js";
 
+// initialise password validation for real-time password validation
+document.addEventListener("DOMContentLoaded", initialisePasswordValidation);
+
+// load the user data and populate the profile
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     const token = localStorage.getItem("access_token");
-    console.log("Token:", token);
     const response = await fetch("/users/me", {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -15,7 +22,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const userData = await response.json();
-    console.log("User Data:", userData);
     populateProfile(userData);
   } catch (error) {
     console.error("Error fetching user data:", error);
@@ -36,6 +42,8 @@ function populateProfile(user) {
   // populate the input fields with the user data
   document.getElementById("email-input").value = user.email;
   document.getElementById("name-input").value = user.username;
+  // no change of institution for now, requirements are to be discussed in future
+  // document.getElementById("institution-input").value = user.institution;
   document.getElementById("company-input").value = user.company;
 }
 
@@ -45,7 +53,7 @@ window.enableEdit = function enableEdit() {
   document.getElementById("edit-mode").style.display = "block";
 };
 
-// Add event listener for password change checkbox
+// event listener for password change checkbox
 const passwordChangeCheckbox = document.getElementById(
   "password-change-checkbox"
 );
@@ -61,12 +69,13 @@ passwordChangeCheckbox.addEventListener("change", function () {
   }
 });
 
-// Add event listeners for password validation
+// event listeners for password validation
 const passwordInput = document.getElementById("password-input");
 passwordInput.addEventListener("input", function () {
   updatePasswordRequirements(this.value);
 });
 
+// saves the changes to the profile and updates the user data
 window.saveChanges = function saveChanges() {
   const email = document.getElementById("email-input").value;
   const name = document.getElementById("name-input").value;
@@ -93,7 +102,7 @@ window.saveChanges = function saveChanges() {
       return;
     }
 
-    const strength = updatePasswordRequirements(password);
+    const strength = validatePassword(password).strength;
     if (strength !== "Medium" && strength !== "Strong") {
       alert(
         "Your password must be at least Medium strength to update your profile."
@@ -103,7 +112,7 @@ window.saveChanges = function saveChanges() {
 
     body.password = password;
   }
-
+  // send the PUT request to the server to update the profile
   fetch("/users/me", {
     method: "PUT",
     headers: {
@@ -114,7 +123,7 @@ window.saveChanges = function saveChanges() {
   })
     .then((response) => {
       if (!response.ok) {
-        // Log the response status and text for debugging
+        // log the response status and text for debugging
         console.error("Response status:", response.status);
         return response.text().then((text) => {
           console.error("Response text:", text);
@@ -124,16 +133,27 @@ window.saveChanges = function saveChanges() {
       return response.json();
     })
     .then((updatedUser) => {
+      // update the user data and populate the profile
       populateProfile(updatedUser);
       document.getElementById("view-mode").style.display = "block";
       document.getElementById("edit-mode").style.display = "none";
+
+      // if the password was changed, log out the user
+      if (passwordChangeCheckbox.checked) {
+        // remove the access token from local storage
+        localStorage.removeItem("access_token");
+        // redirect to the login page
+        window.location.href = "/";
+      }
     })
     .catch((error) => {
+      // log any errors for debugging
       console.error("Error updating profile:", error);
       alert("Failed to update profile.");
     });
 };
 
+// function to toggle password visibility
 function togglePasswordVisibility(inputId, buttonId) {
   const input = document.getElementById(inputId);
   const button = document.getElementById(buttonId);

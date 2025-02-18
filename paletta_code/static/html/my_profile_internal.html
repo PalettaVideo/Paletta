@@ -11,8 +11,7 @@
     <script src="../js/my_profile.js" defer type="module"></script>
     <title>Profile Page</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-   
-    
+    <link rel="icon" type="image/x-icon" href="../picture/logo.ico">
  
 </head>
 
@@ -113,6 +112,8 @@
                         <button type="button" id="toggle-password" style="position: absolute; right: 0; top: 0; height: 100%; background: none; border: none; cursor: pointer;">
                           Show
                         </button>
+                        <small id="password-error" class="password-error"></small>
+                        <small id="password-requirements" class="password-requirements"> Password must be at least 8 characters long. </small>                
                       </div>
 
                       <label for="confirm-password-input">Confirm My Password</label>
