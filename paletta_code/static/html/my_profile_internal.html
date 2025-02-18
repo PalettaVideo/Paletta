@@ -6,13 +6,12 @@
     <link href="../css/footer.css" rel="stylesheet">
     <link href="../css/navigation_internal.css" rel="stylesheet">
     <link href="../css/my_profile.css" rel="stylesheet">
+    <link href="../css/password_message.css" rel="stylesheet">
     <script src="../js/navigation_scripts.js" defer></script>
-    <script src="../js/my_profile.js" defer></script>
+    <script src="../js/my_profile.js" defer type="module"></script>
     <title>Profile Page</title>
-   
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-   
-    
+    <link rel="icon" type="image/x-icon" href="../picture/logo.ico">
  
 </head>
 
@@ -64,8 +63,8 @@
         <a href="../html/collection.html">My Collection</a>
         <a href="../html/cart.html">My Cart</a>
         <a href="../html/my_order.html">My Order</a>
-        <a href="#">Log Out</a>
-    </div>
+        <a href="/">Log Out</a>
+      </div>
     </div>
   </div>
 </header>
@@ -81,48 +80,59 @@
             </ul>
         </div>
         <div class="content">
-            <div id="view-mode" class="profile-box">
+              <div id="view-mode" class="profile-box">
                 <h2>My Profile</h2>
-                <p><strong>My Email:</strong> <span id="email-display">abc@gmail.com</span></p>
-                <p><strong>My Name:</strong> <span id="name-display">Primrose</span></p>
-                <p><strong>My Institution:</strong> <span id="institution-display">University College London</span></p>
+                <p><strong>My Email:</strong> <span id="email-display">Loading...</span></p>
+                <p><strong>My Name:</strong> <span id="name-display">Loading...</span></p>
+                <p><strong>My University:</strong> <span id="institution-display">Loading...</span></p>
+                <p><strong>My Company:</strong> <span id="company-display">Loading...</span></p>
                 <button class="btn" onclick="enableEdit()">Edit</button>
             </div>
 
             <div id="edit-mode" class="profile-box" style="display: none;">
                 <h2>Edit My Profile</h2>
                 <form onsubmit="saveChanges(); return false;">
-                    <label for="email-input">My Email</label>
-                    <input type="email" id="email-input" value="abc@gmail.com" required>
+                    <label for="email-input">Change My Email</label>
+                    <input type="email" id="email-input">
 
-                    <label for="name-input">My Name</label>
-                    <input type="text" id="name-input" value="Primrose" required>
+                    <label for="name-input">Change My Name</label>
+                    <input type="text" id="name-input">
 
-                    <label>My Institution</label>
-                    <div class="institution-options">
-                        <label><input type="radio" name="institution" value="College"> College</label>
-                        <label><input type="radio" name="institution" value="Company"> Company</label>
-                        <label><input type="radio" name="institution" value="Other Institution"> Other Institution</label>
-                    </div>
-                    <div id="institution-text-container" class="institution-input" style="display: none;">
-                        <label for="institution-text">Institution Name</label>
-                        <input type="text" id="institution-text" required>
-                    </div>
+                    <label for="company-input">Change Company Name</label>
+                    <input type="text" id="company-input">
 
-                    <label for="password-input">My Password</label>
-                    <div style="position: relative;">
-                        <input type="password" id="password-input" required>
+                    <label for="password-change-checkbox">
+                      <input type="checkbox" id="password-change-checkbox"> Change My Password
+                    </label>
+
+                    <div id="password-fields" style="display: none;">
+                      <!-- password change -->
+                      <div style="position: relative;">
+                        <input type="password" id="password-input">
                         <button type="button" id="toggle-password" style="position: absolute; right: 0; top: 0; height: 100%; background: none; border: none; cursor: pointer;">
-                            Show
+                          Show
                         </button>
+                        <small id="password-error" class="password-error"></small>
+                        <small id="password-requirements" class="password-requirements"> Password must be at least 8 characters long. </small>                
+                      </div>
+
+                      <label for="confirm-password-input">Confirm My Password</label>
+                      <div style="position: relative;">
+                        <input type="password" id="confirm-password-input">
+                        <button type="button" id="toggle-confirm-password" style="position: absolute; right: 0; top: 0; height: 100%; background: none; border: none; cursor: pointer;">
+                          Show
+                        </button>
+                      </div>
                     </div>
 
-                    <label for="confirm-password-input">Confirm My Password</label>
-                    <div style="position: relative;">
-                        <input type="password" id="confirm-password-input" required>
-                        <button type="button" id="toggle-confirm-password" style="position: absolute; right: 0; top: 0; height: 100%; background: none; border: none; cursor: pointer;">
-                            Show
-                        </button>
+                    <!-- password requirements message-->
+                    <div id="message">
+                      <h3>A valid password contains:</h3>
+                      <p id="letter" class="invalid">A <b>lowercase</b> letter</p>
+                      <p id="capital" class="invalid">A <b>capital (uppercase)</b> letter</p>
+                      <p id="number" class="invalid">A <b>number</b></p>
+                      <p id="length" class="invalid">Minimum <b>8 characters</b></p>
+                      <p id="specialChar" class="invalid">For a strong password, include a <b>special character</b>, such as <b>[@.#$!%^&*.?]</b></p>
                     </div>
 
                     <button type="submit" class="btn">Confirm</button>

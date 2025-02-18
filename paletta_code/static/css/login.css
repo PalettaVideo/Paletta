@@ -110,7 +110,11 @@ body {
     border-radius: 10px;
     transition: background-color 0.3s ease, transform 0.3s ease; /* Smooth transition for background and scale */
 }
-
+.login-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 .login-btn:hover {
     background-color: #6a9a1d;
     transform: scale(1.05); /* Slightly enlarge button on hover */
