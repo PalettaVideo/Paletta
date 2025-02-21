@@ -1,7 +1,11 @@
 To run the Python FastAPI application, follow the steps:<br/>
 
-- start the virtual environment to set up the application with requirements.txt: <br/>
-  > cd .\paletta_code\
-  > .\venv\Scripts\activate
-- to run the application, run the following command: <br/>
-  > uvicorn app.main:app --reload
+1. setup a new virtual environment inside the \paletta_code folder
+   > py -m venv .venv
+2. start the virtual environment to set up the application with requirements.txt: <br/>
+   > cd .\paletta_code\
+   > .\.venv\Scripts\activate
+3. install all dependencies required by the application
+   > pip install -r requirements.txt
+4. to start the application, run the following command: <br/>
+   > uvicorn app.main:app --reload
