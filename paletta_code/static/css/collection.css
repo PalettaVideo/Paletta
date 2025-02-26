@@ -115,6 +115,26 @@
       font-size: 12px;
     }
 
+    .add-to-cart{
+      background-color:#80B824;
+      font-family:'Montserrat';
+      border:none;
+      margin-top:10px;
+      margin-right: 10px;  
+
+    }
+
+    .remove{
+      background-color:#80B824;
+      font-family:'Montserrat';
+      border:none;
+      margin-top:10px;
+      
+      
+    }
+
+
+
 
     .footer {
       position: fixed;

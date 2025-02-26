@@ -4,19 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="../css/navigation_external.css" rel="stylesheet">
-    <link href="../css/about_us.css" rel="stylesheet">
     <link href="../css/footer.css" rel="stylesheet">
+    <link href="../css/q_and_a.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <script src="../js/navigation_scripts.js" defer></script>
+    <script src="../js/q_and_a.js" defer></script>
+    <title>Paletta Help Center</title>
     <link rel="icon" type="image/x-icon" href="../picture/logo.ico">
-
-    <title>About Us</title>
-    
 </head>
 <body>
     <header>
         <div class="logo-container">
-              <a href="../html/homepage_external.html" style="text-decoration: none;">
+              <a href="../html/homepage_customer.html" style="text-decoration: none;">
                 <div class="logo">
                     <img src="../picture/logo.jpg" alt="Logo">
                 </div>
@@ -42,10 +41,10 @@
               My Center
             </button>
             <div class="popup" id="popupMenu">
-              <a href="../html/my_profile_internal.html">My Profile</a>
-              <a href="../html/collection.html">My Collection</a>
-              <a href="../html/cart.html">My Cart</a>
-              <a href="../html/my_order.html">My Order</a>
+              <a href="../html/my_profile_customer.html">My Profile</a>
+              <a href="../html/collection_customer.html">My Collection</a>
+              <a href="../html/cart_customer.html">My Cart</a>
+              <a href="../html/my_order_customer.html">My Order</a>
               <a href="/">Log Out</a>
             </div>
           </div>
@@ -55,21 +54,42 @@
 
     <div class="title-section">
         <div class="image-container">
-            <img src="../picture/All title.png" alt="Contact Us">
-            <div class="overlay">About Us</div>
+            <img src="../picture/All title.png" alt="Help Centre">
+            <div class="overlay">Help Centre</div>
         </div>
         <div class="logo-container">
             <img src="../picture/logo.jpg" alt="PALETTA Logo">
         </div>
     </div>
 
-    <div class="content">
-        <h1>Welcome to Paletta</h1>
-        <h2>Your Gateway to Authentic Educational Content</h2>
-        <p>At Paletta, we redefine how educational visuals are accessed and utilized. As a premium video footage library, we specialize in delivering authentic, education-driven content sourced directly from the world's leading colleges and universities.Our mission is to empower educators, marketers, and creatives with unparalleled access to subject-specific and location-specific footage, ensuring every project resonates with originality and purpose.Standard stock libraries often fall short when it comes to capturing the essence of academic excellence or providing tailored visuals. That's where Paletta stands apart. We go beyond generic stock to connect you directly to the source of inspiration, offering footage that is as informative as it is visually compelling.Whether you're seeking niche content in a specialised subject or iconic footage from locations across the UK, our carefully curated library has you covered. Every clip in our collection is crafted to meet the highest standards of quality and authenticity, providing the perfect foundation for your next project.</p>
+    <div class="faq-container">
+        <div class="faq-questions">
+            <ul>
+                <li onclick="selectQuestion(this, 0)">1. What is Paletta?</li>
+                <li onclick="selectQuestion(this, 1)">2. Who can use Paletta?</li>
+                <li onclick="selectQuestion(this, 2)">3. What types of footage are available on Paletta?</li>
+                <li onclick="selectQuestion(this, 3)">4. How do I purchase footage from Paletta?</li>
+                <li onclick="selectQuestion(this, 4)">5. What formats are the videos available in?</li>
+                <li onclick="selectQuestion(this, 5)">6. Are there licensing restrictions for using the footage?</li>
+                <li onclick="selectQuestion(this, 6)">7. Can I request custom footage?</li>
+                <li onclick="selectQuestion(this, 7)">8. Is there a subscription plan available?</li>
+                <li onclick="selectQuestion(this, 8)">9. Can I preview the footage before purchasing?</li>
+                <li onclick="selectQuestion(this, 9)">10. How can I contact Paletta for support?</li>
+                <li onclick="selectQuestion(this, 10)">11. Does Paletta offer footage outside the UK?</li>
+                <li onclick="selectQuestion(this, 11)">12. How often is the library updated?</li>
+            </ul>
+        </div>
+        <div class="faq-answers" id="faq-answer">
+            <p>Select a question to see the answer here.</p>
+        </div>
     </div>
 
-    <div class="footer">
+    <div class="contact-us">
+        <p>Still have unsolved questions?</p>
+        <a href="../html/contact_us_customer.html"><button>Contact Us</button></a>
+    </div>
+
+    <footer class="footer">
         <div class="divider"></div>
       <div class="footer-content">
         <!-- Logo Section -->
@@ -82,8 +102,8 @@
         <div class="footer-column">
           <h4>Company</h4>
           <ul>
-            <li><a href="../html/about_us.html">About us</a></li>
-            <li><a href="../html/contact_us.html">Contact us</a></li>
+            <li><a href="../html/about_us_customer.html">About us</a></li>
+            <li><a href="../html/contact_us_customer.html">Contact us</a></li>
           </ul>
         </div>
     
@@ -91,7 +111,7 @@
         <div class="footer-column">
           <h4>Support</h4>
           <ul>
-            <li><a href="../html/q_and_a.html">Help & Support</a></li>
+            <li><a href="../html/q_and_a_customer.html">Help & Support</a></li>
             <li><a href="#">Terms & Conditions</a></li>
             <li><a href="#">Privacy</a></li>
           </ul>
@@ -112,6 +132,8 @@
         </div>
       </div>
       
-    </div>
+    </footer>
+
+  
 </body>
 </html>

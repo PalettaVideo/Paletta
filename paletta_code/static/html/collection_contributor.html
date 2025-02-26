@@ -1,21 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Video</title>
-    <link href="../css/navigation_internal.css" rel="stylesheet">
-    <link href="../css/footer.css" rel="stylesheet">
-    <link href="../css/upload_history.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-    <script src="../js/navigation_scripts.js" defer></script>
-    <script src="../js/upload_history.js" defer></script>
-    <link rel="icon" type="image/x-icon" href="../picture/logo.ico">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Collection</title>
+  <link href="../css/navigation_internal.css" rel="stylesheet">
+  <link href="../css/collection.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <script src="../js/navigation_scripts.js" defer></script>
+  <script src="../js/collection.js" defer></script>
+  <link rel="icon" type="image/x-icon" href="../picture/logo.ico">
+  
 </head>
+
 <header>
     <div class="logo-container">
-        <a href="../html/homepage_internal.html" style="text-decoration: none;">
+        <a href="../html/homepage_contributor.html" style="text-decoration: none;">
             <div class="logo">
                 <img src="../picture/logo.jpg" alt="Logo">
             </div>
@@ -29,9 +29,9 @@
           </svg>
         </button>
       </div>
-  
+      
       <div class="actions">
-        <a href="../html/upload.html" style="text-decoration: none;">
+        <a href="../html/upload_contributor.html" style="text-decoration: none;">
             <button>
               <svg style="enable-background:new 0 0 24 24;" version="1.1" viewBox="0 0 24 24" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                 <g id="grid_system"/>
@@ -53,41 +53,46 @@
               <path d="M25.55,24a1,1,0,0,1-.74-.32A11.35,11.35,0,0,0,16.46,20h-.92a11.27,11.27,0,0,0-7.85,3.16,1,1,0,0,1-1.38-1.44A13.24,13.24,0,0,1,15.54,18h.92a13.39,13.39,0,0,1,9.82,4.32A1,1,0,0,1,25.55,24Z" />
             </g>
           </svg>
-          My Center
+          My Account
         </button>
         <div class="popup" id="popupMenu">
-          <a href="../html/my_profile_internal.html">My Profile</a>
-          <a href="../html/collection.html">My Collection</a>
-          <a href="../html/cart.html">My Cart</a>
-          <a href="../html/my_order.html">My Order</a>
-          <a href="/">Log Out</a>
-      </div>
+            <a href="../html/my_profile_contributor.html">My Profile</a>
+            <a href="../html/collection_contributor.html">My Collection</a>
+            <a href="../html/cart_contributor.html">My Cart</a>
+            <a href="../html/my_order_contributor.html">My Order</a>
+            <a href="/">Log Out</a>
+          </div>
       </div>
     </div>
   </header>
+
+
 <body>
-    
-    <div class="container">
-        <div class="menu">
-            <a href="../html/upload.html" >Upload</a>
-            <a href="../html/upload_history.html" class="active">History</a>
-        </div>
-        
-        <div class="upload-history-container">
-          <h2 class="history-title">Upload History</h2>
-          <div class="history-list">
-              <!-- 内容由JavaScript动态生成 -->
-          </div>
-      </div>
+  <div class="layout">
+    <!-- sidebar -->
+    <aside class="sidebar">
+      <nav>
+        <ul>
+            <li><a href="../html/my_profile_contributor.html" >My profile</a></li>
+            <li><a href="../html/collection_contributor.html" class="active">My collection</a></li>
+            <li><a href="../html/cart_contributor.html">My cart</a></li>
+            <li><a href="../html/my_order_contributor.html">My order</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- area of collection -->
+    <main class="content">
+      
+      <div class="clips-grid"></div>
+    </main>
+
+    <!-- footer -->
+    <footer class="footer">
+      <p>&copy; 2024 FilmBright LTD. All rights reserved.</p>
+    </footer>
+  </div>
 
 
-           
-        </div>
-    
-        <div class="footer">© Filmbright LTD 2024</div>
-    
 </body>
-
-
-
 </html>

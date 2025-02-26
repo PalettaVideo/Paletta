@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Collection</title>
+  <link href="../css/navigation_external.css" rel="stylesheet">
+  <link href="../css/collection.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <script src="../js/navigation_scripts.js" defer></script>
+  <script src="../js/collection.js" defer></script>
+  <link rel="icon" type="image/x-icon" href="../picture/logo.ico">
+  
+</head>
+
+<header>
+  <div class="logo-container">
+        <a href="../html/homepage_customer.html" style="text-decoration: none;">
+          <div class="logo">
+              <img src="../picture/logo.jpg" alt="Logo">
+          </div>
+      </a>
+    <div class="search-bar">
+      <input type="text" placeholder="Search in the whole store">
+      <button>
+        <svg id="Icons" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+          <path class="cls-1" d="M18.856,14.624a10.022,10.022,0,1,0-4.234,4.234l4.254,4.255a2.994,2.994,0,1,0,4.239-4.23ZM2,10a8,8,0,1,1,8,8A8.009,8.009,0,0,1,2,10ZM21.7,21.708a1,1,0,0,1-1.4,0l-3.967-3.968a10.092,10.092,0,0,0,1.4-1.406L21.705,20.3a.976.976,0,0,1-.009,1.407Z" />
+          <path class="cls-1" d="M10,4a6.006,6.006,0,0,0-6,6,1,1,0,0,0,2,0,4,4,0,0,1,4-4,1,1,0,0,0,0-2Z" />
+        </svg>
+      </button>
+    </div>
+    <div class="actions">
+      <button id="centerButton">
+        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+          <g data-name="Layer 2" id="Layer_2">
+            <path d="M16,29A13,13,0,1,1,29,16,13,13,0,0,1,16,29ZM16,5A11,11,0,1,0,27,16,11,11,0,0,0,16,5Z" />
+            <path d="M16,17a5,5,0,1,1,5-5A5,5,0,0,1,16,17Zm0-8a3,3,0,1,0,3,3A3,3,0,0,0,16,9Z" />
+            <path d="M25.55,24a1,1,0,0,1-.74-.32A11.35,11.35,0,0,0,16.46,20h-.92a11.27,11.27,0,0,0-7.85,3.16,1,1,0,0,1-1.38-1.44A13.24,13.24,0,0,1,15.54,18h.92a13.39,13.39,0,0,1,9.82,4.32A1,1,0,0,1,25.55,24Z" />
+          </g>
+        </svg>
+        My Center
+      </button>
+      <div class="popup" id="popupMenu">
+        <a href="../html/my_profile_customer.html">My Profile</a>
+        <a href="../html/collection_customer.html">My Collection</a>
+        <a href="../html/cart_customer.html">My Cart</a>
+        <a href="../html/my_order_customer.html">My Order</a>
+        <a href="/">Log Out</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<body>
+  <div class="layout">
+    <!-- sidebar -->
+    <aside class="sidebar">
+      <nav>
+        <ul>
+            <li><a href="../html/my_profile_customer.html" >My profile</a></li>
+            <li><a href="../html/collection_customer.html" class="active">My collection</a></li>
+            <li><a href="../html/cart_customer.html">My cart</a></li>
+            <li><a href="../html/my_order_customer.html">My order</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- area of collection -->
+    <main class="content">
+      
+      <div class="clips-grid"></div>
+    </main>
+
+    <!-- footer -->
+    <footer class="footer">
+      <p>&copy; 2024 FilmBright LTD. All rights reserved.</p>
+    </footer>
+  </div>
+
+
+</body>
+</html>
