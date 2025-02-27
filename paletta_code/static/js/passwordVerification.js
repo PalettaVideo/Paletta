@@ -17,21 +17,19 @@ export function validatePassword(password) {
 export function updatePasswordRequirements(password) {
   const { strength, requirements } = validatePassword(password);
 
-  document.getElementById("letter").className = requirements.lowercase
-    ? "valid"
-    : "invalid";
-  document.getElementById("capital").className = requirements.uppercase
-    ? "valid"
-    : "invalid";
-  document.getElementById("number").className = requirements.number
-    ? "valid"
-    : "invalid";
-  document.getElementById("length").className = requirements.length
-    ? "valid"
-    : "invalid";
-  document.getElementById("specialChar").className = requirements.specialChar
-    ? "valid"
-    : "invalid";
+  // Safely update DOM elements
+  const safelyUpdateClass = (id, isValid) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.className = isValid ? "valid" : "invalid";
+    }
+  };
+
+  safelyUpdateClass("letter", requirements.lowercase);
+  safelyUpdateClass("capital", requirements.uppercase);
+  safelyUpdateClass("number", requirements.number);
+  safelyUpdateClass("length", requirements.length);
+  safelyUpdateClass("specialChar", requirements.specialChar);
 
   const passwordError = document.getElementById("password-error");
   if (passwordError) {
