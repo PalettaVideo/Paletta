@@ -1,0 +1,147 @@
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #ffffff;
+    padding: 10px 20px;
+    z-index: 1000;
+    /*box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1)*/;
+  }
+
+  .logo-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  .logo img {
+    max-height: 100px;
+  }
+
+  .search-bar {
+    flex-grow: 1; 
+    max-width: 600px; 
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    border: 2px solid #80B824;
+    border-radius: 20px;
+    overflow: hidden;
+    margin: 0 20px; 
+}
+
+.search-bar input {
+    flex-grow: 1;
+    padding: 10px;
+    border: none;
+    outline: none;
+    font-family: 'Montserrat';
+    min-width: 150px;
+}
+
+.search-bar button {
+    background-color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-bar button svg {
+    width: 20px;
+    height: 20px;
+    fill: #80B824;
+}
+
+/* 让顶部导航栏的容器使用 flex 布局 */
+.nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px;
+}
+
+  .user-actions button {
+    margin-left: 10px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+
+  .actions {
+    position: absolute; 
+    right: 50px; 
+    top: 50%; 
+    transform: translateY(-50%);
+    display: flex;
+    gap: 15px;
+  }
+
+  .actions button {
+    background-color: #ffffff;
+    color: #80B824;
+    border: 2px solid #80B824;
+    padding: 8px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Montserrat';
+    font-weight: bold;
+    font-size: 12px;
+  }
+
+  .actions button svg {
+    width: 25px;
+    height: 25px;
+    fill: #80B824;
+  }
+
+  .actions button:hover {
+    background-color: #6a9a1d;
+  }
+
+  .popup {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    border: 2px solid #80B824;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    width: 200px;
+    z-index: 2000; 
+    
+    }
+
+
+    #popupMenu{
+      top:100%
+    }
+
+    .popup a {
+      display: block;
+      padding: 10px;
+      color: #80B824;
+      text-decoration: none;
+      font-weight: bold;
+      border-bottom: 1px solid #80B824;
+    }
+
+    .popup a:last-child {
+      border-bottom: none;
+    }
+
+    .popup a:hover {
+      background-color: #f9f9f9;
+    }
