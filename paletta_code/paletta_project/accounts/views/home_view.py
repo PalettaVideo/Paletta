@@ -2,6 +2,8 @@ from django.views.generic import TemplateView
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.contrib import messages
+from videos.models import Category
+from videos.serializers import CategorySerializer
 
 class HomeView(TemplateView):
     """Home view that serves the appropriate home page based on user authentication."""
@@ -9,13 +11,26 @@ class HomeView(TemplateView):
     def get(self, request, *args, **kwargs):
         """Serve the appropriate home page."""
         if request.user.is_authenticated:
-            # determine which internal page to show based on user role
+            # Fetch all categories from the database
+            categories = Category.objects.all().order_by('name')
+            
+            # Use the serializer to get proper image URLs
+            serializer = CategorySerializer(categories, many=True, context={'request': request})
+            
+            context = {
+                'categories': serializer.data
+            }
+            
+            # TODO: see which of these functionalities are needed and can be loaded from the .js static files
+            # TODO: see if the user role check is needed for the home page
             if request.user.role in ['admin', 'owner']:
-                return render(request, 'homepage_internal.html')
+                return render(request, 'homepage_internal.html', context)
             elif request.user.role == 'contributor':
-                return render(request, 'homepage_internal.html')  # TODO: create a specific contributor page
+                return render(request, 'homepage_internal.html', context) 
+                # TODO: create a specific contributor page
             else:
-                return render(request, 'homepage_internal.html')  # TODO: create a specific customer page
+                return render(request, 'homepage_internal.html', context)
+                # TODO: create a specific customer page
         else:
             return render(request, 'homepage_external.html')
 

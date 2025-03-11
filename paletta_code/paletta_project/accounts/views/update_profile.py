@@ -7,7 +7,7 @@ from django.utils.decorators import method_decorator
 
 class ProfileView(TemplateView):
     """View to handle user profile page."""
-    template_name = 'my_profile_internal.html'
+    template_name = 'my_profile.html'
     
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):

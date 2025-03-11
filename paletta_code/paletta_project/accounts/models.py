@@ -50,7 +50,7 @@ class User(AbstractUser):
   created_at = models.DateTimeField(default=timezone.now)
 
   USERNAME_FIELD = 'email'
-  REQUIRED_FIELDS = ['first_name', 'last_name']  # required fields for createsuperuser
+  REQUIRED_FIELDS = ['first_name', 'last_name']  # required fields to create a superuser
 
   objects = UserManager()
 

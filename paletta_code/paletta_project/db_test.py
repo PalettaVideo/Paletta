@@ -4,8 +4,12 @@ import django
 from django.db import connections
 from django.db.utils import OperationalError
 
+# Add the project directory to the Python path
+project_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, project_dir)
+
 # Set up Django environment
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'paletta_project.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'paletta_core.settings')
 django.setup()
 
 def test_database_connection():

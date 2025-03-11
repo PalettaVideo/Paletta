@@ -69,43 +69,34 @@
     </div>
 
     <p>Discover Any Clip You Like From Our Library</p>
-    <div class="categories">
+    <div class="categories" id="categories-container">
+      <!-- "All" category is always shown -->
       <a href="{% url 'clip_store' %}" style="text-decoration: none;">
         <div class="category">
           <img src="{% static 'picture/All.png' %}" alt="All">
           <span>All</span>
         </div>
       </a>
-      <a href="{% url 'category' category='buildings' %}" style="text-decoration: none;">
+      
+      <!-- Dynamic categories from database -->
+      {% for category in categories %}
+      <a href="{% url 'category' category=category.name|lower %}" style="text-decoration: none;">
         <div class="category">
-          <img src="{% static 'picture/Buildings.png' %}" alt="Buildings">
-          <span>Buildings</span>
+          <!-- Use the category image URL if available, otherwise use a default image -->
+          {% if category.image_url %}
+            <img src="{{ category.image_url }}" alt="{{ category.name }}" 
+                 data-category="{{ category.name }}" class="category-image">
+          {% else %}
+            <img src="{% static 'picture/main_campus.png' %}" alt="{{ category.name }}" 
+                 data-category="{{ category.name }}" class="category-image">
+          {% endif %}
+          <span>{{ category.name }}</span>
         </div>
       </a>
-      <a href="{% url 'category' category='humanities' %}" style="text-decoration: none;">
-        <div class="category">
-          <img src="{% static 'picture/Humanities.png' %}" alt="Humanities">
-          <span>Humanities</span>
-        </div>
-      </a>
-      <a href="{% url 'category' category='people' %}" style="text-decoration: none;">
-        <div class="category">
-          <img src="{% static 'picture/People.png' %}" alt="People">
-          <span>People</span>
-        </div>
-      </a>
-      <a href="{% url 'category' category='science' %}" style="text-decoration: none;">
-        <div class="category">
-          <img src="{% static 'picture/Science.png' %}" alt="Science">
-          <span>Science</span>
-        </div>
-      </a>
-      <a href="{% url 'category' category='transport' %}" style="text-decoration: none;">
-        <div class="category">
-          <img src="{% static 'picture/Transport.png' %}" alt="Transport">
-          <span>Transports</span>
-        </div>
-      </a>
+      {% empty %}
+      <!-- If no categories are found, show a message -->
+      <p class="no-categories">No categories created yet. Reach out to Admin for more information.</p>
+      {% endfor %}
     </div>
 
     <div class="contributor-section">

@@ -140,7 +140,6 @@ STATIC_ROOT = BASE_DIR.parent / 'staticfiles'
 # Add all possible static directories
 STATICFILES_DIRS = [
     BASE_DIR.parent / 'static',  # Paletta/paletta_code/static/
-    BASE_DIR / 'static',         # Paletta/paletta_code/paletta_project/static/
     Path(__file__).resolve().parent.parent.parent / 'static',  # Absolute path to static
 ]
 

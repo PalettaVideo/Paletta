@@ -8,9 +8,36 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     
+    def get_serializer_context(self):
+        """
+        Add request to serializer context for generating absolute URLs
+        """
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
+    @action(detail=True, methods=['get'])
+    def image(self, request, pk=None):
+        """
+        Return the image URL for a specific category
+        """
+        category = self.get_object()
+        if category.image:
+            image_url = request.build_absolute_uri(category.image.url)
+            return Response({'image_url': image_url})
+        return Response({'image_url': None})
+
 class VideoViewSet(viewsets.ModelViewSet):
     queryset = Video.objects.all()
     serializer_class = VideoSerializer
+    
+    def get_serializer_context(self):
+        """
+        Add request to serializer context for generating absolute URLs
+        """
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
     
     def get_queryset(self):
         queryset = Video.objects.all()

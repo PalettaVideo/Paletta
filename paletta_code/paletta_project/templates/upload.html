@@ -74,55 +74,56 @@
             <a href="{% url 'upload_history' %}">History</a>
         </div>
         <div class="main-content">
-          <form id="upload-form" novalidate>
+          <form id="upload-form" method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
             <h1>Upload your clip</h1>
             
             <div class="upload-box" id="upload-box">
                 <p>MPEG, MOV, MP4, AVI videos no larger than 300MB and no larger than 1920x1080px</p>
-                <input type="file" id="file-input" accept="video/*" required>
-                <button class="button" id="select-file">Select Video</button>
+                <input type="file" id="file-input" name="video_file" accept="video/*" required style="display: none;">
+                <button type="button" class="button" id="select-file">Select Video</button>
                 <div class="preview-container" id="video-preview-container"></div>
             </div>
             <div class="form-group">
                 <label for="title">Title</label>
-                <input type="text" id="title" maxlength="150"required>
+                <input type="text" id="title" name="title" maxlength="25" required>
                 <div class="word-count" id="title-word-count">0/25 words</div>
             </div>
 
             <div class="form-group">
-              <label for="preview-image">Upload Preview Image</label>
-              <input type="file" id="preview-image" accept="image/*" required>
+              <label for="preview-image">Upload Preview Image (Thumbnail)</label>
+              <input type="file" id="preview-image" name="thumbnail" accept="image/*">
               <div class="preview-container" id="preview-container"></div>
             </div>
 
             <div class="form-group">
                 <label for="description">Description</label>
-                <textarea id="description" maxlength="600" required></textarea>
+                <textarea id="description" name="description" maxlength="600"></textarea>
                 <div class="word-count" id="description-word-count">0/100 words</div>
             </div>
             <div class="form-group">
                 <label for="category">Category</label>
                 <div class="select-wrapper">
-                    <select id="category">
-                        <option value="buildings">Buildings</option>
-                        <option value="nature">Nature</option>
-                        <option value="people">People</option>
-                        <option value="science">Science</option>
-                        <option value="transport">Transport</option>
+                    <select id="category" name="category" required>
+                        <option value="">Select a category</option>
+                        <!-- Categories will be loaded from API via JavaScript -->
                     </select>
                 </div>
             </div>
             <div class="form-group">
-                <label>Attribute</label>
+                <label>Video Information</label>
                 <div class="attribute-group">
                     <span>Duration</span>
-                    <input type="text" placeholder="Duration" required>
-                    <span>Frame Rate</span>
-                    <input type="text" placeholder="Frame Rate" required>
-                    <span>All Supportive Resolution</span>
-                    <input type="text" placeholder="All Supportive Resolution" required>
+                    <input type="text" placeholder="Duration" readonly>
                     <span>Format</span>
-                    <input type="text" placeholder="Format" required>
+                    <input type="text" placeholder="Format" readonly>
+                    <span>File Size</span>
+                    <input type="text" placeholder="File Size" readonly>
+                    <span>Published</span>
+                    <select id="is_published" name="is_published">
+                        <option value="true" selected>Yes</option>
+                        <option value="false">No</option>
+                    </select>
                 </div>
             </div>
             <div class="form-group">
