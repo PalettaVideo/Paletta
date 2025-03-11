@@ -45,6 +45,14 @@ def thumbnail_upload_path(instance, filename):
 
 # SQL model for video
 class Video(models.Model):
+  STORAGE_STATUS_CHOICES = [
+    ('pending', 'Pending Upload'),
+    ('uploading', 'Uploading to Storage'),
+    ('stored', 'Stored in Deep Storage'),
+    ('failed', 'Upload Failed'),
+    ('processing', 'Processing'),
+  ]
+
   title = models.CharField(max_length=25)
   description = models.TextField(blank=True)
   category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='videos')
@@ -53,11 +61,44 @@ class Video(models.Model):
   updated_at = models.DateTimeField(auto_now=True)
   tags = models.ManyToManyField(Tag, related_name='videos', blank=True)
   
-  # Video file field
+  # Video file field - now optional as we'll store in deep storage
   video_file = models.FileField(
     upload_to=video_upload_path,
     validators=[FileExtensionValidator(allowed_extensions=['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv'])],
-    null=True
+    null=True,
+    blank=True,
+    help_text="Temporary storage before uploading to AWS S3 storage"
+  )
+  
+  # Deep storage fields
+  storage_url = models.URLField(
+    max_length=500, 
+    null=True, 
+    blank=True, 
+    help_text="URL to the video in AWS S3 storage"
+  )
+  download_link = models.URLField(
+    max_length=500, 
+    null=True, 
+    blank=True, 
+    help_text="Temporary download link for the video" # TODO: setup download link
+  )
+  download_link_expiry = models.DateTimeField(
+    null=True, 
+    blank=True, 
+    help_text="Expiration time for the download link"
+  )
+  storage_status = models.CharField(
+    max_length=20,
+    choices=STORAGE_STATUS_CHOICES,
+    default='pending',
+    help_text="Current status of the video in AWS S3 storage"
+  )
+  storage_reference_id = models.CharField(
+    max_length=255, 
+    null=True, 
+    blank=True, 
+    help_text="Reference ID in the AWS S3 storage system"
   )
   
   # Thumbnail image
@@ -77,3 +118,39 @@ class Video(models.Model):
         name, extension = os.path.splitext(self.video_file.name)
         return extension[1:].lower()  # Remove the dot and convert to lowercase
     return None
+
+# Video activity log model
+class VideoLog(models.Model):
+    """
+    Model for logging video-related activities for admin tracking.
+    """
+    LOG_TYPE_CHOICES = [
+        ('upload', 'Video Uploaded'),
+        ('process', 'Video Processing'),
+        ('store', 'Video Stored in S3'),
+        ('download', 'Video Download Requested'),
+        ('delete', 'Video Deleted'),
+        ('error', 'Error Occurred'),
+        ('status_change', 'Status Changed'),
+    ]
+    
+    video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name='logs')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='video_logs')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    log_type = models.CharField(max_length=20, choices=LOG_TYPE_CHOICES)
+    message = models.TextField()
+    
+    # Additional metadata
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(null=True, blank=True)
+    file_size = models.PositiveIntegerField(null=True, blank=True, help_text="Size in bytes")
+    storage_status = models.CharField(max_length=20, null=True, blank=True)
+    duration = models.PositiveIntegerField(null=True, blank=True, help_text="Duration in seconds")
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = "Video Log"
+        verbose_name_plural = "Video Logs"
+        
+    def __str__(self):
+        return f"{self.get_log_type_display()} - {self.video.title} - {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
