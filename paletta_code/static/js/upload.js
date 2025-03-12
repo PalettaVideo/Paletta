@@ -18,6 +18,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const uploadForm = document.getElementById("upload-form");
 
   const MAX_TAGS = 10;
+  // Define max file size (5GB in bytes)
+  const MAX_FILE_SIZE = 5000 * 1024 * 1024;
+
   let selectedTags = [];
 
   // fetch categories from API
@@ -25,14 +28,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // event Listeners
   if (selectFileBtn) {
+    console.log("Select file button found, attaching event listener");
     selectFileBtn.addEventListener("click", function (e) {
       e.preventDefault();
+      console.log("Select file button clicked");
       fileInput.click();
     });
+  } else {
+    console.error("Select file button not found in DOM");
   }
 
   if (fileInput) {
+    console.log("File input found, attaching change event listener");
     fileInput.addEventListener("change", handleVideoFileSelect);
+  } else {
+    console.error("File input not found in DOM");
   }
 
   if (previewImageInput) {
@@ -85,9 +95,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const file = e.target.files[0];
     if (!file) return;
 
+    console.log("Video file selected:", file.name, "Size:", file.size);
+
     // check file size
     if (file.size > MAX_FILE_SIZE) {
-      alert("File is too large. Maximum size is 300MB.");
+      alert("File is too large. Maximum size is 5GB.");
       fileInput.value = "";
       return;
     }
@@ -109,6 +121,8 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
+    console.log("Video file validation passed");
+
     // create video preview
     videoPreviewContainer.innerHTML = "";
     const video = document.createElement("video");
@@ -122,8 +136,16 @@ document.addEventListener("DOMContentLoaded", function () {
     fileNameDisplay.textContent = file.name;
     videoPreviewContainer.appendChild(fileNameDisplay);
 
-    // try to extract video metadata
-    extractVideoMetadata(file);
+    // show loading indicator for metadata extraction
+    const loadingIndicator = document.createElement("div");
+    loadingIndicator.className = "loading-indicator";
+    loadingIndicator.textContent = "Extracting video information...";
+    videoPreviewContainer.appendChild(loadingIndicator);
+
+    console.log("Video preview created, extracting metadata");
+
+    // extract video metadata from server
+    extractVideoMetadataFromServer(file);
   }
 
   function handleThumbnailSelect(e) {
@@ -178,32 +200,112 @@ document.addEventListener("DOMContentLoaded", function () {
     tagsWrapper.insertBefore(tagElement, tagsInput);
   }
 
+  function updateMetadataFields(metadata) {
+    // update duration display
+    const durationDisplay = document.getElementById("duration-display");
+    if (durationDisplay && metadata.duration) {
+      durationDisplay.textContent = metadata.duration;
+    }
+
+    // update format display
+    const formatDisplay = document.getElementById("format-display");
+    if (formatDisplay && metadata.format) {
+      formatDisplay.textContent = metadata.format;
+    }
+
+    // update file size display
+    const fileSizeDisplay = document.getElementById("filesize-display");
+    if (fileSizeDisplay && metadata.file_size_display) {
+      fileSizeDisplay.textContent = metadata.file_size_display;
+    }
+
+    // remove loading indicator if it exists
+    const loadingIndicator = document.querySelector(".loading-indicator");
+    if (loadingIndicator) {
+      loadingIndicator.remove();
+    }
+  }
+
+  function extractVideoMetadataFromServer(file) {
+    console.log("Sending file to server for metadata extraction");
+
+    // create a FormData object to send the file
+    const formData = new FormData();
+    formData.append("video_file", file);
+
+    // get CSRF token
+    const csrfToken = getCookie("csrftoken");
+
+    // send the file to the server for metadata extraction
+    fetch("/api/videos/api/extract-metadata/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": csrfToken,
+      },
+      body: formData,
+    })
+      .then((response) => {
+        console.log("Metadata extraction response:", response.status);
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Metadata extraction data:", data);
+        if (data.success && data.metadata) {
+          // update the UI with the extracted metadata
+          updateMetadataFields(data.metadata);
+          console.log("Metadata extracted successfully:", data.metadata);
+        } else {
+          console.error("Failed to extract metadata:", data.message);
+          // fall back to client-side extraction
+          extractVideoMetadata(file);
+        }
+      })
+      .catch((error) => {
+        console.error("Error extracting metadata from server:", error);
+        // fall back to client-side extraction
+        extractVideoMetadata(file);
+      });
+  }
+
   function extractVideoMetadata(file) {
     // this is a client-side approximation - server will do more accurate extraction
-    // TODO: what is meant by client-side approximation?? what part of the process can be done on the server side?
     const video = document.createElement("video");
     video.preload = "metadata";
     video.onloadedmetadata = function () {
-      // update duration field if it exists
-      const durationInput = document.querySelector(
-        '.attribute-group input[placeholder="Duration"]'
-      );
-      if (durationInput) {
+      // update duration display
+      const durationDisplay = document.getElementById("duration-display");
+      if (durationDisplay) {
         const duration = Math.round(video.duration);
-        const minutes = Math.floor(duration / 60);
+        const hours = Math.floor(duration / 3600);
+        const minutes = Math.floor((duration % 3600) / 60);
         const seconds = duration % 60;
-        durationInput.value = `${minutes}:${seconds
+        durationDisplay.textContent = `${minutes}:${seconds
           .toString()
           .padStart(2, "0")}`;
       }
 
-      // update format field if it exists
-      const formatInput = document.querySelector(
-        '.attribute-group input[placeholder="Format"]'
-      );
-      if (formatInput) {
+      // update format display
+      const formatDisplay = document.getElementById("format-display");
+      if (formatDisplay) {
         const format = file.name.split(".").pop().toUpperCase();
-        formatInput.value = format;
+        formatDisplay.textContent = format;
+      }
+
+      // update file size display
+      const fileSizeDisplay = document.getElementById("filesize-display");
+      if (fileSizeDisplay) {
+        const fileSizeMB = file.size / (1024 * 1024);
+        if (fileSizeMB < 1024) {
+          fileSizeDisplay.textContent = `${fileSizeMB.toFixed(1)} MB`;
+        } else {
+          fileSizeDisplay.textContent = `${(fileSizeMB / 1024).toFixed(2)} GB`;
+        }
+      }
+
+      // remove loading indicator if it exists
+      const loadingIndicator = document.querySelector(".loading-indicator");
+      if (loadingIndicator) {
+        loadingIndicator.remove();
       }
 
       URL.revokeObjectURL(video.src);
@@ -213,17 +315,50 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function fetchCategories() {
     try {
-      const response = await fetch("/api/videos/categories/");
-      if (!response.ok) throw new Error("Failed to fetch categories");
+      const apiUrl = "/api/videos/categories/";
+      console.log("Fetching categories from:", apiUrl);
 
-      const categories = await response.json();
+      // fetch cache options
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        cache: "no-cache", // force server request, don't check cache
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+      console.log("Response status:", response.status);
+
+      if (!response.ok) {
+        console.error("Failed to fetch categories. Status:", response.status);
+        throw new Error(`Failed to fetch categories: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Categories raw data:", data);
+
       const categorySelect = document.getElementById("category");
+      if (!categorySelect) {
+        console.error("Category select element not found in DOM");
+        return;
+      }
 
-      if (
-        categorySelect &&
-        categories.results &&
-        categories.results.length > 0
-      ) {
+      // Handle different possible API response formats
+      let categories = [];
+      if (data.results && Array.isArray(data.results)) {
+        // DRF paginated response format
+        categories = data.results;
+      } else if (Array.isArray(data)) {
+        // Simple array response format
+        categories = data;
+      } else if (typeof data === "object" && !Array.isArray(data)) {
+        // Object response format (convert to array)
+        categories = Object.values(data);
+      }
+
+      console.log("Processed categories:", categories);
+
+      if (categories.length > 0) {
         // clear existing options
         categorySelect.innerHTML = "";
 
@@ -234,12 +369,19 @@ document.addEventListener("DOMContentLoaded", function () {
         categorySelect.appendChild(emptyOption);
 
         // add categories from API
-        categories.results.forEach((category) => {
+        categories.forEach((category) => {
           const option = document.createElement("option");
-          option.value = category.id;
-          option.textContent = category.name;
+          // Handle both possible property names
+          option.value = category.id || category.pk || "";
+          option.textContent = category.name || category.title || "";
           categorySelect.appendChild(option);
         });
+
+        console.log("Categories loaded successfully:", categories.length);
+      } else {
+        console.warn("No categories found in the response");
+        console.log("categorySelect:", categorySelect);
+        console.log("categories:", categories);
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -248,11 +390,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function handleFormSubmit(e) {
     e.preventDefault();
+    console.log("Form submission started");
 
     // validate form
     if (!validateForm()) {
       return;
     }
+
+    console.log("Form validation passed");
 
     // create FormData object
     const formData = new FormData();
@@ -271,6 +416,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // get CSRF token
     const csrfToken = getCookie("csrftoken");
+    console.log("Submitting form to API...");
 
     try {
       // show loading state
@@ -279,28 +425,99 @@ document.addEventListener("DOMContentLoaded", function () {
       uploadButton.textContent = "Uploading...";
       uploadButton.disabled = true;
 
-      // send request
-      const response = await fetch("/api/videos/api/upload/", {
-        method: "POST",
-        headers: {
-          "X-CSRFToken": csrfToken,
-        },
-        body: formData,
+      // Create and show progress elements
+      const progressContainer = document.createElement("div");
+      progressContainer.className = "upload-progress-container";
+      progressContainer.style.display = "block";
+
+      const progressBar = document.createElement("div");
+      progressBar.className = "upload-progress-bar";
+      progressContainer.appendChild(progressBar);
+
+      const progressText = document.createElement("div");
+      progressText.className = "upload-progress-text";
+      progressText.textContent = "Preparing upload...";
+
+      // Add progress elements to the video preview container instead of before the button
+      const videoPreviewContainer = document.getElementById(
+        "video-preview-container"
+      );
+      videoPreviewContainer.appendChild(progressContainer);
+      videoPreviewContainer.appendChild(progressText);
+
+      // Create XMLHttpRequest for progress monitoring
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round(
+            (event.loaded / event.total) * 100
+          );
+          progressBar.style.width = percentComplete + "%";
+          progressText.textContent = `Uploading: ${percentComplete}%`;
+          console.log(`Upload progress: ${percentComplete}%`);
+        }
       });
 
-      const result = await response.json();
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const result = JSON.parse(xhr.responseText);
+            console.log("Upload response data:", result);
 
-      if (!response.ok) {
-        throw new Error(result.message || "Upload failed");
+            if (!result.success) {
+              throw new Error(result.message || "Upload failed");
+            }
+
+            // Update progress UI
+            progressBar.style.width = "100%";
+            progressText.textContent = "Upload complete! Redirecting...";
+
+            // Success - redirect to history page
+            setTimeout(() => {
+              alert("Video uploaded successfully!");
+              window.location.href = "/upload/history/";
+            }, 1000);
+          } catch (error) {
+            handleUploadError(error);
+          }
+        } else {
+          handleUploadError(
+            new Error("Upload failed with status: " + xhr.status)
+          );
+        }
+      });
+
+      xhr.addEventListener("error", () => {
+        handleUploadError(new Error("Network error during upload"));
+      });
+
+      xhr.addEventListener("abort", () => {
+        handleUploadError(new Error("Upload was aborted"));
+      });
+
+      // Open and send the request
+      xhr.open("POST", "/api/videos/upload/", true);
+      xhr.setRequestHeader("X-CSRFToken", csrfToken);
+      xhr.send(formData);
+
+      // Helper function for handling errors
+      function handleUploadError(error) {
+        alert("Error uploading video: " + error.message);
+        console.error("Upload error:", error);
+
+        // Reset UI
+        progressBar.style.width = "0%";
+        progressText.textContent = "Upload failed";
+        progressText.style.color = "#d9534f";
+
+        // Reset button
+        uploadButton.textContent = originalText;
+        uploadButton.disabled = false;
       }
-
-      // success - redirect to history page
-      alert("Video uploaded successfully!");
-      window.location.href = "/upload/history/";
     } catch (error) {
+      console.error("Exception during upload:", error);
       alert("Error uploading video: " + error.message);
-
-      // reset button
       uploadButton.textContent = originalText;
       uploadButton.disabled = false;
     }

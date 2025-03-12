@@ -12,6 +12,10 @@ import subprocess
 import json
 from ..tasks import upload_video_to_storage
 from ..services import VideoLogService
+import tempfile
+import mimetypes
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 class VideoUploadForm(forms.ModelForm):
     """Form for uploading videos with tags."""
@@ -38,6 +42,100 @@ class VideoUploadForm(forms.ModelForm):
             if video_file.size > max_size:
                 raise forms.ValidationError(f"File size exceeds 5GB. Current size: {video_file.size / (1024 * 1024 * 1024):.2f}GB")
         return video_file
+
+def extract_video_metadata(file_path):
+    """
+    Extract basic metadata from a video file using ffmpeg/ffprobe.
+    Returns a dictionary with metadata information needed for storage.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    metadata = {
+        'duration': None,
+        'format': None,
+        'file_size': None
+    }
+    
+    # Get file size
+    try:
+        metadata['file_size'] = os.path.getsize(file_path)
+        # Convert to human-readable format
+        if metadata['file_size'] < 1024 * 1024:  # Less than 1MB
+            metadata['file_size_display'] = f"{metadata['file_size'] / 1024:.1f} KB"
+        else:  # MB or GB
+            size_mb = metadata['file_size'] / (1024 * 1024)
+            if size_mb < 1024:
+                metadata['file_size_display'] = f"{size_mb:.1f} MB"
+            else:
+                metadata['file_size_display'] = f"{size_mb / 1024:.2f} GB"
+    except (OSError, IOError) as e:
+        logger.error(f"Error getting file size: {e}")
+    
+    # Get file format from extension
+    try:
+        file_extension = os.path.splitext(file_path)[1]
+        if file_extension:
+            metadata['format'] = file_extension.strip('.').upper()
+            
+        # Use mimetype as fallback
+        mime_type, _ = mimetypes.guess_type(file_path)
+        if mime_type:
+            metadata['mime_type'] = mime_type
+    except Exception as e:
+        logger.error(f"Error getting file format: {e}")
+    
+    # Extract duration using ffprobe
+    try:
+        # Try to import ffmpeg-python
+        try:
+            import ffmpeg
+            
+            # Get video info using ffprobe
+            probe = ffmpeg.probe(file_path)
+            
+            # Extract duration from video stream or format
+            if 'format' in probe and 'duration' in probe['format']:
+                duration_seconds = float(probe['format']['duration'])
+                hours = int(duration_seconds // 3600)
+                minutes = int((duration_seconds % 3600) // 60)
+                seconds = int(duration_seconds % 60)
+                
+                if hours > 0:
+                    metadata['duration'] = f"{hours}:{minutes:02d}:{seconds:02d}"
+                else:
+                    metadata['duration'] = f"{minutes}:{seconds:02d}"
+                metadata['duration_seconds'] = duration_seconds
+                
+                # Extract additional metadata if available
+                if 'bit_rate' in probe['format']:
+                    metadata['bit_rate'] = probe['format']['bit_rate']
+                
+                # Get video stream info
+                video_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
+                if video_stream:
+                    if 'width' in video_stream and 'height' in video_stream:
+                        metadata['resolution'] = f"{video_stream['width']}x{video_stream['height']}"
+                    if 'codec_name' in video_stream:
+                        metadata['codec'] = video_stream['codec_name']
+            
+        except ImportError:
+            logger.error("ffmpeg-python package is not installed. Please install it with: pip install ffmpeg-python")
+            raise RuntimeError("ffmpeg-python package is required but not installed")
+            
+        except ffmpeg.Error as e:
+            logger.error(f"ffmpeg error: {e.stderr.decode() if hasattr(e, 'stderr') else str(e)}")
+            if "No such file or directory" in str(e) or "not found" in str(e):
+                logger.error("ffmpeg/ffprobe is not installed or not in PATH. Please install ffmpeg on your system.")
+                raise RuntimeError("ffmpeg/ffprobe is required but not installed on the system")
+            raise
+            
+    except Exception as e:
+        logger.error(f"Error extracting duration: {e}")
+        # Don't silently fail - raise the exception to make it clear what's missing
+        raise
+    
+    return metadata
 
 class UploadView(FormView):
     """View for the video upload page."""
@@ -78,36 +176,23 @@ class UploadView(FormView):
                     tag, created = Tag.objects.get_or_create(name=tag_name)
                     video.tags.add(tag)
             
-            # Extract video metadata if ffprobe is available
-            try:
-                if video.video_file and os.path.exists(video.video_file.path):
-                    # Get file size
-                    video.file_size = os.path.getsize(video.video_file.path)
+            # Extract video metadata
+            if video.video_file and os.path.exists(video.video_file.path):
+                metadata = extract_video_metadata(video.video_file.path)
+                
+                # Update video model with metadata
+                if metadata['file_size']:
+                    video.file_size = metadata['file_size']
+                
+                if metadata.get('duration_seconds'):
+                    video.duration = int(metadata['duration_seconds'])
+                
+                if metadata.get('format'):
+                    video.format = metadata['format']
+                
+                if metadata.get('mime_type'):
+                    video.mime_type = metadata['mime_type']
                     
-                    # Try to get duration using ffprobe if available
-                    try:
-                        cmd = [
-                            'ffprobe', 
-                            '-v', 'error', 
-                            '-show_entries', 'format=duration', 
-                            '-of', 'json', 
-                            video.video_file.path
-                        ]
-                        result = subprocess.run(cmd, capture_output=True, text=True)
-                        if result.returncode == 0:
-                            data = json.loads(result.stdout)
-                            duration = float(data['format']['duration'])
-                            video.duration = int(duration)
-                    except (subprocess.SubprocessError, json.JSONDecodeError, KeyError, FileNotFoundError):
-                        # If ffprobe fails or isn't installed
-                        pass
-                        
-            except Exception as e:
-                # Log the error but continue
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error extracting video metadata: {e}")
-            
             # Save again with the updated metadata
             video.save()
             
@@ -129,6 +214,67 @@ class UploadView(FormView):
             logger.error(f"Error in form_valid: {e}")
             messages.error(self.request, f"Error uploading video: {str(e)}")
             return self.form_invalid(form)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class VideoMetadataAPIView(View):
+    """API view for extracting metadata from video files without saving them."""
+    
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        """Extract metadata from an uploaded video file."""
+        try:
+            # Check if video file is in the request
+            if 'video_file' not in request.FILES:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No video file provided'
+                }, status=400)
+                
+            video_file = request.FILES['video_file']
+            
+            # Create a temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(video_file.name)[1]) as temp_file:
+                # Write uploaded file to temporary file
+                for chunk in video_file.chunks():
+                    temp_file.write(chunk)
+                
+                temp_path = temp_file.name
+            
+            # Extract metadata from the temporary file
+            try:
+                metadata = extract_video_metadata(temp_path)
+                
+                # Return metadata as JSON
+                return JsonResponse({
+                    'success': True,
+                    'metadata': metadata
+                })
+            except RuntimeError as e:
+                # Handle specific dependency errors
+                if "ffmpeg" in str(e).lower() and ("not installed" in str(e).lower() or "not found" in str(e).lower()):
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Server configuration error: ffmpeg is not installed. Please contact the administrator.',
+                        'error_type': 'dependency_missing',
+                        'error_details': str(e)
+                    }, status=500)
+                else:
+                    raise
+            finally:
+                # Clean up the temporary file
+                try:
+                    os.unlink(temp_path)
+                except (OSError, IOError):
+                    pass
+                    
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in VideoMetadataAPIView.post: {e}")
+            return JsonResponse({
+                'success': False,
+                'message': f'Error extracting metadata: {str(e)}'
+            }, status=500)
 
 class UploadHistoryView(TemplateView):
     """View for the upload history page."""
@@ -195,33 +341,22 @@ class VideoAPIUploadView(View):
                     tag, created = Tag.objects.get_or_create(name=tag_name)
                     video.tags.add(tag)
             
-            # Extract metadata (similar to form view)
-            try:
-                if video.video_file and os.path.exists(video.video_file.path):
-                    # Get file size
-                    video.file_size = os.path.getsize(video.video_file.path)
-                    
-                    # Try to get duration using ffprobe if available
-                    try:
-                        cmd = [
-                            'ffprobe', 
-                            '-v', 'error', 
-                            '-show_entries', 'format=duration', 
-                            '-of', 'json', 
-                            video.video_file.path
-                        ]
-                        result = subprocess.run(cmd, capture_output=True, text=True)
-                        if result.returncode == 0:
-                            data = json.loads(result.stdout)
-                            duration = float(data['format']['duration'])
-                            video.duration = int(duration)
-                    except (subprocess.SubprocessError, json.JSONDecodeError, KeyError, FileNotFoundError):
-                        # If ffprobe fails or isn't installed
-                        pass
-            except Exception as e:
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error extracting video metadata: {e}")
+            # Extract metadata
+            if video.video_file and os.path.exists(video.video_file.path):
+                metadata = extract_video_metadata(video.video_file.path)
+                
+                # Update video model with metadata
+                if metadata['file_size']:
+                    video.file_size = metadata['file_size']
+                
+                if metadata.get('duration_seconds'):
+                    video.duration = int(metadata['duration_seconds'])
+                
+                if metadata.get('format'):
+                    video.format = metadata['format']
+                
+                if metadata.get('mime_type'):
+                    video.mime_type = metadata['mime_type']
             
             # Save again with metadata
             video.save()

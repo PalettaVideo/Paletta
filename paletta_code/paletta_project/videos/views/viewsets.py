@@ -6,9 +6,13 @@ from rest_framework.response import Response
 from ..tasks import generate_and_send_download_link
 import logging
 from ..services import VideoLogService
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
 
 logger = logging.getLogger(__name__)
 
+@method_decorator(never_cache, name='list')
+@method_decorator(never_cache, name='retrieve')
 class CategoryViewSet(viewsets.ModelViewSet):
     """
     API viewset for managing video categories.
@@ -24,6 +28,19 @@ class CategoryViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
+    
+    def finalize_response(self, request, response, *args, **kwargs):
+        """
+        Add cache control headers to all responses from this viewset
+        """
+        response = super().finalize_response(request, response, *args, **kwargs)
+        
+        # Set cache control headers for better client-side caching behavior
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        
+        return response
     
     @action(detail=True, methods=['get'])
     def image(self, request, pk=None):

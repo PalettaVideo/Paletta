@@ -44,8 +44,15 @@ function loadCategoryImages() {
   // Find all category images
   const categoryImages = document.querySelectorAll(".category-image");
 
-  // try to load images from the API
-  fetch("/api/videos/categories/")
+  // try to load images from the API with cache control
+  fetch("/api/videos/categories/", {
+    method: "GET",
+    cache: "no-cache",
+    headers: {
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
+    },
+  })
     .then((response) =>
       response.ok
         ? response.json()
@@ -106,7 +113,14 @@ function tryLoadStaticImage(imgElement, categoryName) {
 }
 
 function fetchCategories() {
-  fetch("/api/videos/categories/")
+  fetch("/api/videos/categories/", {
+    method: "GET",
+    cache: "no-cache",
+    headers: {
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
+    },
+  })
     .then((response) => {
       if (!response.ok) {
         throw new Error("Failed to fetch categories");

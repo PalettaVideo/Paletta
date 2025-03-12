@@ -79,10 +79,12 @@
             <h1>Upload your clip</h1>
             
             <div class="upload-box" id="upload-box">
-                <p>MPEG, MOV, MP4, AVI videos no larger than 300MB and no larger than 1920x1080px</p>
+                <p>MPEG, MOV, MP4, AVI videos no larger than 5GB and no larger than 1920x1080px</p>
                 <input type="file" id="file-input" name="video_file" accept="video/*" required style="display: none;">
                 <button type="button" class="button" id="select-file">Select Video</button>
-                <div class="preview-container" id="video-preview-container"></div>
+                <div class="preview-container" id="video-preview-container">
+                    <!-- Video preview and upload progress will be inserted here by JavaScript -->
+                </div>
             </div>
             <div class="form-group">
                 <label for="title">Title</label>
@@ -114,16 +116,11 @@
                 <label>Video Information</label>
                 <div class="attribute-group">
                     <span>Duration</span>
-                    <input type="text" placeholder="Duration" readonly>
+                    <div class="info-display" id="duration-display">--:--:--</div>
                     <span>Format</span>
-                    <input type="text" placeholder="Format" readonly>
+                    <div class="info-display" id="format-display">--</div>
                     <span>File Size</span>
-                    <input type="text" placeholder="File Size" readonly>
-                    <span>Published</span>
-                    <select id="is_published" name="is_published">
-                        <option value="true" selected>Yes</option>
-                        <option value="false">No</option>
-                    </select>
+                    <div class="info-display" id="filesize-display">--</div>
                 </div>
             </div>
             <div class="form-group">
