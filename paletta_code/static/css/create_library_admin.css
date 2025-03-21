@@ -1,0 +1,240 @@
+body {
+    font-family: 'Montserrat';
+    margin: 0;
+    padding: 0;
+    background: #f8f8f8;
+}
+
+.container {
+    display: flex;
+    margin-top: 150px;
+}
+
+.sidebar {
+    width: 220px;
+    background: #fff;
+    padding: 20px;
+    height: 100vh;
+    border-right: 1px solid #ddd;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+nav ul li {
+    margin-bottom: 15px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: black;
+    padding: 10px;
+    display: block;
+}
+
+nav ul li a.active {
+    background: #80B824;
+    border-radius: 5px;
+}
+
+main {
+    flex: 1;
+    padding: 40px;
+    background: white;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.preview-container {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.preview-container img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+.preview-container button {
+    background-color: #80B824;
+    color: white;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+input[type="file"]::file-selector-button {
+    background-color: #80B824;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+
+
+
+.create-btn {
+    background: #80B824;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    font-size: 16px;
+}
+
+#colorPickerContainer {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+#colorPreview {
+    width: 40px;
+    height: 40px;
+    background: #8bb54a; /* 默认颜色 */
+    border: 1px solid #000;
+    cursor: pointer;
+    display: inline-block;
+}
+
+#themeColor {
+    position: absolute;
+    left: 50px; /* 让颜色选择器显示在预览方块的右侧 */
+    top: 0;
+    opacity: 1; /* 使其可见 */
+    cursor: pointer;
+}
+
+/* Category 头部 */
+.category-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.category-label {
+    font-weight: bold;
+    color: gray;
+    margin-right: 10px;
+}
+
+.add-category-btn {
+    background-color: #8bb54a;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+/* Category 列表 */
+.category-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.category-item {
+    position: relative;
+    width: 150px;
+    text-align: center;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.category-item img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.category-name {
+    background: #8bb54a;
+    color: white;
+    padding: 5px;
+    font-size: 16px;
+}
+
+.category-desc {
+    font-size: 12px;
+    color: #333;
+    padding: 5px;
+}
+
+/* 删除按钮 */
+.delete-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: red;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+}
+
+/* 模态框 */
+.modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #8bb54a;
+}
+
+.modal-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.close {
+    align-self: flex-end;
+    font-size: 24px;
+    cursor: pointer;
+    color: #8bb54a;
+}
+
+.error-text {
+    color: red;
+    font-size: 14px;
+}

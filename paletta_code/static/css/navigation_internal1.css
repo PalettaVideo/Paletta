@@ -96,21 +96,43 @@ header {
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px; /* 增加图标和文字之间的间距 */
     font-family: 'Montserrat';
     font-weight: bold;
     font-size: 12px;
+    min-width: 80px; 
+    justify-content: center; /* 确保内容居中 */
+    position: relative; /* 添加相对定位 */
+    overflow: visible; /* 确保内容不被裁剪 */
   }
-
+  
+  /* 控制SVG图标大小 */
   .actions button svg {
-    width: 25px;
-    height: 25px;
+    width: 20px; /* 减小SVG宽度 */
+    height: 20px; /* 减小SVG高度 */
     fill: #80B824;
+    flex-shrink: 0; /* 防止SVG在空间不足时缩小 */
+    margin-right: 4px; /* 在SVG右侧添加间距 */
   }
-
+  
+  /* 确保按钮文字可见 */
+  .actions button span {
+    display: inline-block; /* 使用inline-block确保文字显示 */
+    white-space: nowrap; /* 防止文字换行 */
+    position: relative; /* 添加相对定位 */
+    z-index: 5; /* 确保文字在SVG上方 */
+  }
+  
+  /* 按钮悬停状态 */
   .actions button:hover {
     background-color: #6a9a1d;
+    color: white; /* 添加白色文字颜色 */
   }
+  
+  .actions button:hover svg {
+    fill: white; /* SVG在悬停时变为白色 */
+  }
+  
 
   .popup {
     display: none;
@@ -125,8 +147,10 @@ header {
     }
 
 
-    #popupMenu{
-      top:100%
+    #popupMenu {
+      top: 100%;
+      right: 0; /* 对齐到按钮右侧 */
+      margin-top: 5px; /* 在按钮下方添加一点间距 */
     }
 
     .popup a {

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Library</title>
+    <link rel="stylesheet" href="../css/edit_library_admin.css"> <!-- 你的 CSS 文件 -->
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">PALETTA</div>
+            <nav>
+                <ul>
+                    <li><a href="#">Create a Library</a></li>
+                    <li><a href="#" class="active">Manage All Libraries</a></li>
+                    <li><a href="#">Manage Administrators</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main>
+            <h2>Manage my Library</h2>
+
+            <label for="library-name">Name</label>
+            <div class="input-group">
+                <input type="text" id="libraryName" value="Default Library" readonly>
+                <button onclick="toggleEdit('libraryName', this)">Edit</button>
+            </div>
+
+            <label>Logo</label>
+            <div class="logo-container">
+                <img id="libraryLogo" src="logo.png" alt="Library Logo">
+                <input type="file" id="logoUpload" accept="image/*" style="display: none;">
+                <button class="change-btn">Change</button>
+            </div>
+
+            <label for="library-description">Description</label>
+            <div class="input-group">
+                <input type="text" id="libraryDescription" value="Library description" readonly>
+                <button onclick="toggleEdit('libraryDescription', this)">Edit</button>
+            </div>
+
+            <!-- Category 添加按钮 -->
+            <div class="category-container">
+                <label class="category-label">edit categories</label>
+                <button class="add-category-btn" onclick="openCategoryModal()">➕ add</button>
+            </div>
+
+            <!-- Category 显示区域 -->
+            <div id="categoryList" class="category-list"></div>
+
+            <!-- Category 添加 & 修改 modal -->
+            <div id="categoryModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeCategoryModal()">&times;</span>
+                    <h2 id="categoryModalTitle">add a category</h2>
+
+                    <label for="categoryName">name</label>
+                    <input type="text" id="categoryName" placeholder="Enter category name">
+
+                    <label for="categoryImage">theme picture</label>
+                    <input type="file" id="categoryImage" accept="image/*">
+                    <img id="imagePreview" style="display: none; width: 100px; height: 100px;">
+
+                    <label for="categoryDescription">description</label>
+                    <textarea id="categoryDescription" placeholder="Enter description"></textarea>
+
+                    <p id="errorText" class="error-text"></p>
+                    <button id="saveCategoryBtn" onclick="saveCategory()">add</button>
+                </div>
+            </div>
+
+            <button class="finish-btn">Finish</button>
+        </main>
+    </div>
+    <div id="modalOverlay" class="modal-overlay"></div>
+    <script src="../js/1.js"></script>
+</body>
+</html>

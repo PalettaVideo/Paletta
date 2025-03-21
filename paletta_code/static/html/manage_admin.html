@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Administrators</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/manage_admin.css">
+    <link rel="stylesheet" href="../css/sidebar_admin.css">
+    <link rel="stylesheet" href="../css/footer.css">
+    <link rel="stylesheet" href="../css/navigation_internal.css">
+    <script src="../js/navigation_scripts.js" defer></script>
+    <script defer src="../js/manage_admin.js"></script>
+</head>
+
+<header>
+    <div id="header">
+
+    </div>
+</header>
+
+<body>
+    <div class="container">
+        <aside>
+            <div class="sidebar">
+                <ul>
+                    <li><a href="#">Create a Library</a></li>
+                    <li><a href="#" class="active">Manage All Libraries</a></li>
+                    <li><a href="#">Manage Administrators</a></li>
+                </ul>
+            </div>
+        </aside>
+        <main>
+            
+            <section>
+                <h1>Manage Administrators <button id="addAdmin">Add</button></h1>
+                <div id="adminList">
+                    <div class="admin-card">
+                        <p><strong>Institution:</strong> University College London</p>
+                        <p><strong>Email:</strong> University College London. com</p>
+                        <p><strong>Name:</strong> Primrose</p>
+                        <p><strong>Library Name:</strong> UCL Main Library; Edtech UCL</p>
+                        <button class="revoke">Revoke Admin Privileges</button>
+                    </div>
+                    <div class="admin-card">
+                        <p><strong>Institution:</strong> University College London</p>
+                        <p><strong>Email:</strong> University College London. com</p>
+                        <p><strong>Name:</strong> Dimitar</p>
+                        <p><strong>Library Name:</strong> N/A</p>
+                        <button class="revoke">Revoke Admin Privileges</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Popup Modal -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add an Administrator</h2>
+            <label for="adminName">Name</label>
+            <input type="text" id="adminName" placeholder="Enter name">
+            <label for="adminEmail">Email</label>
+            <input type="email" id="adminEmail" placeholder="Enter email">
+            <button id="confirmAdd">Add</button>
+        </div>
+    </div>
+</body>
+
+<footer>
+    <div id="footer">
+
+    </div>
+</footer>
+
+</html>

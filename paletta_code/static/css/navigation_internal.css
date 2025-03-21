@@ -21,6 +21,7 @@ header {
 
   .logo img {
     max-height: 100px;
+    border: none;
   }
 
   .search-bar {

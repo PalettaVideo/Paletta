@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Library</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/edit_library_admin.css"> <!-- 你的 CSS 文件 -->
+    <link rel="stylesheet" href="../css/footer.css">
+    <link rel="stylesheet" href="../css/sidebar_admin.css">
+    <link rel="stylesheet" href="../css/navigation_internal.css">
+    <script src="../js/navigation_scripts.js" defer></script>
+</head>
+
+
+<header>
+    <div id="header">
+
+    </div>
+</header>
+
+<body>
+    <div class="container">
+        
+       
+        <aside>
+            <div class="sidebar">
+                <ul>
+                    <li><a href="#">Create a Library</a></li>
+                    <li><a href="#" class="active">Manage All Libraries</a></li>
+                    <li><a href="#">Manage Administrators</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main>
+            <h2>Manage my Library</h2>
+            
+
+            <label for="library-name">Name</label>
+            <div class="input-group">
+                <input type="text" id="libraryName" value="Default Library" readonly>
+                <button onclick="toggleEdit('libraryName', this)">Edit</button>
+            </div>
+
+            <label>Logo</label>
+            <div class="logo-container">
+                <img id="libraryLogo" src="../picture/logo.jpg" alt="Library Logo">
+                <input type="file" id="logoUpload" accept="image/*" style="display: none;">
+                <button class="change-btn">Change</button>
+            </div>
+
+            <label for="library-description">Description</label>
+            <div class="input-group">
+                <input type="text" id="libraryDescription" value="Library description" readonly>
+                <button onclick="toggleEdit('libraryDescription', this)">Edit</button>
+            </div>
+
+
+            
+
+            <!-- Category 添加按钮 -->
+            <div class="category-container">
+                <label class="category-label">edit categories</label>
+                <button class="add-category-btn" onclick="openCategoryModal()">➕ add</button>
+            </div>
+
+            <!-- Category 显示区域 -->
+            <div id="categoryList" class="category-list"></div>
+
+            <!-- Category add modal -->
+            <div id="categoryModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeCategoryModal()">&times;</span>
+                    <h2 id="categoryModalTitle">add a category</h2>
+
+                    <label for="categoryName">name</label>
+                    <input type="text" id="categoryName" placeholder="Enter category name">
+
+                    <label for="categoryImage">theme picture</label>
+                    <input type="file" id="categoryImage" accept="image/*">
+                    <img id="imagePreview" style="display: none; width: 100px; height: 100px;">
+
+                    <label for="categoryDescription">description</label>
+                    <textarea id="categoryDescription" placeholder="Enter description"></textarea>
+
+                    <p id="errorText" class="error-text"></p>
+                    <button id="saveCategoryBtn" onclick="saveCategory()">add</button>
+                </div>
+            </div>
+
+
+            <label>Theme Colour</label>
+            <input type="color" id="themeColor" value="#86B049">
+
+            <div class="contributor-container">
+                <h3>Manage Contributors</h3>
+                <button class="invite-btn" onclick="openContributorModal()">Invite</button>
+                <div class="contributor-list" id="contributorList">
+                    <div class="contributor-item">
+                        <span>Name: Primrose | Email: 111111@ucl.com</span>
+                        <button class="delete-btn" onclick="this.parentElement.remove()">Remove</button>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- Add Contributor Modal -->
+            <div id="contributorModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-btn" onclick="closeContributorModal()">&times;</span>
+                    <h3>add a contributor</h3>
+                    <label for="contributorName">name</label>
+                    <input type="text" id="contributorName">
+                    <label for="contributorEmail">email</label>
+                    <input type="email" id="contributorEmail">
+                    <button class="add-btn" onclick="addContributor()">add</button>
+                </div>
+            </div>
+
+
+            <button class="finish-btn">Finish</button>
+        </main>
+    </div>
+    <div id="modalOverlay" class="modal-overlay"></div>
+    <script src="../js/edit_library_admin.js"></script>
+</body>
+
+<footer>
+    <div id="footer">
+
+    </div>
+</footer>
+
+</html>
