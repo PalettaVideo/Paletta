@@ -11,7 +11,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class RequestDownloadView(View):
+class DownloadRequestView(View):
     """
     View for requesting a download link for a video.
     Provides a form for users to enter their email address and request a download link.

@@ -57,6 +57,19 @@ def extract_video_metadata(file_path):
         'file_size': None
     }
     
+    # Check if file exists
+    if not os.path.exists(file_path):
+        logger.error(f"File does not exist at path: {file_path}")
+        # Try to normalize the path (important for Windows)
+        normalized_path = os.path.normpath(file_path)
+        logger.info(f"Trying normalized path: {normalized_path}")
+        if normalized_path != file_path and os.path.exists(normalized_path):
+            logger.info(f"File found at normalized path")
+            file_path = normalized_path
+        else:
+            # Still not found, raise an error with detailed information
+            raise FileNotFoundError(f"Video file not found at: {file_path}. Please check file permissions and path.")
+    
     # Get file size
     try:
         metadata['file_size'] = os.path.getsize(file_path)
@@ -124,7 +137,8 @@ def extract_video_metadata(file_path):
             raise RuntimeError("ffmpeg-python package is required but not installed")
             
         except ffmpeg.Error as e:
-            logger.error(f"ffmpeg error: {e.stderr.decode() if hasattr(e, 'stderr') else str(e)}")
+            error_message = e.stderr.decode() if hasattr(e, 'stderr') else str(e)
+            logger.error(f"ffmpeg error: {error_message}")
             if "No such file or directory" in str(e) or "not found" in str(e):
                 logger.error("ffmpeg/ffprobe is not installed or not in PATH. Please install ffmpeg on your system.")
                 raise RuntimeError("ffmpeg/ffprobe is required but not installed on the system")
@@ -177,22 +191,36 @@ class UploadView(FormView):
                     video.tags.add(tag)
             
             # Extract video metadata
-            if video.video_file and os.path.exists(video.video_file.path):
-                metadata = extract_video_metadata(video.video_file.path)
+            if video.video_file:
+                logger = logging.getLogger(__name__)
+                logger.info(f"Extracting metadata from: {video.video_file.path}")
+                try:
+                    if hasattr(video.video_file, 'path') and video.video_file.path:
+                        # Check that file exists
+                        if os.path.exists(video.video_file.path):
+                            metadata = extract_video_metadata(video.video_file.path)
+                            
+                            # Update video model with metadata
+                            if metadata['file_size']:
+                                video.file_size = metadata['file_size']
+                            
+                            if metadata.get('duration_seconds'):
+                                video.duration = int(metadata['duration_seconds'])
+                            
+                            if metadata.get('format'):
+                                video.format = metadata['format']
+                            
+                            if metadata.get('mime_type'):
+                                video.mime_type = metadata['mime_type']
+                        else:
+                            logger.error(f"File does not exist for metadata extraction: {video.video_file.path}")
+                    else:
+                        logger.error("Video file has no path attribute")
+                except FileNotFoundError as e:
+                    logger.error(f"File not found error during metadata extraction: {str(e)}")
+                except Exception as e:
+                    logger.error(f"Error extracting video metadata: {str(e)}")
                 
-                # Update video model with metadata
-                if metadata['file_size']:
-                    video.file_size = metadata['file_size']
-                
-                if metadata.get('duration_seconds'):
-                    video.duration = int(metadata['duration_seconds'])
-                
-                if metadata.get('format'):
-                    video.format = metadata['format']
-                
-                if metadata.get('mime_type'):
-                    video.mime_type = metadata['mime_type']
-                    
             # Save again with the updated metadata
             video.save()
             
@@ -249,6 +277,12 @@ class VideoMetadataAPIView(View):
                     'success': True,
                     'metadata': metadata
                 })
+            except FileNotFoundError as e:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'File not found error: {str(e)}',
+                    'error_type': 'file_not_found'
+                }, status=500)
             except RuntimeError as e:
                 # Handle specific dependency errors
                 if "ffmpeg" in str(e).lower() and ("not installed" in str(e).lower() or "not found" in str(e).lower()):
@@ -259,13 +293,18 @@ class VideoMetadataAPIView(View):
                         'error_details': str(e)
                     }, status=500)
                 else:
-                    raise
+                    return JsonResponse({
+                        'success': False,
+                        'message': f'Runtime error: {str(e)}',
+                        'error_type': 'runtime_error'
+                    }, status=500)
             finally:
                 # Clean up the temporary file
                 try:
                     os.unlink(temp_path)
-                except (OSError, IOError):
-                    pass
+                except (OSError, IOError) as e:
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Failed to remove temporary file: {str(e)}")
                     
         except Exception as e:
             import logging
@@ -293,15 +332,26 @@ class VideoAPIUploadView(View):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         """Handle the video upload via API."""
+        logger = logging.getLogger(__name__)
+        logger.info("VideoAPIUploadView.post called")
+        
         try:
             # Extract data from request
             title = request.POST.get('title')
             description = request.POST.get('description')
             category_id = request.POST.get('category')
             tags_text = request.POST.get('tags', '')
+            is_published = request.POST.get('is_published', 'true').lower() == 'true'
+            
+            # Check for files
+            if 'video_file' not in request.FILES:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Missing video file'
+                }, status=400)
+                
             video_file = request.FILES.get('video_file')
             thumbnail = request.FILES.get('thumbnail')
-            is_published = request.POST.get('is_published', 'true').lower() == 'true'
             
             # Validate required fields
             if not all([title, category_id, video_file]):
@@ -311,7 +361,6 @@ class VideoAPIUploadView(View):
                 }, status=400)
             
             # Validate file size (limit to 5GB)
-            # TODO: discuss individual file limits with owner
             max_size = 5 * 1024 * 1024 * 1024  # 5GB in bytes
             if video_file.size > max_size:
                 return JsonResponse({
@@ -341,22 +390,29 @@ class VideoAPIUploadView(View):
                     tag, created = Tag.objects.get_or_create(name=tag_name)
                     video.tags.add(tag)
             
-            # Extract metadata
-            if video.video_file and os.path.exists(video.video_file.path):
-                metadata = extract_video_metadata(video.video_file.path)
-                
-                # Update video model with metadata
-                if metadata['file_size']:
-                    video.file_size = metadata['file_size']
-                
-                if metadata.get('duration_seconds'):
-                    video.duration = int(metadata['duration_seconds'])
-                
-                if metadata.get('format'):
-                    video.format = metadata['format']
-                
-                if metadata.get('mime_type'):
-                    video.mime_type = metadata['mime_type']
+            # Extract metadata - with improved error handling
+            metadata = {}
+            try:
+                if hasattr(video.video_file, 'path') and video.video_file.path and os.path.exists(video.video_file.path):
+                    metadata = extract_video_metadata(video.video_file.path)
+                    
+                    # Update video model with metadata
+                    if metadata.get('file_size'):
+                        video.file_size = metadata['file_size']
+                    
+                    if metadata.get('duration_seconds'):
+                        video.duration = int(metadata['duration_seconds'])
+                    
+                    if metadata.get('format'):
+                        video.format = metadata['format']
+                    
+                    if metadata.get('mime_type'):
+                        video.mime_type = metadata['mime_type']
+                else:
+                    logger.warning(f"Cannot extract metadata: File path missing or file doesn't exist")
+            except Exception as e:
+                logger.error(f"Metadata extraction error: {str(e)}")
+                # Continue with the upload even if metadata extraction fails
             
             # Save again with metadata
             video.save()

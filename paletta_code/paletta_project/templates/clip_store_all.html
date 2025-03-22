@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clip Store</title>
+  <title>All videos</title>
   {% load static %}
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <link href="{% static 'css/navigation_internal.css' %}" rel="stylesheet">
@@ -88,28 +88,8 @@
   
   <section class="main-content">
     <div class="banner">
-      <div class="imagecontainer">
-        {% if current_category %}
-          <h1 class="banner-title">{{ current_category.name }}</h1>
-          <!-- Simple image priority flow -->
-          {% if category_banner_url %}
-            <img src="{{ category_banner_url }}" alt="{{ current_category.name }}" class="category-image">
-          {% elif category_image_url %}
-            <img src="{{ category_image_url }}" alt="{{ current_category.name }}" class="category-image">
-          {% else %}
-            <!-- Default image when no images are available -->
-            <img src="{% static 'picture/All.png' %}" alt="{{ current_category.name }}" 
-                 data-category="{{ current_category.name }}" class="category-image">
-          {% endif %}
-        {% elif category_not_found %}
-          <h1 class="banner-title">Category Not Found</h1>
-          <p>The category "{{ attempted_category_name }}" could not be found.</p>
-          <img src="{% static 'picture/All.png' %}" alt="Category Not Found" class="category-image">
-        {% else %}
-          <h1 class="banner-title">All Clips</h1>
-          <img src="{% static 'picture/All.png' %}" alt="All Clips" class="category-image">
-        {% endif %}
-      </div>
+      <img src="{% static 'picture/All.png' %}" alt="All">
+      <h1 class="banner-title">All Videos in the Library</h1>
     </div>
     
     <div class="category-actions">
@@ -144,113 +124,92 @@
         </div>
         <button id="sortByButton" style="position: relative;">Sort by ▼</button>
         <div class="popup" id="sortByPopup">
-          <a href="#" data-sort="newest">Newest</a>
-          <a href="#" data-sort="oldest">Oldest</a>
-          <a href="#" data-sort="popular">Most Popular</a>
-          <a href="#" data-sort="az">A-Z</a>
-          <a href="#" data-sort="za">Z-A</a>
+          <a href="#" data-sort="asc">Time: Ascending</a>
+          <a href="#" data-sort="desc">Time: Descending</a>
+          <a href="#" data-sort="price-asc">Price: Low to High</a>
+          <a href="#" data-sort="price-desc">Price: High to Low</a>
         </div>
       </div>
     </div>
     
-    <div class="scroll-container">
-      <div class="clips-grid" id="clips-container">
-        <!-- Clips will be loaded dynamically from the API -->
-        <div class="loading-indicator">Loading clips...</div>
+    <div class="clips-container" id="clips-container">
+      <div class="loading-indicator">
+        <div class="spinner"></div>
+        <p>Loading clips...</p>
       </div>
-      
-      <!-- Pagination -->
-      <div id="pagination-controls">
-        <!-- Pagination controls will be added dynamically -->
-      </div>
+    </div>
+    
+    <div class="pagination-controls" id="pagination-controls">
+      <!-- Pagination will be added dynamically by JavaScript -->
     </div>
   </section>
 </main>
 
-  <!-- Video Preview Modal -->
-  <div id="videoPreviewModal" class="modal">
-    <div class="modal-content">
-      <span class="close-modal">&times;</span>
-      <div class="video-preview-container">
-        <div class="video-player">
-          <video id="preview-video" controls>
-            <source src="" type="video/mp4">
-            Your browser does not support the video tag.
-          </video>
+<!-- Video Preview Modal -->
+<div id="videoPreviewModal" class="modal">
+  <div class="modal-content">
+    <span class="close-button">&times;</span>
+    <div class="video-container">
+      <video id="previewVideo" controls>
+        <source src="" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+    </div>
+    <div class="video-details">
+      <h2 id="videoTitle"></h2>
+      <p id="videoDescription"></p>
+      <div class="video-metadata">
+        <div class="metadata-item">
+          <strong>Duration:</strong> <span id="videoDuration"></span>
         </div>
-        <div class="video-details">
-          <h2 id="modal-video-title">Video Title</h2>
-          <div class="video-meta">
-            <span class="meta-item">
-              <i class="fa fa-clock-o"></i>
-              <span id="modal-video-duration">00:00</span>
-            </span>
-            <span class="meta-item">
-              <i class="fa fa-user"></i>
-              <span id="modal-video-uploader">Username</span>
-            </span>
-            <span class="meta-item">
-              <i class="fa fa-calendar"></i>
-              <span id="modal-video-date">Date</span>
-            </span>
-          </div>
-          <div class="video-description">
-            <p id="modal-video-description">Loading video description...</p>
-          </div>
-          <div class="video-tags" id="modal-video-tags">
-            <!-- Tags will be added dynamically -->
-          </div>
-          <div class="video-actions">
-            <button class="add-to-cart-btn" id="add-to-cart-modal">Add to Cart</button>
-            <button class="add-to-favorites-btn" id="add-to-favorites-modal">Add to Collection</button>
-          </div>
+        <div class="metadata-item">
+          <strong>Resolution:</strong> <span id="videoResolution"></span>
         </div>
+        <div class="metadata-item">
+          <strong>Size:</strong> <span id="videoSize"></span>
+        </div>
+        <div class="metadata-item">
+          <strong>Category:</strong> <span id="videoCategory"></span>
+        </div>
+      </div>
+      <div class="video-tags" id="videoTags">
+        <!-- Tags will be added dynamically -->
+      </div>
+      <div class="video-actions">
+        <button id="addToCartButton" class="primary-button">Add to Cart</button>
+        <button id="downloadPreviewButton" class="secondary-button">Download Preview</button>
       </div>
     </div>
   </div>
+</div>
 
-  <footer class="footer">
-    <div class="divider"></div>
-    <div class="footer-content">
-      <!-- Logo Section -->
-      <div class="footer-logo">
-        <img src="{% static 'picture/logo.jpg' %}" alt="PALETTA Logo" style="width: 100px;">
-        <p>&copy; FILMBRIGHT LTD. 2024</p>
-      </div>
-
-      <!-- Company Section -->
-      <div class="footer-column">
-        <h4>Company</h4>
-        <ul>
-          <li><a href="{% url 'about' %}">About us</a></li>
-          <li><a href="{% url 'contact' %}">Contact us</a></li>
-        </ul>
-      </div>
-
-      <!-- Support Section -->
-      <div class="footer-column">
-        <h4>Support</h4>
-        <ul>
-          <li><a href="{% url 'home' %}">Help & Support</a></li>
-          <li><a href="#">Terms & Conditions</a></li>
-          <li><a href="#">Privacy</a></li>
-        </ul>
-      </div>
-
-      <!-- Social Media Section -->
-      <div class="footer-column">
-        <h4>Find us</h4>
-        <div class="social-icon" >
-          <a href="https://www.instagram.com/filmbright/" >
-              <svg data-name="Layer 1" id="Layer_1" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg"><defs><style>.cls-1{fill:#80B824;}</style></defs><title/>
-                  <path class="cls-1" d="M83,23a22,22,0,0,1,22,22V83a22,22,0,0,1-22,22H45A22,22,0,0,1,23,83V45A22,22,0,0,1,45,23H83m0-8H45A30.09,30.09,0,0,0,15,45V83a30.09,30.09,0,0,0,30,30H83a30.09,30.09,0,0,0,30-30V45A30.09,30.09,0,0,0,83,15Z"/>
-                  <path class="cls-1" d="M90.14,32a5.73,5.73,0,1,0,5.73,5.73A5.73,5.73,0,0,0,90.14,32Z"/>
-                  <path class="cls-1" d="M64.27,46.47A17.68,17.68,0,1,1,46.6,64.14,17.7,17.7,0,0,1,64.27,46.47m0-8A25.68,25.68,0,1,0,90,64.14,25.68,25.68,0,0,0,64.27,38.47Z"/>
-              </svg>
-          </a>
-        </div>
-      </div>
+<footer class="footer">
+  <div class="divider"></div>
+  <div class="footer-content">
+    <!-- Logo Section -->
+    <div class="footer-logo">
+      <img src="{% static 'picture/logo.jpg' %}" alt="PALETTA Logo" style="width: 100px;">
+      <p>&copy; FILMBRIGHT LTD. 2024</p>
     </div>
-  </footer>
+
+    <!-- Company Section -->
+    <div class="footer-column">
+      <h4>Company</h4>
+      <ul>
+        <li><a href="{% url 'about' %}">About us</a></li>
+        <li><a href="{% url 'contact' %}">Contact us</a></li>
+      </ul>
+    </div>
+
+    <!-- Support Section -->
+    <div class="footer-column">
+      <h4>Support</h4>
+      <ul>
+        <li><a href="{% url 'home' %}">Help & Support</a></li>
+        <li><a href="#">Terms & Conditions</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
 </body>
 </html>

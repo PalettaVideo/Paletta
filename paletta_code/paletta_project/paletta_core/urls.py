@@ -18,6 +18,7 @@ from accounts.views.forgot_password import ForgotPasswordView
 from accounts.views.home_view import HomeView, LogoutView
 from accounts.views.update_profile import ProfileView, ProfileUpdateView
 from videos.views.upload_view import UploadView, UploadHistoryView
+from videos.views.clip_store_view import ClipStoreView, CategoryClipView
 
 # Create a class for category views
 class CategoryView(TemplateView):
@@ -53,8 +54,8 @@ urlpatterns = [
     # Additional page routes
     path('about/', TemplateView.as_view(template_name='about_us.html'), name='about'),
     path('contact/', TemplateView.as_view(template_name='contact_us.html'), name='contact'),
-    path('clip-store/', TemplateView.as_view(template_name='clip_store.html'), name='clip_store'),
-    path('category/<str:category>/', CategoryView.as_view(), name='category'),
+    path('clip-store/', ClipStoreView.as_view(), name='clip_store'),
+    path('category/<path:category>/', CategoryClipView.as_view(), name='category'),
 ]
 
 # Serve static files during development

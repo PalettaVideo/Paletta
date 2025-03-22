@@ -251,18 +251,37 @@ class AWSCloudStorageService:
                 Key=video.storage_reference_id
             )
             
-            # Update the video record
+            # Also delete the thumbnail if it exists in S3
+            if video.thumbnail and hasattr(video, 'thumbnail_s3_key') and video.thumbnail_s3_key:
+                self.s3_client.delete_object(
+                    Bucket=self.bucket_name,
+                    Key=video.thumbnail_s3_key
+                )
+                logger.info(f"Deleted thumbnail for video ID {video.id} from S3")
+            
+            # Update the video model
             video.storage_url = None
             video.storage_reference_id = None
+            video.storage_status = 'pending'  # Reset to pending
+            
+            # Clear any download links
             video.download_link = None
             video.download_link_expiry = None
-            video.storage_status = 'pending'
-            video.save(update_fields=[
-                'storage_url', 'storage_reference_id', 
-                'download_link', 'download_link_expiry', 'storage_status'
-            ])
             
-            logger.info(f"Deleted video ID {video.id} from S3 storage")
+            # Save changes
+            video.save(update_fields=['storage_url', 'storage_reference_id', 
+                                     'storage_status', 'download_link', 'download_link_expiry'])
+            
+            # Log the deletion from S3
+            from .services import VideoLogService
+            VideoLogService.log_status_change(
+                video=video,
+                user=video.uploader if hasattr(video, 'uploader') else None,
+                old_status='stored',
+                new_status='pending'
+            )
+            
+            logger.info(f"Successfully deleted video ID {video.id} from S3")
             return True
             
         except ClientError as e:
@@ -270,7 +289,7 @@ class AWSCloudStorageService:
             logger.error(f"AWS S3 error ({error_code}) deleting video ID {video.id}: {str(e)}")
             return False
         except Exception as e:
-            logger.error(f"Error deleting video ID {video.id} from deep storage: {str(e)}")
+            logger.error(f"Error deleting video ID {video.id} from S3: {str(e)}")
             return False
 
 class VideoLogService:

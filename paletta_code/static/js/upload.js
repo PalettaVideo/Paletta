@@ -246,7 +246,33 @@ document.addEventListener("DOMContentLoaded", function () {
     })
       .then((response) => {
         console.log("Metadata extraction response:", response.status);
-        return response.json();
+
+        // First check if response is ok (status in 200-299 range)
+        if (!response.ok) {
+          console.error("API error:", response.status, response.statusText);
+          // Don't try to parse JSON for non-OK responses
+          return response.text().then((text) => {
+            throw new Error(
+              `API error: ${response.status} ${response.statusText}${
+                text ? ` - ${text}` : ""
+              }`
+            );
+          });
+        }
+
+        // For successful responses, try to parse as JSON
+        return response.text().then((text) => {
+          if (!text) {
+            throw new Error("Empty response received from server");
+          }
+
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            console.error("Failed to parse JSON:", e, "Response text:", text);
+            throw new Error("Invalid JSON response from server");
+          }
+        });
       })
       .then((data) => {
         console.log("Metadata extraction data:", data);
@@ -462,8 +488,30 @@ document.addEventListener("DOMContentLoaded", function () {
       xhr.addEventListener("load", () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
-            const result = JSON.parse(xhr.responseText);
-            console.log("Upload response data:", result);
+            let result;
+            // Check if we have a response before parsing
+            if (xhr.responseText && xhr.responseText.trim()) {
+              try {
+                result = JSON.parse(xhr.responseText);
+                console.log("Upload response data (parsed JSON):", result);
+              } catch (parseError) {
+                console.error("JSON parse error:", parseError);
+                console.log("Raw response text:", xhr.responseText);
+
+                // Even without proper JSON, if status is 200-299, we consider it success
+                result = {
+                  success: true,
+                  message: "Upload appears successful (non-JSON response)",
+                };
+              }
+            } else {
+              // Empty response with success status - assume success
+              console.log("Empty but successful response");
+              result = {
+                success: true,
+                message: "Upload successful (empty response)",
+              };
+            }
 
             if (!result.success) {
               throw new Error(result.message || "Upload failed");
@@ -482,9 +530,21 @@ document.addEventListener("DOMContentLoaded", function () {
             handleUploadError(error);
           }
         } else {
-          handleUploadError(
-            new Error("Upload failed with status: " + xhr.status)
-          );
+          // Non-success status code
+          let errorMessage = "Upload failed with status: " + xhr.status;
+          try {
+            if (xhr.responseText) {
+              const errorData = JSON.parse(xhr.responseText);
+              if (errorData.message) {
+                errorMessage = errorData.message;
+              }
+            }
+          } catch (e) {
+            // If we can't parse the error response, use default message
+            console.error("Couldn't parse error response:", e);
+          }
+
+          handleUploadError(new Error(errorMessage));
         }
       });
 

@@ -6,26 +6,30 @@ class CategorySerializer(serializers.ModelSerializer):
     Serializer for the Category model.
     Includes the image URL for easy access in the frontend.
     """
+    video_count = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
-    videos_count = serializers.SerializerMethodField()
+    banner_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Category
-        fields = ('id', 'name', 'description', 'created_at', 'image', 'image_url', 'videos_count')
-        read_only_fields = ('created_at', 'videos_count')
+        fields = ('id', 'name', 'description', 'created_at', 'video_count', 'image', 'image_url', 'banner_url')
+        read_only_fields = ('created_at', 'video_count')
+    
+    def get_video_count(self, obj):
+        """Get the count of videos in this category."""
+        return obj.videos.count()
     
     def get_image_url(self, obj):
         """Get the absolute URL for the category image."""
-        if obj.image:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.image.url)
+        if hasattr(obj, 'image') and obj.image:
             return obj.image.url
         return None
-        
-    def get_videos_count(self, obj):
-        """Get the count of videos in this category."""
-        return obj.videos.count()
+    
+    def get_banner_url(self, obj):
+        """Get the absolute URL for the category banner."""
+        if hasattr(obj, 'banner') and obj.banner:
+            return obj.banner.url
+        return None
 
 class TagSerializer(serializers.ModelSerializer):
     """
