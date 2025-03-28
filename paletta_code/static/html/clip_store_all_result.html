@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Clip Store</title>
-  <link href="../css/clip_store_category.css" rel="stylesheet">
-  <link href="../css/navigation_internal.css" rel="stylesheet">
-  <link href="../css/footer_clipstore.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <link href="../css/navigation_internal.css" rel="stylesheet">
+  <link href="../css/clip_store_all_result.css" rel="stylesheet">
   <script src="../js/clip_store_all.js" defer></script>
+  <link href="../css/footer_clipstore.css" rel="stylesheet">
   <script src="../js/navigation_scripts.js" defer></script>
   <link rel="icon" type="image/x-icon" href="../picture/logo.ico">
 
@@ -77,10 +77,9 @@
         </a>
       </div>
 
-
-       <ul>
-        <li >All</li>
-        <li class="active">Buildings</li>
+      <ul>
+        <li class="active">All</li>
+        <li>Buildings</li>
         <li>Humanities</li>
         <li>People</li>
         <li>Science</li>
@@ -89,13 +88,12 @@
     </aside>
     <section class="main-content">
       <div class="banner">
-        <div class="text-content">
-            <h1>Buildings</h1>
-            <p class="description">Discription of this category</p>
-        </div>
-        <div class="imagecontainer">
-            <img src="../picture/Buildings.png" alt="Buildings">
-        </div>
+        <h1>
+        Results
+      </h1>
+      <h2>
+        5 clips of “Life” in the whole library
+      </h2>
       </div>
       <div class="category-actions">
         <div class="categorysearch">
@@ -119,8 +117,8 @@
             <div class="popup" id="sortByPopup">
               <a href="#" data-sort="asc">Time: Ascending</a>
               <a href="#" data-sort="desc">Time: Descending</a>
-              <a href="#" data-sort="price-asc">Title: A to Z</a>
-              <a href="#" data-sort="price-desc">Title: Z to A</a>
+              <a href="#" data-sort="price-asc">Price: Low to High</a>
+              <a href="#" data-sort="price-desc">Price: High to Low</a>
             </div>
           </div>
       </div>
@@ -176,6 +174,7 @@
   
 </footer>
 
- 
+
+  
 </body>
 </html>

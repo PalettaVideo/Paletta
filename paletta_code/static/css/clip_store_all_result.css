@@ -2,8 +2,10 @@
     body {
       margin: 0;
       font-family: 'Montserrat';
+      background-color: white;
     }
 
+    
     
     
 
@@ -76,6 +78,23 @@
     }
 
 
+    .banner h1 {
+      font-size: 50px; /* 调整字体大小 */
+      text-transform: uppercase; /* 转换为大写 */
+      color: #80B824; /* 设定文本颜色 */
+      text-align: left; /* 让标题居中 */
+      margin-bottom: 10px; /* 调整底部间距 */
+      letter-spacing: 1.5px; /* 调整字符间距 */
+      font-family: "Montserrat";
+      font-weight: normal;
+      
+  }
+  
+    .banner h2{
+      font-weight:normal;
+      font-family: "Montserrat";
+    }
+
 
     .categorysearch {
       
@@ -143,7 +162,6 @@
     .main-content {
       display: flex;
       flex-direction: column;
-      margin-top:50px
     }
 
     .clips-grid {
@@ -221,67 +239,32 @@
       background-color: #6aa839;
     }
 
-
-
-
-      .banner {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px;
-    }
-    .banner text-content {
-        flex: 1;
-        margin-right: 50px;
-        
-    }
-   
     .banner {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px;
-  }
-  .banner text-content {
-      flex: 1;
-      margin-right: 50px;
-      
-  }
-  .banner h1 {
-      font-size: 50px;
-      margin: 0;
-      font-family: 'Montserrat';
-      font-weight: normal;
-      color: #80B824;
-  }
-  .banner p {
-      font-size: 25px;
-      color: #666;
-      font-family: 'Montserrat';
-  }
-  
-
-
-  .imagecontainer {
-    width: 100px;  /* 设置容器的宽度 */
-    height: 250px; /* 设置容器的高度 */
-    overflow: hidden; /* 隐藏超出的部分 */
-    position: relative;
-    flex: 1;
-      display: flex;
-      justify-content: flex-end;
-    margin-left: 10px;
-}
-
-    .imagecontainer img {
-        width: 80%; /* 让图片宽度填充容器 */
-        height: 100%; /* 让图片高度填充容器 */
-        object-fit: cover; /* 保持比例填充容器，裁剪超出的部分 */
-        object-position: center top;
+      position: relative;
+      text-align: left;
+      margin-bottom: 20px;
+      margin-top: 40px;
     }
 
+    .banner img {
+      width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+      
+    }
 
-
+    .banner-title {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+      background-color: #7bbd42;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 24px;
+      margin: 0;
+    }
 
     .scroll-container {
        

@@ -58,20 +58,20 @@
     }
 
     .title-section {
-      display: flex;
+      
       align-items: center;
       justify-content: center;
-      gap: 15px;
+      margin-top:50px;
       margin-bottom: 20px;
     }
 
     .title-section img {
-      max-height: 150px;
+      max-width: 400px;
     }
 
     .title-section h1 {
-      text-align: left;
-      font-size: 40px;
+      text-align: center;
+      font-size: 25px;
       line-height: 1.4;
       font-weight: normal;
     }

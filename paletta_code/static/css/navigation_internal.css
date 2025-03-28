@@ -20,8 +20,10 @@ header {
   }
 
   .logo img {
-    max-height: 100px;
+    max-width: 150px;
     border: none;
+    margin-top: 25px;
+    margin-bottom: 25px;
   }
 
   .search-bar {
