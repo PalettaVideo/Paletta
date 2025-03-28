@@ -22,7 +22,7 @@ from videos.views.clip_store_view import ClipStoreView, CategoryClipView
 
 # Create a class for category views
 class CategoryView(TemplateView):
-    template_name = 'clip_store.html'
+    template_name = 'inside_category.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -55,7 +55,7 @@ urlpatterns = [
     path('about/', TemplateView.as_view(template_name='about_us.html'), name='about'),
     path('contact/', TemplateView.as_view(template_name='contact_us.html'), name='contact'),
     path('clip-store/', ClipStoreView.as_view(), name='clip_store'),
-    path('category/<path:category>/', CategoryClipView.as_view(), name='category'),
+    path('category/<str:category>/', CategoryClipView.as_view(), name='category'),
 ]
 
 # Serve static files during development

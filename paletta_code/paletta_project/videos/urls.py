@@ -35,6 +35,6 @@ urlpatterns = [
     # Video API endpoints
     path('api/videos/', VideoListAPIView.as_view(), name='api_videos_list'),
     path('api/videos/<int:video_id>/', VideoDetailAPIView.as_view(), name='api_video_detail'),
-    path('api/categories/<path:category_name>/videos/', CategoryVideosAPIView.as_view(), name='api_category_videos'),
+    path('api/categories/<str:category_name>/videos/', CategoryVideosAPIView.as_view(), name='api_category_videos'),
     path('api/popular-tags/', PopularTagsAPIView.as_view(), name='api_popular_tags'),
 ]

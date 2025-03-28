@@ -5,10 +5,13 @@ from django.db.models import Count
 from ..models import Category, Tag, Video
 from ..serializers import CategorySerializer
 import urllib.parse
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ClipStoreView(TemplateView):
     """View for the clip store page showing all videos."""
-    template_name = 'clip_store_all.html'
+    template_name = 'inside_category.html'
     
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
@@ -35,30 +38,32 @@ class ClipStoreView(TemplateView):
 
 class CategoryClipView(ClipStoreView):
     """View for the clip store page showing videos from a specific category."""
-    template_name = 'clip_store.html'
+    template_name = 'inside_category.html'
     
     def get_context_data(self, **kwargs):
         """Get context data for the template."""
         context = super().get_context_data(**kwargs)
         
-        # Set the active category from the URL
+        # Get the category name from the URL
         category_name = self.kwargs.get('category', 'all')
         
-        # URL decode the category name for database lookup and display
-        decoded_name = urllib.parse.unquote(category_name)
+        # Properly decode the URL-encoded category name
+        try:
+            decoded_name = urllib.parse.unquote(category_name)
+            logger.info(f"Category URL parameter: '{category_name}', decoded: '{decoded_name}'")
+        except Exception as e:
+            logger.error(f"Error decoding category name: {str(e)}")
+            decoded_name = category_name
         
-        # Use the decoded name for database lookups and display
+        # Use the decoded name for filtering and display
         context['category_filter'] = decoded_name
         
-        # Store both encoded and decoded versions for debugging
-        context['category_name_encoded'] = category_name
-        context['category_name_decoded'] = decoded_name
-        
-        # Get the category object if it's not 'all'
+        # Look up the category in the database if not 'all'
         if decoded_name and decoded_name.lower() != 'all':
             try:
                 # Find the category using case-insensitive match
                 category = Category.objects.get(name__iexact=decoded_name)
+                logger.info(f"Found category: {category.name} (ID: {category.id})")
                 
                 # Add the category object to context
                 context['current_category'] = category
@@ -72,6 +77,7 @@ class CategoryClipView(ClipStoreView):
                 
             except Category.DoesNotExist:
                 # Category not found
+                logger.warning(f"Category not found: '{decoded_name}'")
                 context['category_not_found'] = True
                 context['attempted_category_name'] = decoded_name
         

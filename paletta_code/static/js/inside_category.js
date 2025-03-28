@@ -54,15 +54,8 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".category-list li").forEach((categoryItem) => {
       categoryItem.addEventListener("click", function () {
         const category = this.getAttribute("data-category");
-        if (category === "all") {
-          window.location.href = "/clip-store/";
-        } else {
-          // Replace spaces with hyphens and encode for URL
-          const formattedCategory = category.replace(/\s+/g, "-");
-          window.location.href = `/category/${encodeURIComponent(
-            formattedCategory
-          )}/`;
-        }
+        const displayName = this.textContent.trim();
+        changeCategory(category, displayName);
       });
     });
 
@@ -117,7 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // Check if we're on a category page from the URL path
       const pathMatch = window.location.pathname.match(/\/category\/([^\/]+)/);
       if (pathMatch && pathMatch[1]) {
-        currentCategory = pathMatch[1];
+        currentCategory = decodeURIComponent(pathMatch[1]);
         setActiveCategoryInSidebar(currentCategory);
       }
     }
@@ -147,15 +140,14 @@ document.addEventListener("DOMContentLoaded", function () {
     // Build API URL with filters
     let apiUrl = `/api/videos/?page=${page}`;
 
-    if (currentCategory && currentCategory !== "all") {
-      // Format category: replace spaces with hyphens for API URL
-      const formattedCategory = currentCategory.replace(/\s+/g, "-");
-      apiUrl = `/api/categories/${encodeURIComponent(
-        formattedCategory
-      )}/videos/?page=${page}`;
-      console.log(`Fetching videos for category: ${currentCategory}`);
-      console.log(`Using formatted category name: ${formattedCategory}`);
-      console.log(`Encoded API URL: ${apiUrl}`);
+    if (!currentCategory || currentCategory === "all") {
+      newPath = "/clip_store/";
+    } else {
+      // First decode the category in case it's already URL-encoded
+      const decodedCategory = decodeURIComponent(currentCategory);
+      // Then format category: replace spaces with hyphens for URL path
+      const formattedCategory = decodedCategory.replace(/\s+/g, "-");
+      newPath = `/category/${encodeURIComponent(formattedCategory)}/`;
     }
 
     // Add search parameter if needed
@@ -377,7 +369,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Change category
-  function changeCategory(category) {
+  function changeCategory(category, displayName) {
     currentCategory = category;
     currentPage = 1;
 
@@ -385,7 +377,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setActiveCategoryInSidebar(category);
 
     // Update UI
-    updateCategoryUI(category);
+    updateCategoryUI(category, displayName);
 
     // Load videos
     loadVideos(currentPage);
@@ -409,32 +401,63 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Update category title and banner
-  function updateCategoryUI(category) {
-    const pageTitle = document.querySelector("title");
-
-    // Format category name for display (capitalize first letter, remove spaces)
-    const displayCategory =
-      category === "all"
-        ? "All"
-        : category.charAt(0).toUpperCase() +
-          category.slice(1).replace(/\s+/g, "");
+  function updateCategoryUI(category, displayName) {
+    // If displayName is not provided, try to get it from the sidebar
+    if (!displayName && category !== "all") {
+      const categoryElement = document.querySelector(
+        `.category-list li[data-category="${category}"]`
+      );
+      if (categoryElement) {
+        displayName = categoryElement.textContent.trim();
+      } else {
+        // Fallback to a capitalized version of the category
+        displayName = category.charAt(0).toUpperCase() + category.slice(1);
+      }
+    }
 
     // Update page title
-    if (pageTitle) {
-      pageTitle.textContent = `${displayCategory} - Paletta`;
+    const pageTitle =
+      category === "all"
+        ? "All Videos - Paletta"
+        : `${displayName || category} - Paletta`;
+    document.title = pageTitle;
+
+    // Get the banner element
+    const banner = document.querySelector(".banner");
+    if (!banner) return;
+
+    // Update banner based on category
+    if (category === "all") {
+      // All videos view - simpler structure
+      banner.innerHTML = `
+        <img src="/static/picture/All.png" alt="All">
+        <h1 class="banner-title">All Videos in the Library</h1>
+      `;
+    } else {
+      // Category-specific view - container with image and title
+      banner.innerHTML = `
+        <div class="imagecontainer">
+          <h1 class="banner-title">${displayName || category}</h1>
+          <img src="/static/picture/All.png" alt="${
+            displayName || category
+          }" class="category-image">
+        </div>
+      `;
+
+      // Get category image from API
+      const categoryImage = banner.querySelector(".category-image");
+      if (categoryImage) {
+        loadCategoryImage(category, categoryImage);
+      }
     }
   }
 
   // Load banner image from API with fallback to static files
-  function loadBannerFromAPI(category, bannerElement) {
-    // Try to fetch categories from API to get banner image
+  // Load banner image from API with fallback to static files
+  function loadCategoryImage(category, imageElement) {
     fetch("/api/videos/categories/", {
       method: "GET",
-      cache: "no-cache",
-      headers: {
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-      },
+      headers: { "Content-Type": "application/json" },
     })
       .then((response) =>
         response.ok
@@ -444,40 +467,22 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((data) => {
         const categories = data.results || data;
 
-        // Find the matching category
+        // Find matching category (case-insensitive)
         const categoryData = categories.find(
-          (cat) =>
-            cat.name.toLowerCase() === category.toLowerCase() ||
-            (category === "all" && cat.name.toLowerCase() === "all")
+          (cat) => cat.name.toLowerCase() === category.toLowerCase()
         );
 
         if (categoryData) {
-          // Update title and description if available
-          const bannerTitleElement = document.querySelector(
-            ".banner .text-content h1"
-          );
-          const bannerDescriptionElement = document.querySelector(
-            ".banner .text-content .description"
-          );
-
-          if (bannerTitleElement && categoryData.name) {
-            bannerTitleElement.textContent = categoryData.name;
-          }
-
-          if (bannerDescriptionElement && categoryData.description) {
-            bannerDescriptionElement.textContent = categoryData.description;
-          }
-
-          // Set image from API data only - no static fallbacks needed
+          // Update image if available
           if (categoryData.banner_url) {
-            bannerElement.src = categoryData.banner_url;
+            imageElement.src = categoryData.banner_url;
           } else if (categoryData.image_url) {
-            bannerElement.src = categoryData.image_url;
+            imageElement.src = categoryData.image_url;
           }
         }
       })
       .catch((error) => {
-        console.error("Error fetching category banner:", error);
+        console.error("Error loading category image:", error);
       });
   }
 
@@ -500,32 +505,38 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Update URL parameters
   function updateUrlParams() {
-    const urlParams = new URLSearchParams();
+    // Create the path based on category
+    let newPath;
 
-    if (currentCategory && currentCategory !== "all") {
-      urlParams.set("category", currentCategory);
+    if (!currentCategory || currentCategory === "all") {
+      newPath = "/clip-store/";
+    } else {
+      newPath = `/category/${encodeURIComponent(currentCategory)}/`;
     }
 
+    // Add query parameters
+    const params = new URLSearchParams();
+
     if (currentSearchQuery) {
-      urlParams.set("search", currentSearchQuery);
+      params.set("search", currentSearchQuery);
     }
 
     if (currentPage > 1) {
-      urlParams.set("page", currentPage);
+      params.set("page", currentPage);
     }
 
     if (currentSortBy && currentSortBy !== "newest") {
-      urlParams.set("sort", currentSortBy);
+      params.set("sort", currentSortBy);
     }
 
     if (selectedTags.length > 0) {
-      urlParams.set("tags", selectedTags.join(","));
+      params.set("tags", selectedTags.join(","));
     }
 
-    // Update URL without reloading
-    const newUrl = `${window.location.pathname}${
-      urlParams.toString() ? "?" + urlParams.toString() : ""
-    }`;
+    // Build full URL and update
+    const queryString = params.toString() ? `?${params.toString()}` : "";
+    const newUrl = `${newPath}${queryString}`;
+
     window.history.pushState({ path: newUrl }, "", newUrl);
   }
 

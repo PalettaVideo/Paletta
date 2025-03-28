@@ -116,39 +116,30 @@ class CategoryVideosAPIView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     
     def get_queryset(self):
-        # Get category name from URL and decode URL encoding
-        category_name = self.kwargs.get('category_name', '')
-        original_name = category_name
+        # Get category name from URL and decode it properly
+        encoded_category_name = self.kwargs.get('category_name', '')
         
-        # Ensure we properly decode URL-encoded spaces and special characters
-        try:
-            category_name = urllib.parse.unquote(category_name)
-            # Replace hyphens with spaces for database lookup
-            db_category_name = category_name.replace('-', ' ')
-        except Exception as e:
-            print(f"Error decoding category name: {e}")
-            db_category_name = category_name
+        # First, decode any URL encoding
+        decoded_category_name = urllib.parse.unquote(encoded_category_name)
         
-        # Debug info for troubleshooting
-        print(f"Original category name from URL: '{original_name}'")
-        print(f"Decoded category name: '{category_name}'")
-        print(f"Database lookup name: '{db_category_name}'")
+        # For consistent database lookup, use spaces instead of hyphens
+        # This is needed regardless of whether the URL contains hyphens or %20
+        db_category_name = decoded_category_name.replace('-', ' ')
         
-        # List all categories for debugging
-        all_categories = list(Category.objects.values_list('name', flat=True))
-        print(f"Available categories in database: {all_categories}")
+        logger.info(f"Category lookup: encoded='{encoded_category_name}', decoded='{decoded_category_name}', db_lookup='{db_category_name}'")
         
-        # Try to find the category first to see if it exists
+        # Try to find the category first to confirm it exists
         try:
             category = Category.objects.get(name__iexact=db_category_name)
-            print(f"Found category: '{category.name}' (id: {category.id})")
+            logger.info(f"Found category: '{category.name}' (id: {category.id})")
         except Category.DoesNotExist:
-            print(f"Error: Category '{db_category_name}' does not exist in database!")
-            
-        # Continue with the original query
+            logger.warning(f"Category '{db_category_name}' does not exist in database")
+            return Video.objects.none()  # Return empty queryset if category doesn't exist
+        
+        # Continue with queryset filtering using the found category
         queryset = Video.objects.filter(
             is_published=True, 
-            category__name__iexact=db_category_name
+            category=category
         )
         
         # Apply search filter
@@ -181,9 +172,9 @@ class CategoryVideosAPIView(generics.ListAPIView):
         else:
             queryset = queryset.order_by('-upload_date')  # Default to newest
         
-        # Debug final query count
+        # Log final query count
         result_count = queryset.count()
-        print(f"Found {result_count} videos for category '{db_category_name}'")
+        logger.info(f"Found {result_count} videos for category '{db_category_name}'")
         
         return queryset.distinct()
 
