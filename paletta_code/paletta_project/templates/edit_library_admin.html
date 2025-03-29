@@ -1,0 +1,154 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Library</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/edit_library_admin.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sidebar_admin.css' %}">
+    <link rel="stylesheet" href="{% static 'css/navigation_internal.css' %}">
+    <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
+</head>
+
+<body>
+    {% include "partials/navigation_internal.html" %}
+
+    <div class="container">
+        <aside>
+            <div class="sidebar">
+                <ul>
+                    <li><a href="{% url 'create_library' %}">Create a Library</a></li>
+                    <li><a href="{% url 'manage_libraries' %}" class="active">Manage All Libraries</a></li>
+                    <li><a href="{% url 'manage_administrators' %}">Manage Administrators</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main>
+            <h2>Manage my Library</h2>
+            
+            <form method="post" enctype="multipart/form-data" id="editLibraryForm">
+                {% csrf_token %}
+                <input type="hidden" name="library_id" value="{{ library.id }}">
+                <input type="hidden" name="categories" id="categoriesData">
+                <input type="hidden" name="contributors" id="contributorsData">
+
+                <div class="form-group">
+                    <label for="library-name">Name</label>
+                    <div class="input-group">
+                        <input type="text" id="libraryName" name="library_name" value="{{ library.name|default:'Default Library' }}" readonly>
+                        <button type="button" onclick="toggleEdit('libraryName', this)">Edit</button>
+                    </div>
+                    {% if form.library_name.errors %}
+                    <p class="error-text">{{ form.library_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label>Logo</label>
+                    <div class="logo-container">
+                        <img id="libraryLogo" src="{% if library.logo %}{{ library.logo.url }}{% else %}{% static 'images/logo.jpg' %}{% endif %}" alt="Library Logo">
+                        <input type="file" id="logoUpload" name="logo" accept="image/*" style="display: none;">
+                        <button type="button" class="change-btn">Change</button>
+                    </div>
+                    {% if form.logo.errors %}
+                    <p class="error-text">{{ form.logo.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="library-description">Description</label>
+                    <div class="input-group">
+                        <input type="text" id="libraryDescription" name="description" value="{{ library.description|default:'Library description' }}" readonly>
+                        <button type="button" onclick="toggleEdit('libraryDescription', this)">Edit</button>
+                    </div>
+                    {% if form.description.errors %}
+                    <p class="error-text">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <div class="category-container">
+                        <label class="category-label">Edit Categories</label>
+                        <button type="button" class="add-category-btn" onclick="openCategoryModal()">➕ Add</button>
+                    </div>
+
+                    <div id="categoryList" class="category-list">
+                        {% for category in library.categories.all %}
+                        <div class="category-item" data-id="{{ category.id }}" onclick="editCategoryModal(event, this)">
+                            <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                            <div class="category-name">{{ category.name }}</div>
+                            <div class="category-desc" style="display: none;">{{ category.description }}</div>
+                            <button type="button" class="delete-btn" onclick="event.stopPropagation(); this.parentElement.remove();">✖️</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Theme Color</label>
+                    <input type="color" id="themeColor" name="theme_color" value="{{ library.theme_color|default:'#86B049' }}">
+                </div>
+
+                <div class="contributor-container">
+                    <h3>Manage Contributors</h3>
+                    <button type="button" class="invite-btn" onclick="openContributorModal()">Invite</button>
+                    <div class="contributor-list" id="contributorList">
+                        {% for contributor in library.contributors.all %}
+                        <div class="contributor-item" data-id="{{ contributor.id }}">
+                            <span>Name: {{ contributor.name }} | Email: {{ contributor.email }}</span>
+                            <button type="button" class="delete-btn" onclick="this.parentElement.remove()">Remove</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <button type="submit" class="finish-btn">Save Changes</button>
+            </form>
+        </main>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCategoryModal()">&times;</span>
+            <h2 id="categoryModalTitle">Add a Category</h2>
+
+            <label for="categoryName">Name</label>
+            <input type="text" id="categoryName" placeholder="Enter category name">
+
+            <label for="categoryImage">Theme Picture</label>
+            <input type="file" id="categoryImage" accept="image/*">
+            <img id="imagePreview" style="display: none; width: 100px; height: 100px;">
+
+            <label for="categoryDescription">Description</label>
+            <textarea id="categoryDescription" placeholder="Enter description"></textarea>
+
+            <p id="errorText" class="error-text"></p>
+            <button id="saveCategoryBtn" onclick="saveCategory()">Add</button>
+        </div>
+    </div>
+
+    <!-- Add Contributor Modal -->
+    <div id="contributorModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeContributorModal()">&times;</span>
+            <h3>Add a Contributor</h3>
+            <label for="contributorName">Name</label>
+            <input type="text" id="contributorName">
+            <label for="contributorEmail">Email</label>
+            <input type="email" id="contributorEmail">
+            <button class="add-btn" onclick="addContributor()">Add</button>
+        </div>
+    </div>
+
+    <div id="modalOverlay" class="modal-overlay"></div>
+    
+    {% include "partials/footer.html" %}
+    
+    <script src="{% static 'js/edit_library_admin.js' %}"></script>
+</body>
+</html>

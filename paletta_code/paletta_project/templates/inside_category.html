@@ -31,6 +31,7 @@
     </div>
 
     <div class="actions">
+      {% if user.is_authenticated and user.role != 'customer' %}
       <a href="{% url 'upload' %}" style="text-decoration: none;">
         <button>
           <svg style="enable-background:new 0 0 24 24;" version="1.1" viewBox="0 0 24 24" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -45,6 +46,7 @@
           Upload
         </button>
       </a>
+      {% endif %}
       <button id="centerButton">
         <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
           <g data-name="Layer 2" id="Layer_2">
@@ -221,8 +223,8 @@
     <div class="footer-column">
       <h4>Company</h4>
       <ul>
-        <li><a href="{% url 'about' %}">About us</a></li>
-        <li><a href="{% url 'contact' %}">Contact us</a></li>
+        <li><a href="{% url 'about_us' %}">About us</a></li>
+        <li><a href="{% url 'contact_us' %}">Contact us</a></li>
       </ul>
     </div>
 
@@ -230,7 +232,7 @@
     <div class="footer-column">
       <h4>Support</h4>
       <ul>
-        <li><a href="{% url 'home' %}">Help & Support</a></li>
+        <li><a href="{% url 'q_and_a' %}">Help & Support</a></li>
         <li><a href="#">Terms & Conditions</a></li>
         <li><a href="#">Privacy</a></li>
       </ul>

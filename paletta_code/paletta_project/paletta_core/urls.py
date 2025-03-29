@@ -52,8 +52,9 @@ urlpatterns = [
     path('order/', TemplateView.as_view(template_name='my_order.html'), name='order'),
     
     # Additional page routes
-    path('about/', TemplateView.as_view(template_name='about_us.html'), name='about'),
-    path('contact/', TemplateView.as_view(template_name='contact_us.html'), name='contact'),
+    path('about/', TemplateView.as_view(template_name='about_us.html'), name='about_us'),
+    path('contact/', TemplateView.as_view(template_name='contact_us.html'), name='contact_us'),
+    path('help/', TemplateView.as_view(template_name='q_and_a.html'), name='q_and_a'),
     path('clip-store/', ClipStoreView.as_view(), name='clip_store'),
     path('category/<str:category>/', CategoryClipView.as_view(), name='category'),
 ]

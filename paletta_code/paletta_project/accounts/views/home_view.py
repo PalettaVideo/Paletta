@@ -6,10 +6,12 @@ from videos.models import Category
 from videos.serializers import CategorySerializer
 
 class HomeView(TemplateView):
-    """Home view that serves the appropriate home page based on user authentication."""
+    """Home view that serves the unified home page with conditional content based on authentication."""
     
     def get(self, request, *args, **kwargs):
-        """Serve the appropriate home page."""
+        """Serve the home page with appropriate context."""
+        context = {}
+        
         if request.user.is_authenticated:
             # Fetch all categories from the database
             categories = Category.objects.all().order_by('name')
@@ -20,19 +22,9 @@ class HomeView(TemplateView):
             context = {
                 'categories': serializer.data
             }
-            
-            # TODO: see which of these functionalities are needed and can be loaded from the .js static files
-            # TODO: see if the user role check is needed for the home page
-            if request.user.role in ['admin', 'owner']:
-                return render(request, 'homepage_internal.html', context)
-            elif request.user.role == 'contributor':
-                return render(request, 'homepage_internal.html', context) 
-                # TODO: create a specific contributor page
-            else:
-                return render(request, 'homepage_internal.html', context)
-                # TODO: create a specific customer page
-        else:
-            return render(request, 'homepage_external.html')
+        
+        # Return the single homepage template with the context
+        return render(request, 'homepage.html', context)
 
 class LogoutView(TemplateView):
     """View to handle user logout."""

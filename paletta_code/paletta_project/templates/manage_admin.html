@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Administrators</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/manage_admin.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sidebar_admin.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/navigation_internal.css' %}">
+    <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
+    <script defer src="{% static 'js/manage_admin.js' %}"></script>
+</head>
+
+<body>
+    {% include "partials/navigation_internal.html" %}
+
+    <div class="container">
+        <aside>
+            <div class="sidebar">
+                <ul>
+                    <li><a href="{% url 'create_library' %}">Create a Library</a></li>
+                    <li><a href="{% url 'manage_libraries' %}">Manage All Libraries</a></li>
+                    <li><a href="{% url 'manage_administrators' %}" class="active">Manage Administrators</a></li>
+                </ul>
+            </div>
+        </aside>
+        <main>
+            <section>
+                <h1>Manage Administrators <button id="addAdmin">Add</button></h1>
+                <div id="adminList">
+                    {% if admins %}
+                        {% for admin in admins %}
+                        <div class="admin-card" data-id="{{ admin.id }}">
+                            <p><strong>Institution:</strong> {{ admin.institution|default:"Not specified" }}</p>
+                            <p><strong>Email:</strong> {{ admin.email }}</p>
+                            <p><strong>Name:</strong> {{ admin.name }}</p>
+                            <p><strong>Library Name:</strong> 
+                                {% if admin.libraries.all %}
+                                    {% for library in admin.libraries.all %}
+                                        {{ library.name }}{% if not forloop.last %}; {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </p>
+                            <button class="revoke" data-admin-id="{{ admin.id }}">Revoke Admin Privileges</button>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-admins">No administrators found.</p>
+                    {% endif %}
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Popup Modal -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add an Administrator</h2>
+            <form id="addAdminForm" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="adminName">Name</label>
+                    <input type="text" id="adminName" name="name" placeholder="Enter name" required>
+                    <span class="error-message" id="nameError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="adminEmail">Email</label>
+                    <input type="email" id="adminEmail" name="email" placeholder="Enter email" required>
+                    <span class="error-message" id="emailError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="adminInstitution">Institution (Optional)</label>
+                    <input type="text" id="adminInstitution" name="institution" placeholder="Enter institution">
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="confirmAdd" class="btn-primary">Add</button>
+                    <button type="button" class="btn-cancel close-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% include "partials/footer.html" %}
+</body>
+</html>

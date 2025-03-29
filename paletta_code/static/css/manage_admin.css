@@ -1,0 +1,108 @@
+/* styles.css */
+body {
+    font-family: 'Montserrat';
+    margin: 0;
+    padding: 0;
+    
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    margin-top: 100px;
+}
+
+nav button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: none;
+    background: #ccc;
+    cursor: pointer;
+}
+
+nav .active {
+    background: #8bc34a;
+    color: white;
+}
+
+main {
+    flex: 1;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.upload, .profile, #addAdmin {
+    background: #8bc34a;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+.admin-card {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 10px;
+    background: white;
+}
+
+.revoke {
+    background: #f44336;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    width: 300px;
+    text-align: center;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #8bc34a;
+}
+
+.modal-content button {
+    background: #8bc34a;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.close {
+    float: right;
+    font-size: 24px;
+    cursor: pointer;
+    color: #8bc34a;
+}

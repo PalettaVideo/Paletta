@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Order</title>
     {% load static %}
+    <link href="{% static 'css/navigation_internal.css' %}" rel="stylesheet">
     <link href="{% static 'css/my_order.css' %}" rel="stylesheet">
     <script src="{% static 'js/my_order.js' %}" defer></script>
     <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
@@ -30,7 +31,8 @@
           </div>
           
           <div class="actions">
-            <a href="{% url 'home' %}" style="text-decoration: none;">
+            {% if user.is_authenticated and user.role != 'customer' %}
+            <a href="{% url 'upload' %}" style="text-decoration: none;">
                 <button>
                   <svg style="enable-background:new 0 0 24 24;" version="1.1" viewBox="0 0 24 24" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                     <g id="grid_system"/>
@@ -44,6 +46,7 @@
                   Upload
                 </button>
               </a>
+            {% endif %}
             <button id="centerButton">
               <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
                 <g data-name="Layer 2" id="Layer_2">
@@ -54,13 +57,7 @@
               </svg>
               My Center
             </button>
-            <div class="popup" id="popupMenu">
-                <a href="{% url 'profile' %}">My Profile</a>
-                <a href="{% url 'collection' %}">My Collection</a>
-                <a href="{% url 'cart' %}">My Cart</a>
-                <a href="{% url 'order' %}" class="active">My Order</a>
-                <a href="{% url 'logout' %}">Log Out</a>
-            </div>
+
           </div>
         </div>
       </header>

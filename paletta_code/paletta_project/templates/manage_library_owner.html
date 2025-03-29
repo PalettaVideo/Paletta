@@ -1,0 +1,75 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Libraries</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/manage_library_owner.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sidebar_admin.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/navigation_internal1.css' %}">
+    <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
+    <script src="{% static 'js/manage_library_owner.js' %}" defer></script>
+</head>
+
+<body>
+    {% include "partials/navigation_internal.html" %}
+
+    <div class="container">
+        <!-- Sidebar -->
+        <aside>
+            <div class="sidebar">
+                <ul>
+                    <li><a href="{% url 'create_library' %}">Create a Library</a></li>
+                    <li><a href="{% url 'manage_libraries' %}" class="active">Manage All Libraries</a></li>
+                    <li><a href="{% url 'manage_administrators' %}">Manage Administrators</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="content">
+            <h2>Manage all Libraries</h2>
+
+            <!-- Library List -->
+            <div class="library-list">
+                {% if libraries %}
+                    {% for library in libraries %}
+                    <div class="library-item" data-id="{{ library.id }}">
+                        <div class="library-logo">
+                            <img src="{% if library.logo %}{{ library.logo.url }}{% else %}{% static 'images/default-logo.jpg' %}{% endif %}" alt="{{ library.name }}">
+                        </div>
+                        <span>{{ library.name }}</span>
+                        <div class="library-actions">
+                            <a href="{% url 'edit_library' library.id %}"><button class="edit"><i class="fas fa-edit"></i> Edit</button></a>
+                            <button class="stop" data-library-id="{{ library.id }}"><i class="fas fa-pause"></i> {% if library.is_active %}Stop{% else %}Start{% endif %}</button>
+                            <button class="close" data-library-id="{{ library.id }}"><i class="fas fa-times"></i> Close</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-libraries">
+                        <p>No libraries found. <a href="{% url 'create_library' %}">Create a new library</a>.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <h2 id="confirmTitle">Confirm Action</h2>
+            <p id="confirmMessage">Are you sure you want to perform this action?</p>
+            <div class="modal-actions">
+                <button id="confirmBtn" class="confirm-btn">Confirm</button>
+                <button id="cancelBtn" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    {% include "partials/footer.html" %}
+</body>
+</html>
