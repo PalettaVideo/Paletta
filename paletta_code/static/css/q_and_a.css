@@ -1,122 +1,121 @@
+body {
+    font-family: 'Montserrat';
+    margin: 0;
+    padding: 0;
+    background-color: white;
 
-        body {
-            font-family: 'Montserrat';
-            margin: 0;
-            padding: 0;
-            background-color: white;
+}
 
-        }
+.title-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: white;
+    margin-top: 100px;
+    
+}
 
-        
-        .title-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            background-color: white;
-            margin-top: 100px;
-            
-        }
+.title-section .image-container {
+    position: relative;
+    width: 60%;
+    margin-left: 10%;
+}
 
-        .title-section .image-container {
-            position: relative;
-            width: 60%;
-            margin-left: 30px;
-        }
+.title-section .image-container img {
+    width: 87%;
+    height: 350px
+}
 
-        .title-section .image-container img {
-            width: 100%;
-            height: 200px;
+.title-section .image-container .overlay {
+    position: absolute;
+    top: 0%;
+    left: 34%;
+    background-color: #80B824;
+    padding: 20px 40px;
+    font-size: 35px;
+    font-weight: normal;
+    color: white;
+    text-align: center;
+}
 
-        }
+.title-section .logo-container {
+    width: 25%;
+    text-align: center;
+    margin-right: 50px;
+}
 
-        .title-section .image-container .overlay {
-            position: absolute;
-            top: 0%;
-            left: 30%;
-            background-color: #80B824;
-            padding: 20px 40px;
-            font-size: 35px;
-            font-weight: normal;
-            color: white;
-            text-align: center;
-        }
-
-        .title-section .logo-container {
-            width: 25%;
-            text-align: center;
-            margin-right: 50px;
-        }
-
-        .title-section .logo-container img {
-            width: 80%;
-            height: auto;
-        }
+.title-section .logo-container img {
+    width: 80%;
+    height: auto;
+}
 
 
-        .faq-container {
-            display: flex;
-            height: calc(100vh - 170px);
-        }
+.faq-container {
+    display: flex;
+    height: calc(100vh - 170px);
+    margin-right: 10%;
+    margin-left: 10%;
+}
 
-        .faq-questions {
-            flex: 1;
-            max-width: 40%;
-            border-right: 1px solid #ccc;
-            overflow-y: scroll;
-            padding: 20px;
-        }
+.faq-questions {
+    flex: 1;
+    max-width: 40%;
+    border-right: 1px solid #ccc;
+    overflow-y: scroll;
+    padding: 20px;
+}
 
-        .faq-answers {
-            flex: 2;
-            overflow-y: scroll;
-            padding: 20px;
-        }
+.faq-answers {
+    flex: 2;
+    overflow-y: scroll;
+    padding: 20px;
+}
 
-        .faq-questions ul {
-            list-style: none;
-            padding: 0;
-        }
+.faq-questions ul {
+    list-style: none;
+    padding: 0;
+}
 
-        .faq-questions li {
-            margin: 10px 0;
-            cursor: pointer;
-            color: #000;
-            background-color: #fff;
-            padding: 10px;
-            border-radius: 5px;
-        }
+.faq-questions li {
+    margin: 10px 0;
+    cursor: pointer;
+    color: #000;
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 5px;
+}
 
-        .faq-questions li:hover, .faq-questions li.active {
-            background-color: #80B824;
-            color: #fff;
-        }
+.faq-questions li:hover, .faq-questions li.active {
+    background-color: #80B824;
+    color: #fff;
+}
 
-        .faq-answers {
-            font-size: 20px;
-            line-height: 1.8;
-            padding: 20px 40px; 
-            margin: 0 20px;
-        }
+.faq-answers {
+    font-size: 20px;
+    line-height: 1.8;
+    padding: 20px 40px; 
+    margin: 0 20px;
+}
 
 
-        .contact-us {
-            text-align: center;
-            margin: 50px 50px;
-        }
+.contact-us {
+    text-align: center;
+    margin: 50px 50px;
+}
 
-        .contact-us p {
-            margin: 10px 0;
-            font-size: 20px;
-        }
+.contact-us p {
+    margin: 10px 0;
+    font-size: 20px;
+}
 
-        .contact-us button {
-            background-color: #80B824;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 20px;
-            font-family: 'Montserrat';
-            margin-top: 10px;
-        }
+.contact-us button {
+    background-color: #80B824;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 20px;
+    font-family: 'Montserrat';
+    margin-top: 10px;
+}

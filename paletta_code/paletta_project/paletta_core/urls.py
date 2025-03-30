@@ -57,6 +57,18 @@ urlpatterns = [
     path('help/', TemplateView.as_view(template_name='q_and_a.html'), name='q_and_a'),
     path('clip-store/', ClipStoreView.as_view(), name='clip_store'),
     path('category/<str:category>/', CategoryClipView.as_view(), name='category'),
+    
+    # Library management routes
+    path('libraries/create/', login_required(TemplateView.as_view(template_name='create_library_admin.html')), name='create_library'),
+    path('libraries/manage/', login_required(TemplateView.as_view(template_name='manage_library_owner.html')), name='manage_libraries'),
+    path('libraries/<int:library_id>/edit/', login_required(TemplateView.as_view(template_name='edit_library_admin.html')), name='edit_library'),
+    path('libraries/<int:library_id>/view/', TemplateView.as_view(template_name='library_view.html'), name='library_view'),
+    
+    # Admin management routes
+    path('admins/manage/', login_required(TemplateView.as_view(template_name='manage_admin.html')), name='manage_administrators'),
+    
+    # Contributor application route
+    path('contributor/apply/', TemplateView.as_view(template_name='contributor_form.html'), name='contributor_apply'),
 ]
 
 # Serve static files during development

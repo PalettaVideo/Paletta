@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% load static %}
+  {% if clip %}
+  <meta name="clip-id" content="{{ clip.id }}">
+  {% endif %}
+  <link href="{% static 'css/navigation_internal.css' %}" rel="stylesheet">
+  <link href="{% static 'css/clip_detail.css' %}" rel="stylesheet">
+  <link href="{% static 'css/footer.css' %}" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
+  <script src="{% static 'js/clip_detail.js' %}" defer></script>
+  <title>{{ clip.title|default:"Clip Detail" }}</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+</head>
+<body>
+  {% include "navigation_internal.html" %}
+  
+  {% csrf_token %}
+
+  <!-- Main content -->
+  <main>
+    <!-- Video and Details -->
+    <div class="content">
+      <div class="video-container">
+        <a href="{% url 'clip_store' %}">
+        <button class="back-button">⬅ Back to Clip Store</button></a>
+        <video src="{{ clip.video_url|default:'' }}" controls{% if not clip.video_url %} poster="{% static 'picture/video_placeholder.jpg' %}"{% endif %}></video>
+      </div>
+      <div class="details">
+        <h1>{{ clip.title|default:"Video Title" }}</h1>
+        <p>Uploaded Time: {{ clip.upload_date|date:"Y-m-d"|default:"2024-01-01" }}</p>
+        <div class="clipaction">
+          <button id="addToCollectionButton">Add to Collection</button>
+          <button id="addToCartButton">Add to Cart</button>
+          <button id="requestNowButton">Request Now</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video Description -->
+    <div class="description">
+      <div class="video-info">
+        <h2>Description</h2>
+        <p>{{ clip.description|default:"No description available." }}</p>
+        <div class="category">
+          <strong>Category:</strong>
+          <span>{{ clip.category|default:"Uncategorized" }}</span>
+        </div>
+        <div class="tags">
+          <strong>Tags:</strong>
+          {% if clip.tags %}
+            {% for tag in clip.tags %}
+              <span>{{ tag }}</span>
+            {% endfor %}
+          {% else %}
+            <span>No tags</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="attributes">
+        <h2>Attributes</h2>
+        <p><strong>Duration:</strong> {{ clip.duration|default:"Unknown" }}</p>
+        <p><strong>Frame Rate:</strong> {{ clip.frame_rate|default:"Unknown" }}</p>
+        <p><strong>Resolution:</strong> {{ clip.resolution|default:"Unknown" }}</p>
+        <p><strong>Format:</strong> {{ clip.format|default:"Unknown" }}</p>
+      </div>
+    </div>
+
+    <!-- Related Clips -->
+    <div class="related-clips">
+      <h2>Related Clips:</h2>
+      <div class="related-container">
+        {% if related_clips %}
+          {% for related_clip in related_clips %}
+            <div class="clip-card">
+              <a href="{% url 'clip_detail' clip_id=related_clip.id %}">
+                {% if related_clip.thumbnail %}
+                  <img src="{{ related_clip.thumbnail }}" alt="{{ related_clip.title }}">
+                {% else %}
+                  <img src="{% static 'picture/default_thumbnail.png' %}" alt="{{ related_clip.title }}">
+                {% endif %}
+                <p>{{ related_clip.title }}</p>
+              </a>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="no-related-clips">
+            <p>No related clips found</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+
+  <!-- Popup -->
+  <div class="popup-overlay" id="popupOverlay">
+    <div class="resolution">
+      <h2>Choose the resolution you want</h2>
+      <label><input type="radio" name="resolution" value="HD" data-price="5.00"> HD : 1920×1080 - £5.00</label><br>
+      <label><input type="radio" name="resolution" value="4K" data-price="7.00"> 4K : 3840×2160 - £7.00</label><br><br>
+      <button id="confirmAddToCart">Add to Cart</button>
+    </div>
+  </div>
+
+  {% include "footer.html" %}
+
+  {% comment %}
+  <!-- We'll move this script to an external file -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const addToCartButton = document.getElementById('addToCartButton');
+      const popupOverlay = document.getElementById('popupOverlay');
+      const confirmAddToCart = document.getElementById('confirmAddToCart');
+
+      addToCartButton.addEventListener('click', () => {
+        popupOverlay.style.display = 'flex';
+      });
+
+      confirmAddToCart.addEventListener('click', () => {
+        const selectedResolution = document.querySelector('input[name="resolution"]:checked');
+        if (selectedResolution) {
+          const resolution = selectedResolution.value;
+          const price = selectedResolution.dataset.price;
+          
+          // CSRF token for Django
+          const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+          
+          // Here we would send a POST request to add to cart
+          // For demo purposes, just show an alert
+          alert(`Item added to cart! Resolution: ${resolution}, Price: £${price}`);
+          
+          popupOverlay.style.display = 'none';
+        } else {
+          alert('Please select a resolution');
+        }
+      });
+
+      popupOverlay.addEventListener('click', (event) => {
+        if (event.target === popupOverlay) {
+          popupOverlay.style.display = 'none';
+        }
+      });
+    });
+  </script>
+  {% endcomment %}
+
+  {% include "footer.html" %}
+</body>
+</html>

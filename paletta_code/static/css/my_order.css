@@ -1,20 +1,24 @@
-
 body {
-    margin-top: 120px;
     font-family: 'Montserrat';
+    margin-top: 120px;
+    padding: 0;
+    background-color: #ffffff;
+}
+.layout {
     display: flex;
-    height: 100vh;
-    overflow: hidden;
+    flex-direction: row;
+    width: 100%;
+    margin-top: 120px; /* Space for fixed header */
+    min-height: calc(100vh - 180px); /* Adjust for header and footer */
 }
 
 .sidebar {
     width: 250px;
     background-color: #fff;
-    height: 100vh;
     box-sizing: border-box;
-    border-right:1px solid #ddd;
-    padding:20px
-  }
+    border-right: 1px solid #ddd;
+    padding: 20px;
+}
 .sidebar ul {
     list-style: none;
     padding: 0;
@@ -44,16 +48,19 @@ body {
 .container {
     width: 90%;
     max-width: 1200px;
-    margin: 0 auto;
+    margin-left: 5vh;
 }
 
-.my-order {
-    padding: 20px;
+.main-content {
+    width: calc(100% - 300px);
+    overflow-y: auto;  
+    display: flex;
+    flex-direction: row;
+    min-height: calc(100vh - 180px); /* Adjust for header and footer */
 }
 
 .order-item {
     display: flex;
-    align-items: center;
     margin-bottom: 20px;
     padding: 10px;
     border: 1px solid #ccc;

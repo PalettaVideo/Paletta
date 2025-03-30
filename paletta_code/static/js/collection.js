@@ -75,4 +75,111 @@ function renderCollection() {
 // initialize
 document.addEventListener("DOMContentLoaded", () => {
   renderCollection();
+
+  // Set up event listeners for remove buttons
+  setupRemoveButtons();
+
+  function setupRemoveButtons() {
+    const removeButtons = document.querySelectorAll(".remove");
+
+    removeButtons.forEach((button) => {
+      button.addEventListener("click", function () {
+        const clipId = this.getAttribute("data-clip-id");
+        if (clipId) {
+          removeFromCollection(clipId, this);
+        }
+      });
+    });
+  }
+
+  function removeFromCollection(clipId, buttonElement) {
+    // Get the CSRF token
+    const csrftoken = document.querySelector(
+      "[name=csrfmiddlewaretoken]"
+    ).value;
+
+    // Create form data for the request
+    const formData = new FormData();
+    formData.append("clip_id", clipId);
+    formData.append("csrfmiddlewaretoken", csrftoken);
+
+    // Send POST request to remove item from collection
+    fetch("/collection/remove/", {
+      method: "POST",
+      body: formData,
+      headers: {
+        "X-CSRFToken": csrftoken,
+      },
+      credentials: "same-origin",
+    })
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error("Network response was not ok");
+      })
+      .then((data) => {
+        if (data.success) {
+          // Find the clip element and remove it
+          const clipElement = buttonElement.closest(".clip");
+          if (clipElement) {
+            clipElement.style.opacity = "0";
+            setTimeout(() => {
+              clipElement.remove();
+
+              // Check if there are any clips left
+              const remainingClips = document.querySelectorAll(".clip");
+              if (remainingClips.length === 0) {
+                // If no clips left, show empty state
+                const clipsGrid = document.querySelector(".clips-grid");
+                clipsGrid.innerHTML = `
+                <div class="no-clips">
+                  <p>Your collection is empty. Browse the clip store to add items to your collection.</p>
+                  <a href="/clip-store/">
+                    <button class="add-to-cart">Browse Clip Store</button>
+                  </a>
+                </div>
+              `;
+              }
+            }, 300);
+          }
+
+          // Show success message
+          showNotification("Clip removed from your collection");
+        } else {
+          // Show error message
+          showNotification(
+            "Error: " + (data.error || "Failed to remove clip"),
+            "error"
+          );
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showNotification("Failed to remove clip from collection", "error");
+      });
+  }
+
+  function showNotification(message, type = "success") {
+    // Create notification element
+    const notification = document.createElement("div");
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+
+    // Add to body
+    document.body.appendChild(notification);
+
+    // Animate in
+    setTimeout(() => {
+      notification.classList.add("show");
+    }, 10);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+      notification.classList.remove("show");
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 300);
+    }, 3000);
+  }
 });

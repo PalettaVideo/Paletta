@@ -1,33 +1,36 @@
+/* Main content layout styles only for collection page */
 body {
-  margin-top: 120px;
+  margin: 0;
+  padding: 0;
   font-family: 'Montserrat';
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
 }
 
 .layout {
   display: flex;
   flex-direction: row;
   width: 100%;
+  margin-top: 120px; /* Space for fixed header */
+  min-height: calc(100vh - 180px); /* Adjust for header and footer */
 }
 
 .sidebar {
   width: 250px;
   background-color: #fff;
-  height: 100vh;
   box-sizing: border-box;
-  border-right:1px solid #ddd;
-  padding:20px
+  border-right: 1px solid #ddd;
+  padding: 20px;
 }
+
 .sidebar ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
+
 .sidebar ul li {
   margin: 0;
 }
+
 .sidebar ul li a {
   display: block;
   padding: 15px 20px;
@@ -36,29 +39,27 @@ body {
   background-color: #fff;
   transition: background-color 0.3s, color 0.3s;
 }
+
 .sidebar ul li a:hover,
 .sidebar ul li a:focus {
   background-color: #80B824;
   color: #fff;
 }
+
 .sidebar ul li a.active {
   background-color: #80B824;
   color: #fff;
 }
 
-/* main content area */
+/* Main content area */
 .content {
   margin-left: 50px; 
   padding: 20px;
-  width: calc(100% - 220px);
+  width: calc(100% - 300px);
   overflow-y: auto;
 }
 
-header h1 {
-  font-size: 24px;
-  margin-bottom: 20px;
-}
-
+/* Clip grid styles */
 .clips-grid {
   display: flex;
   flex-direction: column;
@@ -110,91 +111,66 @@ header h1 {
   font-size: 12px;
 }
 
-.add-to-cart{
-  background-color:#80B824;
-  font-family:'Montserrat';
-  border:none;
-  margin-top:10px;
-  margin-right: 10px;  
-}
-
-.remove{
-  background-color:#80B824;
-  font-family:'Montserrat';
-  border:none;
-  margin-top:10px;
-}
-
-.footer {
-  position: fixed;
-  bottom: 0;
-  left: 240px;
-  width: calc(100% - 220px);
-  background-color: #f4f4f4;
-  text-align: center;
-  padding: 10px;
-  font-size: 14px;
-  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-}
-
-/* Unauthorized message styles */
-.unauthorized-message {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  min-height: 60vh;
-  padding: 2rem;
-  margin: 2rem auto;
-  max-width: 600px;
-  background-color: #f8f8f8;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.unauthorized-message h2 {
-  color: #333;
-  margin-bottom: 1rem;
-  font-size: 1.8rem;
-}
-
-.unauthorized-message p {
-  color: #666;
-  margin-bottom: 2rem;
-  font-size: 1.1rem;
-}
-
-.auth-buttons {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.btn {
-  display: inline-block;
-  padding: 0.8rem 1.5rem;
-  border-radius: 4px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.3s ease;
-}
-
-.login-btn {
+/* Button styles */
+.add-to-cart, .remove {
   background-color: #80B824;
   color: white;
+  font-family: 'Montserrat';
+  border: none;
+  border-radius: 5px;
+  padding: 8px 15px;
+  cursor: pointer;
+  margin-top: 10px;
 }
 
-.login-btn:hover {
-  background-color: #6ca31e;
+.add-to-cart {
+  margin-right: 10px;
 }
 
-.register-btn {
-  background-color: #f8f8f8;
-  color: #333;
-  border: 1px solid #ddd;
+/* For empty collection state */
+.no-clips {
+  text-align: center;
+  padding: 40px;
+  color: #666;
 }
 
-.register-btn:hover {
-  background-color: #eee;
+/* For unauthorized access message */
+.unauthorized-message {
+  text-align: center;
+  margin: 100px auto;
+  max-width: 600px;
+  padding: 40px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
+
+/* Notification styles */
+.notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 15px 25px;
+  border-radius: 5px;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: translateY(20px);
+  opacity: 0;
+  transition: transform 0.3s, opacity 0.3s;
+  z-index: 1000;
+}
+
+.notification.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.notification.success {
+  background-color: #80B824;
+}
+
+.notification.error {
+  background-color: #e74c3c;
+}
+

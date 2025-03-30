@@ -14,8 +14,20 @@ document.addEventListener("DOMContentLoaded", function () {
     loadCategoryImages();
   }
 
+  // fetch libraries for the more-libraries-nav section
+  const librariesContainer = document.getElementById("libraries-container");
+  if (
+    librariesContainer &&
+    librariesContainer.querySelectorAll(".library-button").length <= 1
+  ) {
+    fetchLibraries();
+  }
+
   // initialize search functionality
   initSearch();
+
+  // initialize sidebar toggle
+  initSidebar();
 });
 
 function initPopupMenu() {
@@ -38,6 +50,37 @@ function initPopupMenu() {
       event.stopPropagation();
     });
   }
+}
+
+function initSidebar() {
+  // Set up sidebar toggle functionality
+  window.toggleSidebar = function () {
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("sidebar-overlay");
+
+    if (sidebar) {
+      sidebar.classList.toggle("active");
+      if (overlay) {
+        if (sidebar.classList.contains("active")) {
+          overlay.style.display = "block";
+        } else {
+          overlay.style.display = "none";
+        }
+      }
+    }
+  };
+
+  window.closeSidebar = function () {
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("sidebar-overlay");
+
+    if (sidebar) {
+      sidebar.classList.remove("active");
+      if (overlay) {
+        overlay.style.display = "none";
+      }
+    }
+  };
 }
 
 function loadCategoryImages() {
@@ -135,6 +178,82 @@ function fetchCategories() {
     .catch((error) => {
       console.error("Error fetching categories:", error);
     });
+}
+
+function fetchLibraries() {
+  fetch("/api/libraries/", {
+    method: "GET",
+    cache: "no-cache",
+    headers: {
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
+    },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch libraries");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      if (data.results && data.results.length > 0) {
+        updateLibrariesUI(data.results);
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching libraries:", error);
+    });
+}
+
+function updateLibrariesUI(libraries) {
+  const librariesContainer = document.getElementById("libraries-container");
+  if (!librariesContainer) return;
+
+  // Keep the default Paletta library which should already be there
+  const defaultLibrary = librariesContainer.querySelector(".library-button");
+
+  // Clear existing libraries except the default one
+  if (defaultLibrary) {
+    librariesContainer.innerHTML = "";
+    librariesContainer.appendChild(defaultLibrary);
+  }
+
+  // Add each library from the API
+  libraries.forEach((library) => {
+    // Skip adding duplicate of default Paletta if it exists in the API results
+    if (library.name.toLowerCase() === "paletta") return;
+
+    const libraryDiv = document.createElement("div");
+    libraryDiv.className = "library-button";
+
+    const libraryLink = document.createElement("a");
+    libraryLink.href = `/libraries/${library.id}/view/`;
+
+    const img = document.createElement("img");
+    // Use the logo from the API if available, otherwise use default
+    if (library.logo) {
+      img.src = library.logo;
+    } else {
+      img.src = "/static/picture/default-logo.jpg";
+    }
+    img.alt = library.name;
+
+    const span = document.createElement("span");
+    span.textContent = library.name;
+
+    libraryLink.appendChild(img);
+    libraryLink.appendChild(span);
+    libraryDiv.appendChild(libraryLink);
+    librariesContainer.appendChild(libraryDiv);
+  });
+
+  // If no libraries were added (and only the default remains), show a message
+  if (librariesContainer.querySelectorAll(".library-button").length <= 1) {
+    const noLibraries = document.createElement("p");
+    noLibraries.classList.add("no-libraries");
+    noLibraries.textContent = "No additional libraries available.";
+    librariesContainer.appendChild(noLibraries);
+  }
 }
 
 function updateCategoriesUI(categories) {

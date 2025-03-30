@@ -7,14 +7,16 @@
     <title>Edit Library</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/edit_library_admin.css' %}">
-    <link rel="stylesheet" href="{% static 'css/footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/header_component.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer_component.css' %}">
     <link rel="stylesheet" href="{% static 'css/sidebar_admin.css' %}">
-    <link rel="stylesheet" href="{% static 'css/navigation_internal.css' %}">
     <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+
 </head>
 
 <body>
-    {% include "partials/navigation_internal.html" %}
+    {% include "header_component.html" %}
 
     <div class="container">
         <aside>
@@ -147,7 +149,7 @@
 
     <div id="modalOverlay" class="modal-overlay"></div>
     
-    {% include "partials/footer.html" %}
+    {% include "footer_component.html" %}
     
     <script src="{% static 'js/edit_library_admin.js' %}"></script>
 </body>

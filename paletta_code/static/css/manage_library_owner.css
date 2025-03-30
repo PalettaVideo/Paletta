@@ -11,6 +11,8 @@
     margin-top: 150px;
 }
 
+
+
 /* Main Content */
 .content {
     flex: 1;
@@ -72,7 +74,7 @@
 .library-item {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: space-between; /* 让内容和按钮分别靠两边 */
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 8px;
@@ -89,10 +91,10 @@
 
 .library-actions {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-start;
-    justify-content: flex-end;
+    flex-direction: column;  /* 让按钮垂直排列 */
+    gap: 8px;  /* 按钮之间的间距 */
+    align-items: flex-start; /* 按钮左侧对齐 */
+    justify-content: flex-end; /* 让按钮整体靠右 */
 }
 
 .library-actions button {

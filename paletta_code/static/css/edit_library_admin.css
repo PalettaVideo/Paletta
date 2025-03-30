@@ -4,14 +4,13 @@ body {
     margin: 0;
     padding: 0;
     background-color: #F8F8F8;
-    
 
 }
 
 .container {
-    margin-top: 100px;
     display: flex;
     min-height: 100vh;
+    margin-top: 150px;
 }
 
 /* Sidebar */

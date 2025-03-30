@@ -4,10 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   {% load static %}
-  <link href="{% static 'css/footer.css' %}" rel="stylesheet">
+  <!-- CSS -->
+  <link href="{% static 'css/footer_component.css' %}" rel="stylesheet">
   <link href="{% static 'css/homepage.css' %}" rel="stylesheet">
+  <link href="{% static 'css/floating.css' %}" rel="stylesheet">
+  <!-- JS -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <script src="{% static 'js/homepage.js' %}" defer></script>
+  <script src="{% static 'js/floating_label.js' %}" defer></script>
   <title>Paletta Homepage</title>
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
 
@@ -65,6 +69,68 @@
   </header>
 
   <main>
+    {% if user.is_authenticated and user.role != 'customer' or user.role != 'contributor' %}
+      <!--- Floating label -->
+      <div id="floating-label" class="floating-label" onclick="toggleSidebar()">
+        <span>&#9776; More Libraries</span>
+      </div>
+    
+      <!-- sidebar -->
+      <div id="sidebar" class="sidebar">
+        <button class="close-btn" onclick="closeSidebar()">×</button>
+        <h2>Explore more libraries</h2>
+    
+        <div class="search-bar">
+          <input type="text" placeholder="Search libraries">
+          <button>
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path d="M18.856,14.624a10.022,10.022,0,1,0-4.234,4.234l4.254,4.255a2.994,2.994,0,1,0,4.239-4.23ZM2,10a8,8,0,1,1,8,8A8.009,8.009,0,0,1,2,10ZM21.7,21.708a1,1,0,0,1-1.4,0l-3.967-3.968a10.092,10.092,0,0,0,1.4-1.406L21.705,20.3a.976.976,0,0,1-.009,1.407Z"/>
+            </svg>
+          </button>
+        </div>
+    
+        <h3>Quick Navigation</h3>
+        <div class="more-libraries-nav" id="libraries-container">
+            <!-- Default Paletta library -->
+            <!-- TODO: delete this after testing -->
+
+            <div class="library-button">
+                <a href="{% url 'home' %}">
+                    <img src="{% static 'picture/logo.jpg' %}" alt="Paletta">
+                    <span>Paletta</span>
+                </a>
+            </div>
+            
+            {% if user.is_authenticated %}
+                <!-- Dynamic libraries from database for authenticated users -->
+                {% for library in libraries %}
+                <div class="library-button">
+                    <a href="{% url 'library_view' library_id=library.id %}">
+                        {% if library.logo %}
+                            <img src="{{ library.logo.url }}" alt="{{ library.name }}">
+                        {% else %}
+                            <img src="{% static 'picture/default-logo.jpg' %}" alt="{{ library.name }}">
+                        {% endif %}
+                        <span>{{ library.name }}</span>
+                    </a>
+                </div>
+                {% empty %}
+                <!-- No additional libraries message for authenticated users -->
+                <p class="no-libraries">No additional libraries available.</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="admin-nav-btns">
+            <button class="admin-nav-btn"><a href="{% url 'create_library' %}" style="text-decoration: none;">Create a Library</a></button>
+            <button class="admin-nav-btn"><a href="{% url 'manage_libraries' %}" style="text-decoration: none;">Manage All Libraries</a></button>
+            <button class="admin-nav-btn"><a href="{% url 'manage_administrators' %}" style="text-decoration: none;">Manage Administrator</a></button>
+        </div>
+      </div>
+    <!-- sidebar-overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+    {% endif %}
+    
     <div class="title-section">
       <img src="{% static 'picture/logo.jpg' %}" alt="Logo">
       <h1>
@@ -133,7 +199,7 @@
     <div class="contributor-section">
       <p>Want to be or recommend a clip contributor?</p>
       {% if user.is_authenticated %}
-        <a href="{% url 'home' %}">
+        <a href="{% url 'contributor_apply' %}">
           <button>Apply Here</button>
         </a>
       {% else %}
@@ -144,51 +210,7 @@
     </div>
   </main>
 
-  <footer class="footer">
-    <div class="divider"></div>
-  <div class="footer-content">
-    <!-- Logo Section -->
-    <div class="footer-logo">
-      <img src="{% static 'picture/logo.jpg' %}" alt="PALETTA Logo" style="width: 100px;">
-      <p>&copy; FILMBRIGHT LTD. 2024</p>
-    </div>
-
-    <!-- Company Section -->
-    <div class="footer-column">
-      <h4>Company</h4>
-      <ul>
-        <li><a href="{% url 'about_us' %}">About us</a></li>
-        <li><a href="{% url 'contact_us' %}">Contact us</a></li>
-      </ul>
-    </div>
-
-    <!-- Support Section -->
-    <div class="footer-column">
-      <h4>Support</h4>
-      <ul>
-        <li><a href="{% url 'q_and_a' %}">Help & Support</a></li>
-        <li><a href="#">Terms & Conditions</a></li>
-        <li><a href="#">Privacy</a></li>
-      </ul>
-    </div>
-
-    <!-- Social Media Section -->
-    <div class="footer-column">
-      <h4>Find us</h4>
-      <div class="social-icon" >
-        <a href="https://www.instagram.com/filmbright/" >
-            <svg data-name="Layer 1" id="Layer_1" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg"><defs><style>.cls-1{fill:#80B824;}</style></defs><title/>
-                <path class="cls-1" d="M83,23a22,22,0,0,1,22,22V83a22,22,0,0,1-22,22H45A22,22,0,0,1,23,83V45A22,22,0,0,1,45,23H83m0-8H45A30.09,30.09,0,0,0,15,45V83a30.09,30.09,0,0,0,30,30H83a30.09,30.09,0,0,0,30-30V45A30.09,30.09,0,0,0,83,15Z"/>
-                <path class="cls-1" d="M90.14,32a5.73,5.73,0,1,0,5.73,5.73A5.73,5.73,0,0,0,90.14,32Z"/>
-                <path class="cls-1" d="M64.27,46.47A17.68,17.68,0,1,1,46.6,64.14,17.7,17.7,0,0,1,64.27,46.47m0-8A25.68,25.68,0,1,0,90,64.14,25.68,25.68,0,0,0,64.27,38.47Z"/>
-            </svg>
-        </a>
-      </div>
-    </div>
-  </div>
-  
-</footer>
-
+  {% include "footer_component.html" %}
   
 </body>
 </html>
