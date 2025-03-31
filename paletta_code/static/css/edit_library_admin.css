@@ -4,7 +4,6 @@ body {
     margin: 0;
     padding: 0;
     background-color: #F8F8F8;
-
 }
 
 .container {
@@ -47,8 +46,6 @@ body {
     background-color: #80B824;
     color: #fff;
 }
-
-
 
 /* Main Content */
 main {
@@ -111,7 +108,6 @@ input[type="text"], textarea {
     height: auto;
     max-height: 150px;
     object-fit: contain;
-    border: 1px solid #ccc;
     border-radius: 8px;
 }
 

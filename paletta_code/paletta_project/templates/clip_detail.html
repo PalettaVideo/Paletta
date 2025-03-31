@@ -76,7 +76,7 @@
       <div class="related-container">
         {% if related_clips %}
           {% for related_clip in related_clips %}
-            <div class="clip-card">
+        <div class="clip-card">
               <a href="{% url 'clip_detail' clip_id=related_clip.id %}">
                 {% if related_clip.thumbnail %}
                   <img src="{{ related_clip.thumbnail }}" alt="{{ related_clip.title }}">
@@ -85,12 +85,12 @@
                 {% endif %}
                 <p>{{ related_clip.title }}</p>
               </a>
-            </div>
+        </div>
           {% endfor %}
         {% else %}
           <div class="no-related-clips">
             <p>No related clips found</p>
-          </div>
+        </div>
         {% endif %}
       </div>
     </div>
@@ -112,15 +112,15 @@
   <!-- We'll move this script to an external file -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      const addToCartButton = document.getElementById('addToCartButton');
-      const popupOverlay = document.getElementById('popupOverlay');
-      const confirmAddToCart = document.getElementById('confirmAddToCart');
+    const addToCartButton = document.getElementById('addToCartButton');
+    const popupOverlay = document.getElementById('popupOverlay');
+    const confirmAddToCart = document.getElementById('confirmAddToCart');
 
-      addToCartButton.addEventListener('click', () => {
-        popupOverlay.style.display = 'flex';
-      });
+    addToCartButton.addEventListener('click', () => {
+      popupOverlay.style.display = 'flex';
+    });
 
-      confirmAddToCart.addEventListener('click', () => {
+    confirmAddToCart.addEventListener('click', () => {
         const selectedResolution = document.querySelector('input[name="resolution"]:checked');
         if (selectedResolution) {
           const resolution = selectedResolution.value;
@@ -133,16 +133,16 @@
           // For demo purposes, just show an alert
           alert(`Item added to cart! Resolution: ${resolution}, Price: £${price}`);
           
-          popupOverlay.style.display = 'none';
+      popupOverlay.style.display = 'none';
         } else {
           alert('Please select a resolution');
         }
-      });
+    });
 
-      popupOverlay.addEventListener('click', (event) => {
-        if (event.target === popupOverlay) {
-          popupOverlay.style.display = 'none';
-        }
+    popupOverlay.addEventListener('click', (event) => {
+      if (event.target === popupOverlay) {
+        popupOverlay.style.display = 'none';
+      }
       });
     });
   </script>

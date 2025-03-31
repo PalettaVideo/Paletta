@@ -6,13 +6,14 @@ from videos.models import Video
 class Library(models.Model):
   name = models.CharField(max_length=25)
   description = models.TextField(blank=True)
-  owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_libraries')
-#  logo = models.ImageField(upload_to='library_logos/', blank=True, null=True)
-#  primary_color = models.CharField(max_length=7, default='#000000')
-#  secondary_color = models.CharField(max_length=7, default='#000000')
+  LibraryAdmin = models.ForeignKey(User, on_delete=models.CASCADE, related_name='administered_libraries')
+  logo = models.ImageField(upload_to='library_logos/', blank=True, null=True)
+  primary_color = models.CharField(max_length=7, default='#000000')
+  secondary_color = models.CharField(max_length=7, default='#000000')
   created_at = models.DateTimeField(default=timezone.now)
   updated_at = models.DateTimeField(auto_now=True)
   videos = models.ManyToManyField(Video, related_name='libraries', blank=True)
+  is_active = models.BooleanField(default=True)
 
   class Meta:
     verbose_name_plural = "Libraries"

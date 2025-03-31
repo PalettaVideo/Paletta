@@ -122,5 +122,5 @@ document.addEventListener("DOMContentLoaded", function () {
       const clipId = document.querySelector('meta[name="clip-id"]').content;
       window.location.href = `/request/${clipId}/`;
     });
-  }
-});
+      }
+    });

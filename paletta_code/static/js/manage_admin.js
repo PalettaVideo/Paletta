@@ -45,12 +45,12 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Modal handling
-  const modal = document.getElementById("adminModal");
-  const addAdminBtn = document.getElementById("addAdmin");
-  const closeModal = document.querySelector(".close");
+    const modal = document.getElementById("adminModal");
+    const addAdminBtn = document.getElementById("addAdmin");
+    const closeModal = document.querySelector(".close");
   const closeBtn = document.querySelector(".close-btn");
-  const confirmAddBtn = document.getElementById("confirmAdd");
-
+    const confirmAddBtn = document.getElementById("confirmAdd");
+    
   if (addAdminBtn) {
     addAdminBtn.addEventListener("click", function () {
       // Clear previous errors and form values
@@ -60,13 +60,13 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("adminEmail").value = "";
       document.getElementById("adminInstitution").value = "";
 
-      modal.style.display = "flex";
+        modal.style.display = "flex";
     });
   }
-
+    
   if (closeModal) {
     closeModal.addEventListener("click", function () {
-      modal.style.display = "none";
+        modal.style.display = "none";
     });
   }
 
@@ -75,13 +75,13 @@ document.addEventListener("DOMContentLoaded", function () {
       modal.style.display = "none";
     });
   }
-
-  window.addEventListener("click", function (event) {
-    if (event.target === modal) {
-      modal.style.display = "none";
-    }
-  });
-
+    
+    window.addEventListener("click", function (event) {
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    });
+    
   // Handle adding a new administrator
   if (confirmAddBtn) {
     confirmAddBtn.addEventListener("click", function () {
@@ -113,9 +113,9 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       if (hasErrors) {
-        return;
-      }
-
+            return;
+        }
+        
       // Prepare data for submission
       const formData = new FormData();
       formData.append("name", name);
@@ -225,7 +225,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Helper function to add a new admin to the DOM
   function addAdminToList(admin) {
-    const adminList = document.getElementById("adminList");
+        const adminList = document.getElementById("adminList");
 
     // Remove "no administrators" message if present
     const noAdminsMessage = adminList.querySelector(".no-admins");
@@ -233,8 +233,8 @@ document.addEventListener("DOMContentLoaded", function () {
       noAdminsMessage.remove();
     }
 
-    const newAdmin = document.createElement("div");
-    newAdmin.classList.add("admin-card");
+        const newAdmin = document.createElement("div");
+        newAdmin.classList.add("admin-card");
     newAdmin.dataset.id = admin.id;
 
     const libraryNames =
@@ -242,7 +242,7 @@ document.addEventListener("DOMContentLoaded", function () {
         ? admin.libraries.join("; ")
         : "N/A";
 
-    newAdmin.innerHTML = `
+        newAdmin.innerHTML = `
             <p><strong>Institution:</strong> ${
               admin.institution || "Not specified"
             }</p>
@@ -253,8 +253,8 @@ document.addEventListener("DOMContentLoaded", function () {
               admin.id
             }">Revoke Admin Privileges</button>
         `;
-
-    adminList.appendChild(newAdmin);
+        
+        adminList.appendChild(newAdmin);
 
     // Add event listener to new revoke button
     newAdmin.querySelector(".revoke").addEventListener("click", function () {

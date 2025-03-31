@@ -3,14 +3,14 @@ from .models import Library, LibraryMember
 from videos.serializers import VideoSerializer
 
 class LibrarySerializer(serializers.ModelSerializer):
-    owner_username = serializers.ReadOnlyField(source='owner.username')
+    admin_username = serializers.ReadOnlyField(source='LibraryAdmin.username')
     videos = VideoSerializer(many=True, read_only=True)
     
     class Meta:
         model = Library
-        fields = ('id', 'name', 'description', 'owner', 'owner_username', 
+        fields = ('id', 'name', 'description', 'LibraryAdmin', 'admin_username', 
                   'videos', 'created_at', 'updated_at')
-        read_only_fields = ('owner', 'created_at', 'updated_at')
+        read_only_fields = ('LibraryAdmin', 'created_at', 'updated_at')
 
 class LibraryMemberSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')

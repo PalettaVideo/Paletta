@@ -53,8 +53,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     <a href="/clip-store/">
                         <button>Browse Clip Store</button>
                     </a>
-                </div>
-            `;
+          </div>
+        `;
     }
   }
 
@@ -179,15 +179,16 @@ const centerButton = document.getElementById("centerButton");
 const popupMenu = document.getElementById("popupMenu");
 
 centerButton.addEventListener("click", (event) => {
-  event.stopPropagation();
+      event.stopPropagation();
   popupMenu.style.display =
     popupMenu.style.display === "block" ? "none" : "block";
-});
+    });
 
 document.addEventListener("click", () => {
   popupMenu.style.display = "none";
-});
+    });
 
 popupMenu.addEventListener("click", (event) => {
-  event.stopPropagation();
-});
+      event.stopPropagation();
+    });
+  

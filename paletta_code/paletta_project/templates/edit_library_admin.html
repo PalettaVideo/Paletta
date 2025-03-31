@@ -30,7 +30,24 @@
         </aside>
 
         <main>
-            <h2>Manage my Library</h2>
+            {% if library_not_found %}
+            <div class="error-message">
+                <h2>Library Not Found</h2>
+                <p>The requested library "{{ library_name }}" could not be found. <a href="{% url 'manage_libraries' %}">Return to library management</a>.</p>
+            </div>
+            {% elif permission_error %}
+            <div class="error-message">
+                <h2>Permission Denied</h2>
+                <p>You don't have permission to edit library "{{ library_name }}". <a href="{% url 'manage_libraries' %}">Return to library management</a>.</p>
+            </div>
+            {% elif error %}
+            <div class="error-message">
+                <h2>Error</h2>
+                <p>{{ error }}</p>
+                <p><a href="{% url 'manage_libraries' %}">Return to library management</a>.</p>
+            </div>
+            {% else %}
+            <h2>Manage Library - {{ library.name }}</h2>
             
             <form method="post" enctype="multipart/form-data" id="editLibraryForm">
                 {% csrf_token %}
@@ -39,38 +56,38 @@
                 <input type="hidden" name="contributors" id="contributorsData">
 
                 <div class="form-group">
-                    <label for="library-name">Name</label>
-                    <div class="input-group">
-                        <input type="text" id="libraryName" name="library_name" value="{{ library.name|default:'Default Library' }}" readonly>
+            <label for="library-name">Name</label>
+            <div class="input-group">
+                        <input type="text" id="libraryName" name="library_name" value="{{ library.name }}" readonly>
                         <button type="button" onclick="toggleEdit('libraryName', this)">Edit</button>
                     </div>
                     {% if form.library_name.errors %}
                     <p class="error-text">{{ form.library_name.errors.0 }}</p>
                     {% endif %}
-                </div>
+            </div>
 
                 <div class="form-group">
-                    <label>Logo</label>
-                    <div class="logo-container">
-                        <img id="libraryLogo" src="{% if library.logo %}{{ library.logo.url }}{% else %}{% static 'images/logo.jpg' %}{% endif %}" alt="Library Logo">
+            <label>Logo</label>
+            <div class="logo-container">
+                        <img id="libraryLogo" src="{% if library.logo %}{{ library.logo.url }}{% else %}{% static 'picture/logo.ico' %}{% endif %}" alt="{{ library.name }} Logo">
                         <input type="file" id="logoUpload" name="logo" accept="image/*" style="display: none;">
                         <button type="button" class="change-btn">Change</button>
                     </div>
                     {% if form.logo.errors %}
                     <p class="error-text">{{ form.logo.errors.0 }}</p>
                     {% endif %}
-                </div>
+            </div>
 
                 <div class="form-group">
-                    <label for="library-description">Description</label>
-                    <div class="input-group">
-                        <input type="text" id="libraryDescription" name="description" value="{{ library.description|default:'Library description' }}" readonly>
+            <label for="library-description">Description</label>
+            <div class="input-group">
+                        <input type="text" id="libraryDescription" name="description" value="{{ library.description }}" readonly>
                         <button type="button" onclick="toggleEdit('libraryDescription', this)">Edit</button>
                     </div>
                     {% if form.description.errors %}
                     <p class="error-text">{{ form.description.errors.0 }}</p>
                     {% endif %}
-                </div>
+            </div>
 
                 <div class="form-group">
                     <div class="category-container">
@@ -79,14 +96,17 @@
                     </div>
 
                     <div id="categoryList" class="category-list">
-                        {% for category in library.categories.all %}
-                        <div class="category-item" data-id="{{ category.id }}" onclick="editCategoryModal(event, this)">
-                            <img src="{{ category.image.url }}" alt="{{ category.name }}">
-                            <div class="category-name">{{ category.name }}</div>
-                            <div class="category-desc" style="display: none;">{{ category.description }}</div>
-                            <button type="button" class="delete-btn" onclick="event.stopPropagation(); this.parentElement.remove();">✖️</button>
-                        </div>
-                        {% endfor %}
+                        {% if categories %}
+                            {% for category in categories %}
+                            <div class="category-item" data-id="{{ category.id }}" onclick="editCategoryModal(event, this)">
+                                <img src="{% if category.image %}{{ category.image.url }}{% else %}{% static 'picture/default-category.jpg' %}{% endif %}" alt="{{ category.name }}">
+                                <div class="category-name">{{ category.name }}</div>
+                                <div class="category-desc" style="display: none;">{{ category.description }}</div>
+                                <button type="button" class="delete-btn" onclick="event.stopPropagation(); this.parentElement.remove(); checkCategoriesEmpty();">✖️</button>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                        <p id="no-categories-message" class="no-categories" {% if categories %}style="display: none;"{% endif %}>No categories found. Add categories to organize clips in this library.</p>
                     </div>
                 </div>
 
@@ -99,58 +119,69 @@
                     <h3>Manage Contributors</h3>
                     <button type="button" class="invite-btn" onclick="openContributorModal()">Invite</button>
                     <div class="contributor-list" id="contributorList">
-                        {% for contributor in library.contributors.all %}
-                        <div class="contributor-item" data-id="{{ contributor.id }}">
-                            <span>Name: {{ contributor.name }} | Email: {{ contributor.email }}</span>
-                            <button type="button" class="delete-btn" onclick="this.parentElement.remove()">Remove</button>
-                        </div>
-                        {% endfor %}
+                        {% if contributors %}
+                            {% for contributor in contributors %}
+                            <div class="contributor-item" data-id="{{ contributor.id }}">
+                                <span>Name: {{ contributor.user.username }} | Email: {{ contributor.user.email }}</span>
+                                <button type="button" class="delete-btn" onclick="this.parentElement.remove()">Remove</button>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="no-contributors">No contributors found. Invite contributors to help manage this library.</p>
+                        {% endif %}
                     </div>
-                </div>
+            </div>
 
-                <button type="submit" class="finish-btn">Save Changes</button>
+            <button href="{% url 'manage_libraries' %}" type="submit" class="finish-btn">Save Changes</button>
             </form>
+            {% endif %}
         </main>
     </div>
 
     <!-- Category Modal -->
-    <div id="categoryModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeCategoryModal()">&times;</span>
+            <div id="categoryModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeCategoryModal()">&times;</span>
             <h2 id="categoryModalTitle">Add a Category</h2>
 
             <label for="categoryName">Name</label>
-            <input type="text" id="categoryName" placeholder="Enter category name">
+                    <input type="text" id="categoryName" placeholder="Enter category name">
 
             <label for="categoryImage">Theme Picture</label>
-            <input type="file" id="categoryImage" accept="image/*">
-            <img id="imagePreview" style="display: none; width: 100px; height: 100px;">
+                    <input type="file" id="categoryImage" accept="image/*">
+                    <img id="imagePreview" style="display: none; width: 100px; height: 100px;">
 
             <label for="categoryDescription">Description</label>
-            <textarea id="categoryDescription" placeholder="Enter description"></textarea>
+                    <textarea id="categoryDescription" placeholder="Enter description"></textarea>
 
-            <p id="errorText" class="error-text"></p>
+                    <p id="errorText" class="error-text"></p>
             <button id="saveCategoryBtn" onclick="saveCategory()">Add</button>
-        </div>
-    </div>
+                </div>
+            </div>
 
-    <!-- Add Contributor Modal -->
-    <div id="contributorModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeContributorModal()">&times;</span>
+            <!-- Add Contributor Modal -->
+            <div id="contributorModal" class="modal">
+                <div class="modal-content">
+                    <span class="close-btn" onclick="closeContributorModal()">&times;</span>
             <h3>Add a Contributor</h3>
             <label for="contributorName">Name</label>
-            <input type="text" id="contributorName">
+            <input type="text" id="contributorName" placeholder="Contributor's name">
             <label for="contributorEmail">Email</label>
-            <input type="email" id="contributorEmail">
+            <input type="email" id="contributorEmail" placeholder="Contributor's email">
             <button class="add-btn" onclick="addContributor()">Add</button>
-        </div>
-    </div>
+                </div>
+            </div>
 
     <div id="modalOverlay" class="modal-overlay"></div>
     
     {% include "footer_component.html" %}
     
     <script src="{% static 'js/edit_library_admin.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the no categories message visibility
+            window.checkCategoriesEmpty();
+        });
+    </script>
 </body>
 </html>

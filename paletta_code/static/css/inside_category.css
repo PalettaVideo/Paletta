@@ -5,12 +5,16 @@ body {
   background-color: white;
 }
 
+
+
+
 .filter{
   position: absolute; 
   right: 50px; 
   height:50px;
-}
+  
 
+}
 .popup {
 display: none;
 position: absolute;
@@ -20,7 +24,9 @@ border-radius: 10px;
 box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
 width: 200px;
 z-index: 2000; 
+
 }
+
 
 #popupMenu{
   top:100%
@@ -70,23 +76,6 @@ z-index: 2000;
   font-family: "Montserrat";
 }
 
-
-.banner h1 {
-  font-size: 50px;
-  text-transform: uppercase;
-  color: #80B824;
-  text-align: left; 
-  margin-bottom: 10px; 
-  letter-spacing: 1.5px; 
-  font-family: "Montserrat";
-  font-weight: normal;
-  
-}
-
-.banner h2{
-  font-weight:normal;
-  font-family: "Montserrat";
-}
 
 
 .categorysearch {
@@ -155,7 +144,6 @@ main {
 .main-content {
   display: flex;
   flex-direction: column;
-  margin-top: 50px;
 }
 
 .clips-grid {
@@ -234,52 +222,37 @@ main {
 }
 
 .banner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
+  position: relative;
+  text-align: left;
+  margin-bottom: 20px;
+  margin-top: 40px;
 }
-.banner text-content {
-  flex: 1;
-  margin-right: 50px;
+
+.banner img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
   
 }
-.banner h1 {
-  font-size: 50px;
+
+.banner-title {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  background-color: #7bbd42;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 24px;
   margin: 0;
-  font-family: 'Montserrat';
-  font-weight: normal;
-  color: #80B824;
 }
-.banner p {
-  font-size: 25px;
-  color: #666;
-  font-family: 'Montserrat';
-}
-
-
-.imagecontainer {
-width: 100px;  
-height: 250px; 
-overflow: hidden; 
-position: relative;
-flex: 1;
-  display: flex;
-  justify-content: flex-end;
-margin-left: 10px;
-}
-
-.imagecontainer img {
-  width: 80%; 
-  height: 100%; 
-  object-fit: cover; 
-  object-position: center top;
-}
-
 
 .scroll-container {
+  
   max-height: calc(100vh - 140px);
   overflow-y: auto;
+  
 }
 
 .scroll-container::-webkit-scrollbar {

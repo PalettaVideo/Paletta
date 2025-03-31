@@ -110,7 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Function to toggle library status (active/inactive)
   function toggleLibraryStatus(libraryId, setActive) {
-    fetch(`/libraries/${libraryId}/toggle-status/`, {
+    fetch(`/api/libraries/libraries/${libraryId}/toggle-status/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -161,8 +161,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Function to close (delete) a library
   function closeLibrary(libraryId) {
-    fetch(`/libraries/${libraryId}/close/`, {
-      method: "POST",
+    fetch(`/api/libraries/libraries/${libraryId}/`, {
+      method: "DELETE",
       headers: {
         "Content-Type": "application/json",
         "X-CSRFToken": csrftoken,

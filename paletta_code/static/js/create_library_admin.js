@@ -67,13 +67,25 @@ document.addEventListener("DOMContentLoaded", function () {
   let categoryImagePreview = document.getElementById("imagePreview");
   let categoriesArray = [];
 
+  // Initialize categoriesArray and make sure it's set in the form
+  document.getElementById("categories-json").value =
+    JSON.stringify(categoriesArray);
+
   categoryImageInput.addEventListener("change", function (event) {
     let file = event.target.files[0];
     if (file) {
+      console.log("Category image file selected:", file.name);
       let reader = new FileReader();
       reader.onload = function (e) {
+        console.log("Image loaded, setting preview");
         categoryImagePreview.src = e.target.result;
         categoryImagePreview.style.display = "block";
+        // Store the base64 data for later use
+        categoryImagePreview.dataset.base64 = e.target.result;
+        console.log(
+          "Base64 data length:",
+          categoryImagePreview.dataset.base64.length
+        );
       };
       reader.readAsDataURL(file);
     }
@@ -82,10 +94,100 @@ document.addEventListener("DOMContentLoaded", function () {
   // Form submission handling
   const libraryForm = document.getElementById("library-form");
   if (libraryForm) {
-    libraryForm.addEventListener("submit", function (event) {
+    libraryForm.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      // Update categories JSON before submission
       document.getElementById("categories-json").value =
         JSON.stringify(categoriesArray);
+      console.log("Categories array at submission:", categoriesArray);
+      console.log(
+        "categories_json value:",
+        document.getElementById("categories-json").value
+      );
+
+      // Validate form
+      if (!validateForm()) {
+        return;
+      }
+
+      // Create FormData object
+      const formData = new FormData(libraryForm);
+
+      // Debug form data
+      console.log("Form submission data:");
+      for (let pair of formData.entries()) {
+        if (pair[0] === "categories_json") {
+          console.log(`${pair[0]}: ${pair[1]} (length: ${pair[1].length})`);
+          // Parse JSON to verify it's valid
+          try {
+            const parsed = JSON.parse(pair[1]);
+            console.log("Parsed categories:", parsed);
+          } catch (e) {
+            console.error("Error parsing categories JSON:", e);
+            alert(
+              "There was an error with the category data. Please try again."
+            );
+            return;
+          }
+        } else {
+          console.log(`${pair[0]}: ${pair[1]}`);
+        }
+      }
+
+      try {
+        const response = await fetch(
+          libraryForm.action || window.location.href,
+          {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": csrftoken,
+              // Don't set Content-Type here, FormData will set it with boundary
+            },
+            body: formData,
+          }
+        );
+
+        // Debug response
+        console.log("Response status:", response.status);
+        const data = await response.json();
+        console.log("Response data:", data);
+
+        if (data.status === "success") {
+          // Show success message
+          alert(data.message);
+          // Redirect to manage libraries page
+          window.location.href = data.redirect_url;
+        } else {
+          // Show error message
+          alert("Error: " + JSON.stringify(data.message));
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert(
+          "An error occurred while creating the library. Please try again."
+        );
+      }
     });
+  }
+
+  function validateForm() {
+    const nameField = document.getElementById("id_name");
+    const descriptionField = document.getElementById("id_description");
+
+    if (!nameField.value.trim()) {
+      alert("Please enter a library name");
+      nameField.focus();
+      return false;
+    }
+
+    if (!descriptionField.value.trim()) {
+      alert("Please enter a library description");
+      descriptionField.focus();
+      return false;
+    }
+
+    return true;
   }
 });
 
@@ -108,6 +210,7 @@ window.addCategory = function () {
   let name = document.getElementById("categoryName").value.trim();
   let description = document.getElementById("categoryDescription").value.trim();
   let imagePreview = document.getElementById("imagePreview");
+  const categoryStatus = document.getElementById("category-status");
 
   if (!name || !description || imagePreview.style.display === "none") {
     document.getElementById("errorText").innerText = "All fields are required!";
@@ -143,6 +246,11 @@ window.addCategory = function () {
       categoriesArray.splice(index, 1);
       document.getElementById("categories-json").value =
         JSON.stringify(categoriesArray);
+
+      // Show/hide status message based on categories count
+      if (categoriesArray.length === 0) {
+        categoryStatus.classList.remove("hidden");
+      }
     }
   };
 
@@ -156,11 +264,23 @@ window.addCategory = function () {
   const categoryData = {
     name: name,
     description: description,
-    image: imagePreview.src, // Base64 of the image
+    image: imagePreview.dataset.base64 || imagePreview.src, // Use the stored base64 data
   };
+
+  // Add to array and update hidden input
   categoriesArray.push(categoryData);
   document.getElementById("categories-json").value =
     JSON.stringify(categoriesArray);
+
+  // Hide status message once we have categories
+  categoryStatus.classList.add("hidden");
+
+  // Debug output to verify data is being stored correctly
+  console.log("Categories array:", categoriesArray);
+  console.log(
+    "Hidden input value:",
+    document.getElementById("categories-json").value
+  );
 
   // Close the modal
   closeCategoryModal();

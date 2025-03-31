@@ -14,7 +14,7 @@
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
 </head>
 <body>
-  {% include "header_component.html" %}
+{% include "header_component.html" %}
 <main>
   <aside class="sidebar">
     <div class="backbutton">
@@ -57,7 +57,7 @@
         </div>
       {% else %}
         <!-- All clips view -->
-        <img src="{% static 'picture/All.png' %}" alt="All">
+        <img src="{% static 'picture/All.png' %}" alt="default-all-videos">
         <h1 class="banner-title">All Videos in the Library</h1>
       {% endif %}
     </div>

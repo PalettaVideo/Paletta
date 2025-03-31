@@ -10,6 +10,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
+from libraries.views import CreateLibraryView, ManageLibrariesView, EditLibraryView
 
 # Import views directly from their modules to avoid circular imports
 from accounts.views.login import CustomLoginView
@@ -59,10 +60,10 @@ urlpatterns = [
     path('category/<str:category>/', CategoryClipView.as_view(), name='category'),
     
     # Library management routes
-    path('libraries/create/', login_required(TemplateView.as_view(template_name='create_library_admin.html')), name='create_library'),
-    path('libraries/manage/', login_required(TemplateView.as_view(template_name='manage_library_owner.html')), name='manage_libraries'),
-    path('libraries/<int:library_id>/edit/', login_required(TemplateView.as_view(template_name='edit_library_admin.html')), name='edit_library'),
-    path('libraries/<int:library_id>/view/', TemplateView.as_view(template_name='library_view.html'), name='library_view'),
+    path('libraries/create/', login_required(CreateLibraryView.as_view()), name='create_library'),
+    path('libraries/manage/', login_required(ManageLibrariesView.as_view()), name='manage_libraries'),
+    path('libraries/edit/', login_required(EditLibraryView.as_view()), name='edit_library'),
+    path('libraries/<str:library_name>/view/', TemplateView.as_view(template_name='library_view.html'), name='library_view'),
     
     # Admin management routes
     path('admins/manage/', login_required(TemplateView.as_view(template_name='manage_admin.html')), name='manage_administrators'),

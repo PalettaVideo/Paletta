@@ -179,6 +179,7 @@ document.addEventListener("DOMContentLoaded", function () {
         event.stopPropagation();
         categoryList.removeChild(categoryItem);
         updateCategoriesData();
+        checkCategoriesEmpty();
       };
 
       categoryItem.appendChild(img);
@@ -186,10 +187,29 @@ document.addEventListener("DOMContentLoaded", function () {
       categoryItem.appendChild(desc);
       categoryItem.appendChild(deleteBtn);
       categoryList.appendChild(categoryItem);
+
+      // Hide the "no categories" message when adding a category
+      document.getElementById("no-categories-message").style.display = "none";
     }
 
     closeCategoryModal();
     updateCategoriesData();
+  };
+
+  // Check if categories are empty and show/hide the message
+  window.checkCategoriesEmpty = function () {
+    const categoryItems = document.querySelectorAll(
+      "#categoryList .category-item"
+    );
+    const noCategoriesMessage = document.getElementById(
+      "no-categories-message"
+    );
+
+    if (categoryItems.length === 0) {
+      noCategoriesMessage.style.display = "block";
+    } else {
+      noCategoriesMessage.style.display = "none";
+    }
   };
 
   window.openContributorModal = function () {
@@ -272,11 +292,75 @@ document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("editLibraryForm");
   if (form) {
     form.addEventListener("submit", function (e) {
-      // Update hidden inputs with current data
-      updateCategoriesData();
-      updateContributorsData();
+      e.preventDefault();
 
-      // Form will submit normally with all data included
+      try {
+        // Update hidden inputs with current data
+        updateCategoriesData();
+        updateContributorsData();
+
+        // Submit form data using AJAX
+        const formData = new FormData(form);
+
+        fetch(form.action || window.location.href, {
+          method: "POST",
+          body: formData,
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        }).then((response) => {
+            console.log("Response status:", response.status);
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+          })
+          .then((data) => {
+            console.log("Response data:", data);
+
+            // Show success message
+            if (data.status === "success") {
+              alert(data.message);
+            } else {
+              alert("Error: " + (data.message || "Unknown error occurred"));
+            }
+
+            // Always redirect regardless of status
+            console.log(
+              "Attempting redirect to:",
+              data.redirect_url || "/libraries/manage/"
+            );
+
+            // Force redirect using a more direct approach
+            setTimeout(function () {
+              window.location.replace(
+                data.redirect_url || "/libraries/manage/"
+              );
+            }, 500);
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert(
+              "An error occurred while saving changes. Redirecting to library management page."
+            );
+
+            // Force redirect after error using the same approach
+            setTimeout(function () {
+              window.location.replace("/libraries/manage/");
+            }, 500);
+          });
+      } catch (error) {
+        console.error("Form processing error:", error);
+        alert(
+          "An unexpected error occurred while processing the form. Redirecting to library management page."
+        );
+
+        // Force redirect after error using the same approach
+        setTimeout(function () {
+          window.location.replace("/libraries/manage/");
+        }, 500);
+      }
     });
   }
 });

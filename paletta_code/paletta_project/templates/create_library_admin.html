@@ -43,7 +43,7 @@
             {% endif %}
             
             <label for="id_name">Name</label>
-            <input type="text" maxlength="25" placeholder="Enter name">
+            <input type="text" id="id_name" name="name" maxlength="25" placeholder="Enter name" required>
             {% if form.name.errors %}
                 <div class="error-message">{{ form.name.errors }}</div>
             {% endif %}
@@ -60,46 +60,47 @@
             {% endif %}
 
             <label for="id_description">Description</label>
-            <textarea maxlength="100" placeholder="Enter description"></textarea>
+            <textarea id="id_description" name="description" maxlength="100" placeholder="Enter description" required></textarea>
             {% if form.description.errors %}
                 <div class="error-message">{{ form.description.errors }}</div>
             {% endif %}
 
             <!-- Category section -->
             <div class="category-container">
-                <label class="category-label">Add a category</label>
-                <button type="button" class="add-category-btn" onclick="openCategoryModal()">➕ add</button>
+                <label class="category-label">Add Categories (Optional)</label>
+                <button type="button" class="add-category-btn" onclick="openCategoryModal()">➕ add category</button>
             </div>
 
             <!-- Category display area -->
             <div id="categoryList" class="category-list"></div>
+            <div id="category-status" class="status-message">No categories added yet.</div>
             <input type="hidden" id="categories-json" name="categories_json" value="[]">
             
             <!-- Category modal -->
             <div id="categoryModal" class="modal">
                 <div class="modal-content">
                     <span class="close" onclick="closeCategoryModal()">&times;</span>
-                    <h2>Add a category</h2>
+                    <h2>Add a Category</h2>
 
-                    <label for="categoryName">Name</label>
+                    <label for="categoryName">Category Name</label>
                     <input type="text" id="categoryName" placeholder="Enter category name">
 
-                    <label for="categoryImage">Theme picture</label>
+                    <label for="categoryImage">Category Image</label>
                     <input type="file" id="categoryImage" accept="image/*">
                     <img id="imagePreview" style="display: none; width: 100px; height: 100px;">
 
-                    <label for="categoryDescription">Description</label>
+                    <label for="categoryDescription">Category Description</label>
                     <textarea id="categoryDescription" placeholder="Enter description"></textarea>
 
                     <p id="errorText" class="error-text"></p>
-                    <button type="button" onclick="addCategory()">Add</button>
+                    <button type="button" class="add-btn" onclick="addCategory()">Add Category</button>
                 </div>
             </div>
 
             <label for="id_theme_color">Theme Colour</label>
             <div id="colorPickerContainer">
                 <div id="colorPreview" onclick="toggleColorPicker()"></div>
-                <input type="color" id="themeColor" name="theme_color" onchange="updateColor()">
+                <input type="color" id="themeColor" name="primary_color" onchange="updateColor()">
             </div>
             {% if form.theme_color.errors %}
                 <div class="error-message">{{ form.theme_color.errors }}</div>
