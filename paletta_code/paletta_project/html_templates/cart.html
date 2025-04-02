@@ -14,7 +14,7 @@
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
 </head>
 <body>
-  {% include "header_component.html" %}
+  {% include "html_components/header_component.html" %}
   
   {% if user.is_authenticated %}
   <div class="layout">
@@ -92,6 +92,6 @@
   {% endif %}
   
   {% csrf_token %}
-  {% include "footer_component.html" %}
+  {% include "html_components/footer_component.html" %}
 </body>
 </html>

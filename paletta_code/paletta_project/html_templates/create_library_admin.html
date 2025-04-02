@@ -17,7 +17,7 @@
 </head>
 
 <body>
-    {% include "header_component.html" %}
+    {% include "html_components/header_component.html" %}
 
     <div class="container">
     <aside>
@@ -43,7 +43,7 @@
             {% endif %}
             
             <label for="id_name">Name</label>
-            <input type="text" id="id_name" name="name" maxlength="25" placeholder="Enter name" required>
+            <input type="text" id="id_name" name="name" maxlength="100" placeholder="Enter name" required>
             {% if form.name.errors %}
                 <div class="error-message">{{ form.name.errors }}</div>
             {% endif %}
@@ -63,6 +63,16 @@
             <textarea id="id_description" name="description" maxlength="100" placeholder="Enter description" required></textarea>
             {% if form.description.errors %}
                 <div class="error-message">{{ form.description.errors }}</div>
+            {% endif %}
+            
+            <label for="id_storage_tier">Storage Tier</label>
+            <select id="id_storage_tier" name="storage_tier">
+                <option value="basic">Basic (up to 100GB)</option>
+                <option value="pro">Professional (up to 1TB)</option>
+                <option value="enterprise">Enterprise (up to 10TB)</option>
+            </select>
+            {% if form.storage_tier.errors %}
+                <div class="error-message">{{ form.storage_tier.errors }}</div>
             {% endif %}
 
             <!-- Category section -->
@@ -100,7 +110,7 @@
             <label for="id_theme_color">Theme Colour</label>
             <div id="colorPickerContainer">
                 <div id="colorPreview" onclick="toggleColorPicker()"></div>
-                <input type="color" id="themeColor" name="primary_color" onchange="updateColor()">
+                <input type="color" id="themeColor" name="primary_color" onchange="updateColor()" value="#86B049">
             </div>
             {% if form.theme_color.errors %}
                 <div class="error-message">{{ form.theme_color.errors }}</div>
@@ -111,7 +121,7 @@
     </main>
 </div>
 
-{% include "footer_component.html" %}
+{% include "html_components/footer_component.html" %}
 
 </body>
 </html>

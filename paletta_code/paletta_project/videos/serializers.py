@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Video, Category, Tag
+from .models import Video, Category, Tag, VideoTag, Upload
 
 class CategorySerializer(serializers.ModelSerializer):
     """
@@ -8,11 +8,10 @@ class CategorySerializer(serializers.ModelSerializer):
     """
     video_count = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
-    banner_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Category
-        fields = ('id', 'name', 'description', 'created_at', 'video_count', 'image', 'image_url', 'banner_url')
+        fields = ('id', 'name', 'description', 'library', 'created_at', 'video_count', 'image', 'image_url')
         read_only_fields = ('created_at', 'video_count')
     
     def get_video_count(self, obj):
@@ -25,12 +24,6 @@ class CategorySerializer(serializers.ModelSerializer):
             return obj.image.url
         return None
     
-    def get_banner_url(self, obj):
-        """Get the absolute URL for the category banner."""
-        if hasattr(obj, 'banner') and obj.banner:
-            return obj.banner.url
-        return None
-
 class TagSerializer(serializers.ModelSerializer):
     """
     Serializer for the Tag model.
@@ -39,11 +32,12 @@ class TagSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Tag
-        fields = ('id', 'name', 'videos_count')
+        fields = ('id', 'name', 'library', 'videos_count')
         
     def get_videos_count(self, obj):
         """Get the count of videos with this tag."""
-        return obj.videos.count()
+        # We need to count through the VideoTag model now
+        return VideoTag.objects.filter(tag=obj).count()
 
 class VideoSerializer(serializers.ModelSerializer):
     """
@@ -52,7 +46,8 @@ class VideoSerializer(serializers.ModelSerializer):
     """
     uploaded_by_username = serializers.ReadOnlyField(source='uploader.username')
     category_name = serializers.ReadOnlyField(source='category.name')
-    tags = TagSerializer(many=True, read_only=True)
+    library_name = serializers.ReadOnlyField(source='library.name')
+    tags = serializers.SerializerMethodField()
     video_file_url = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
     storage_status_display = serializers.SerializerMethodField()
@@ -60,13 +55,23 @@ class VideoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Video
         fields = ('id', 'title', 'description', 'category', 'category_name',
-                  'uploader', 'uploaded_by_username', 'upload_date', 'updated_at', 
-                  'tags', 'video_file', 'video_file_url', 'thumbnail', 'thumbnail_url',
+                  'library', 'library_name', 'uploader', 'uploaded_by_username', 
+                  'upload_date', 'updated_at', 'tags', 'video_file', 
+                  'video_file_url', 'thumbnail', 'thumbnail_url',
                   'duration', 'file_size', 'views_count', 'is_published',
                   'storage_status', 'storage_status_display', 'storage_url')
         read_only_fields = ('uploader', 'upload_date', 'updated_at', 'views_count', 
                            'storage_status', 'storage_url', 'download_link', 'download_link_expiry',
                            'file_size', 'duration')
+    
+    def get_tags(self, obj):
+        """Get all tags for this video through VideoTag."""
+        video_tags = VideoTag.objects.filter(video=obj).select_related('tag')
+        return TagSerializer(
+            [vt.tag for vt in video_tags], 
+            many=True, 
+            context=self.context
+        ).data
     
     def get_video_file_url(self, obj):
         """Get the absolute URL for the video file."""

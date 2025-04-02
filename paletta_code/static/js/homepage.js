@@ -156,7 +156,17 @@ function tryLoadStaticImage(imgElement, categoryName) {
 }
 
 function fetchCategories() {
-  fetch("/api/videos/categories/", {
+  // Get the current library ID from the URL or session
+  const urlParams = new URLSearchParams(window.location.search);
+  const libraryId = urlParams.get("library_id");
+
+  // Construct the API URL with library context if available
+  let apiUrl = "/api/videos/categories/";
+  if (libraryId) {
+    apiUrl += `?library_id=${libraryId}`;
+  }
+
+  fetch(apiUrl, {
     method: "GET",
     cache: "no-cache",
     headers: {
@@ -173,6 +183,9 @@ function fetchCategories() {
     .then((data) => {
       if (data.results && data.results.length > 0) {
         updateCategoriesUI(data.results);
+      } else {
+        // No categories found yet, text is generated from the backend
+        pass;
       }
     })
     .catch((error) => {
@@ -227,7 +240,7 @@ function updateLibrariesUI(libraries) {
     libraryDiv.className = "library-button";
 
     const libraryLink = document.createElement("a");
-    libraryLink.href = `/libraries/${library.id}/view/`;
+    libraryLink.href = `/home/?library_id=${library.id}`;
 
     const img = document.createElement("img");
     // Use the logo from the API if available, otherwise use default
@@ -276,7 +289,17 @@ function updateCategoriesUI(categories) {
   // add each category from the API
   categories.forEach((category) => {
     const categoryLink = document.createElement("a");
+
+    // Get the current library ID from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const libraryId = urlParams.get("library_id");
+
+    // Construct the category URL with library context if available
     categoryLink.href = `/category/${category.name.toLowerCase()}/`;
+    if (libraryId) {
+      categoryLink.href += `?library_id=${libraryId}`;
+    }
+
     categoryLink.style.textDecoration = "none";
 
     const categoryDiv = document.createElement("div");
@@ -332,8 +355,16 @@ function initSearch() {
 
 function performSearch(query) {
   if (query.trim()) {
-    window.location.href = `/clip-store/?search=${encodeURIComponent(
-      query.trim()
-    )}`;
+    // Get the current library ID from the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const libraryId = urlParams.get("library_id");
+
+    // Construct the search URL with library context if available
+    let searchUrl = `/clip-store/?search=${encodeURIComponent(query.trim())}`;
+    if (libraryId) {
+      searchUrl += `&library_id=${libraryId}`;
+    }
+
+    window.location.href = searchUrl;
   }
 }

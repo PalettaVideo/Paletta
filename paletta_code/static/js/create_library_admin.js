@@ -207,81 +207,109 @@ window.closeCategoryModal = function () {
 
 // Add category to the list
 window.addCategory = function () {
-  let name = document.getElementById("categoryName").value.trim();
-  let description = document.getElementById("categoryDescription").value.trim();
-  let imagePreview = document.getElementById("imagePreview");
-  const categoryStatus = document.getElementById("category-status");
+  const name = document.getElementById("categoryName").value.trim();
+  const description = document
+    .getElementById("categoryDescription")
+    .value.trim();
+  const imageInput = document.getElementById("categoryImage");
+  const errorText = document.getElementById("errorText");
 
-  if (!name || !description || imagePreview.style.display === "none") {
-    document.getElementById("errorText").innerText = "All fields are required!";
+  // Validate
+  if (!name) {
+    errorText.textContent = "Category name is required";
     return;
   }
 
-  let categoryList = document.getElementById("categoryList");
-
-  // Create category element
-  let categoryItem = document.createElement("div");
-  categoryItem.classList.add("category-item");
-
-  let img = document.createElement("img");
-  img.src = imagePreview.src;
-
-  let title = document.createElement("div");
-  title.classList.add("category-name");
-  title.innerText = name;
-
-  let desc = document.createElement("div");
-  desc.classList.add("category-desc");
-  desc.innerText = description;
-
-  let deleteBtn = document.createElement("button");
-  deleteBtn.classList.add("delete-btn");
-  deleteBtn.type = "button";
-  deleteBtn.innerHTML = "✖️";
-  deleteBtn.onclick = function () {
-    categoryList.removeChild(categoryItem);
-    // Also remove from the array
-    const index = categoriesArray.findIndex((cat) => cat.name === name);
-    if (index > -1) {
-      categoriesArray.splice(index, 1);
-      document.getElementById("categories-json").value =
-        JSON.stringify(categoriesArray);
-
-      // Show/hide status message based on categories count
-      if (categoriesArray.length === 0) {
-        categoryStatus.classList.remove("hidden");
-      }
-    }
-  };
-
-  categoryItem.appendChild(img);
-  categoryItem.appendChild(title);
-  categoryItem.appendChild(desc);
-  categoryItem.appendChild(deleteBtn);
-  categoryList.appendChild(categoryItem);
-
-  // Store the category data in the array for form submission
-  const categoryData = {
+  // Create category object
+  const category = {
     name: name,
     description: description,
-    image: imagePreview.dataset.base64 || imagePreview.src, // Use the stored base64 data
+    // The library ID will be assigned server-side during library creation
+    library: null,
   };
 
-  // Add to array and update hidden input
-  categoriesArray.push(categoryData);
-  document.getElementById("categories-json").value =
-    JSON.stringify(categoriesArray);
+  // Handle image if uploaded
+  if (imageInput.files && imageInput.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      category.image = e.target.result; // base64 encoded image
+      addCategoryToList(category);
+    };
+    reader.readAsDataURL(imageInput.files[0]);
+  } else {
+    addCategoryToList(category);
+  }
+};
 
-  // Hide status message once we have categories
-  categoryStatus.classList.add("hidden");
+function addCategoryToList(category) {
+  // Get existing categories
+  const categoriesInput = document.getElementById("categories-json");
+  const categories = JSON.parse(categoriesInput.value);
 
-  // Debug output to verify data is being stored correctly
-  console.log("Categories array:", categoriesArray);
-  console.log(
-    "Hidden input value:",
-    document.getElementById("categories-json").value
-  );
+  // Add new category
+  categories.push(category);
 
-  // Close the modal
+  // Update hidden input
+  categoriesInput.value = JSON.stringify(categories);
+  categoriesArray = categories; // Update the global categoriesArray
+
+  // Update UI
+  const categoryList = document.getElementById("categoryList");
+  const statusMessage = document.getElementById("category-status");
+
+  // Create category item HTML
+  const categoryItem = document.createElement("div");
+  categoryItem.className = "category-item";
+  categoryItem.innerHTML = `
+      <div class="category-info">
+          <h3>${category.name}</h3>
+          <p>${category.description || "No description"}</p>
+      </div>
+      <button type="button" class="remove-btn" onclick="removeCategory(this, '${
+        category.name
+      }')">Remove</button>
+  `;
+
+  // Add image preview if available
+  if (category.image) {
+    const imgElement = document.createElement("img");
+    imgElement.src = category.image;
+    imgElement.className = "category-image-preview";
+    categoryItem.prepend(imgElement);
+  }
+
+  // Add to list
+  categoryList.appendChild(categoryItem);
+
+  // Hide status message if we have categories
+  if (categories.length > 0) {
+    statusMessage.style.display = "none";
+  } else {
+    statusMessage.style.display = "block";
+  }
+
+  // Close modal and reset form
   closeCategoryModal();
+}
+
+window.removeCategory = function (button, categoryName) {
+  // Get the category item
+  const categoryItem = button.parentNode;
+
+  // Remove from DOM
+  categoryItem.remove();
+
+  // Remove from categories array
+  const categoriesInput = document.getElementById("categories-json");
+  let categories = JSON.parse(categoriesInput.value);
+
+  categories = categories.filter((cat) => cat.name !== categoryName);
+  categoriesInput.value = JSON.stringify(categories);
+  categoriesArray = categories; // Update the global categoriesArray
+
+  // Show status message if no categories
+  const statusMessage = document.getElementById("category-status");
+  if (categories.length === 0) {
+    statusMessage.style.display = "block";
+  }
 };

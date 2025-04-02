@@ -6,8 +6,8 @@ import json
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from .models import Library, LibraryMember
-from .serializers import LibrarySerializer, LibraryMemberSerializer
+from .models import Library, UserLibraryRole
+from .serializers import LibrarySerializer, UserLibraryRoleSerializer
 from videos.serializers import CategorySerializer
 from videos.models import Category
 import base64
@@ -29,7 +29,7 @@ class IsLibraryAdminOrReadOnly(permissions.BasePermission):
             return True
         
         # Write permissions are only allowed to the library administrator
-        return obj.LibraryAdmin == request.user
+        return obj.owner == request.user
 
 class LibraryViewSet(viewsets.ModelViewSet):
     queryset = Library.objects.all()
@@ -45,7 +45,7 @@ class LibraryViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
     
     def perform_create(self, serializer):
-        serializer.save(LibraryAdmin=self.request.user)
+        serializer.save(owner=self.request.user)
     
     def destroy(self, request, *args, **kwargs):
         """Close (delete) a library"""
@@ -62,7 +62,7 @@ class LibraryViewSet(viewsets.ModelViewSet):
         library = self.get_object()
         
         # Only the library administrator can change the status
-        if library.LibraryAdmin != request.user:
+        if library.owner != request.user:
             return Response(
                 {"error": "Only the library administrator can change the library status."},
                 status=status.HTTP_403_FORBIDDEN
@@ -86,14 +86,14 @@ class LibraryViewSet(viewsets.ModelViewSet):
         library = self.get_object()
         
         # Only the library administrator can add members
-        if library.LibraryAdmin != request.user:
+        if library.owner != request.user:
             return Response(
                 {"detail": "Only the library administrator can add members."},
                 status=status.HTTP_403_FORBIDDEN
             )
             
         user_id = request.data.get('user_id')
-        role = request.data.get('role', 'customer')
+        role = request.data.get('role', 'contributor')
         
         if not user_id:
             return Response(
@@ -102,25 +102,25 @@ class LibraryViewSet(viewsets.ModelViewSet):
             )
             
         # Check if the user is already a member
-        if LibraryMember.objects.filter(library=library, user_id=user_id).exists():
+        if UserLibraryRole.objects.filter(library=library, user_id=user_id).exists():
             return Response(
                 {"detail": "User is already a member of this library."},
                 status=status.HTTP_400_BAD_REQUEST
             )
             
         # Create the library member
-        member = LibraryMember.objects.create(
+        user_role = UserLibraryRole.objects.create(
             library=library,
             user_id=user_id,
             role=role
         )
         
-        serializer = LibraryMemberSerializer(member)
+        serializer = UserLibraryRoleSerializer(user_role)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-class LibraryMemberViewSet(viewsets.ModelViewSet):
-    queryset = LibraryMember.objects.all()
-    serializer_class = LibraryMemberSerializer
+class UserLibraryRoleViewSet(viewsets.ModelViewSet):
+    queryset = UserLibraryRole.objects.all()
+    serializer_class = UserLibraryRoleSerializer
     
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
@@ -171,7 +171,11 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
             # Handle color
             primary_color = request.POST.get('primary_color')
             if primary_color:
-                data['primary_color'] = primary_color
+                data['color_scheme'] = {
+                    'primary': primary_color,
+                    'secondary': '#FFFFFF',
+                    'text': '#000000'
+                }
                 
             # First, process any categories
             categories = []
@@ -234,8 +238,8 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
             # Then create the library
             serializer = LibrarySerializer(data=data)
             if serializer.is_valid():
-                # Save with LibraryAdmin set to the current user
-                library = serializer.save(LibraryAdmin=request.user)
+                # Save with owner set to the current user
+                library = serializer.save(owner=request.user)
                 
                 # Handle logo upload if provided
                 logo = request.FILES.get('logo')
@@ -248,358 +252,263 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                     for video in library.videos.all():
                         # Check if video doesn't already have a category
                         if not video.category:
-                            # Assign the first category by default
+                            # Assign the first category as default
                             video.category = categories[0]
                             video.save()
+                
+                # Create an admin role for the creator automatically
+                UserLibraryRole.objects.create(
+                    library=library,
+                    user=request.user,
+                    role='admin'
+                )
                 
                 return JsonResponse({
                     'status': 'success',
                     'message': 'Library created successfully.',
-                    'redirect_url': 'manage_libraries'
+                    'redirect_url': reverse('manage_libraries')
                 })
             else:
-                print("Serializer errors:", serializer.errors)
+                print(f"Library validation errors: {serializer.errors}")
                 return JsonResponse({
                     'status': 'error',
-                    'message': serializer.errors
+                    'message': f"Library validation failed: {serializer.errors}"
                 }, status=400)
+                
         except Exception as e:
-            import traceback
-            print("Exception:", str(e))
-            print(traceback.format_exc())
+            print(f"Error creating library: {str(e)}")
             return JsonResponse({
                 'status': 'error',
-                'message': str(e)
+                'message': f"An error occurred: {str(e)}"
             }, status=500)
 
 class ManageLibrariesView(LoginRequiredMixin, TemplateView):
-    template_name = 'manage_library_owner.html'
+    template_name = 'manage_libraries.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Get libraries managed by the current user
-        user_libraries = Library.objects.filter(LibraryAdmin=self.request.user)
+        # Get all libraries where the user is either the owner or has a role
+        user_libraries = Library.objects.filter(owner=self.request.user)
         context['libraries'] = user_libraries
         
-        print(f"User {self.request.user.username} has {user_libraries.count()} libraries")
-        for lib in user_libraries:
-            print(f" - {lib.name} (ID: {lib.id})")
-            
-        return context
+        # Get libraries where the user is a contributor
+        contributed_libraries = Library.objects.filter(
+            user_roles__user=self.request.user
+        ).exclude(owner=self.request.user)
+        context['contributed_libraries'] = contributed_libraries
         
-    def get(self, request, *args, **kwargs):
-        # Check if we need to store a library ID in session
-        library_id = request.GET.get('set_library_id')
-        if library_id:
-            try:
-                # Verify the library exists and user has permission
-                library = Library.objects.get(id=library_id, LibraryAdmin=request.user)
-                # Store in session
-                request.session['editing_library_id'] = library_id
-                request.session['editing_library_name'] = library.name  # Store the name for display
-                # Redirect to the edit page
-                return redirect('edit_library')
-            except Library.DoesNotExist:
-                messages.error(request, "Library not found or you don't have permission.")
-                
-        return super().get(request, *args, **kwargs)
+        return context
 
 class EditLibraryView(LoginRequiredMixin, TemplateView):
-    """View for editing a library and its related data."""
     template_name = 'edit_library_admin.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        library_id = self.request.session.get('editing_library_id')
+        
+        # Get library_id from kwargs or from query parameters
+        library_id = kwargs.get('library_id') or self.request.GET.get('library_id')
         
         if not library_id:
-            context['error'] = "Library session expired. Please return to library management."
+            context['error'] = "No library specified"
             return context
             
-        # Add library name from session for page title even if we can't load the library
-        library_name = self.request.session.get('editing_library_name', 'Unknown Library')
-        context['library_name'] = library_name
-        
         try:
-            # Fetch the library by ID from session
             library = Library.objects.get(id=library_id)
             
-            # Check if the current user is the library admin
-            if library.LibraryAdmin != self.request.user:
-                # If not, redirect to the libraries management page
+            # Check if user can edit this library
+            if not (library.owner == self.request.user or 
+                    UserLibraryRole.objects.filter(library=library, user=self.request.user, role='admin').exists()):
                 context['permission_error'] = True
+                context['library_name'] = library.name
                 return context
             
-            # Add library to context
             context['library'] = library
+            # Get categories for this library
+            context['categories'] = Category.objects.filter(library=library)
             
-            # Fetch categories related to this library
-            from videos.models import Category, Video
-            
-            # Method 1: Get categories from videos in this library
-            videos_in_library = Video.objects.filter(libraries=library)
-            category_ids_from_videos = videos_in_library.values_list('category', flat=True).distinct()
-            
-            # Get the categories from the unique category IDs
-            # This will show existing categories that are actually in use
-            categories = list(Category.objects.filter(id__in=category_ids_from_videos))
-            
-            # If no categories found, check if there are any categories in the database
-            # This allows library admins to add categories even if no videos exist yet
-            if not categories:
-                # Get first 5 categories as examples they can use
-                categories = list(Category.objects.all()[:5])
-            
-            context['categories'] = categories
-            
-            # Fetch contributors (library members with contributor role)
-            context['contributors'] = LibraryMember.objects.filter(
-                library=library, 
-                role='contributor'
-            )
-            
-            # Debug information
-            print(f"Loaded library: {library.name} (ID: {library.id})")
-            print(f"Library description: {library.description}")
-            print(f"Library logo: {library.logo}")
-            print(f"Categories count: {len(context['categories'])}")
-            print(f"Contributors count: {len(context['contributors'])}")
+            # Get contributors for this library
+            context['contributors'] = UserLibraryRole.objects.filter(
+                library=library
+            ).select_related('user')
             
         except Library.DoesNotExist:
-            # Library not found
             context['library_not_found'] = True
-            print(f"Library with ID {library_id} not found")
-        except Exception as e:
-            # Other error
-            context['error'] = str(e)
-            print(f"Error loading library data: {e}")
+            context['library_name'] = f"ID: {library_id}"
         
         return context
     
-    def dispatch(self, request, *args, **kwargs):
-        library_id = request.session.get('editing_library_id')
-        
-        if not library_id:
-            messages.error(request, "Library session expired. Please return to library management.")
-            return redirect('manage_libraries')
-        
-        try:
-            # Check if the current user is the library admin
-            library = Library.objects.get(id=library_id)
-            if library.LibraryAdmin != request.user:
-                # If not, redirect to the libraries management page
-                messages.error(request, "You don't have permission to edit this library.")
-                return redirect('manage_libraries')
-        except Library.DoesNotExist:
-            messages.error(request, "Library not found.")
-            return redirect('manage_libraries')
-        
-        return super().dispatch(request, *args, **kwargs)
-    
     def post(self, request, *args, **kwargs):
-        print("="*80)
-        print("EDIT LIBRARY POST REQUEST RECEIVED")
-        print(f"Content-Type: {request.META.get('CONTENT_TYPE')}")
-        print(f"X-Requested-With: {request.META.get('HTTP_X_REQUESTED_WITH')}")
-        print(f"Request method: {request.method}")
-        print("="*80)
-        
-        library_id = request.session.get('editing_library_id')
+        # Get library_id from kwargs or from request parameters
+        library_id = kwargs.get('library_id') or request.POST.get('library_id')
         
         if not library_id:
-            print("No library_id in session")
-            error_response = {
+            return JsonResponse({
                 'status': 'error',
-                'message': 'Library session expired',
-                'redirect_url': reverse('manage_libraries')
-            }
-            print(f"Error response: {error_response}")
-            return JsonResponse(error_response, status=400)
-        
+                'message': "No library specified"
+            }, status=400)
+            
         try:
-            # Get the library by id from session
             library = Library.objects.get(id=library_id)
             
-            # Check if the current user is the library admin
-            if library.LibraryAdmin != request.user:
+            # Check if user can edit this library
+            if not (library.owner == self.request.user or 
+                    UserLibraryRole.objects.filter(library=library, user=self.request.user, role='admin').exists()):
                 return JsonResponse({
                     'status': 'error',
                     'message': "You don't have permission to edit this library."
                 }, status=403)
             
-            # Update basic library information
-            library.name = request.POST.get('library_name', library.name)
-            library.description = request.POST.get('description', library.description)
-            
-            # Handle logo upload
-            if 'logo' in request.FILES:
-                library.logo = request.FILES['logo']
-            
+            # Update library fields
+            library_name = request.POST.get('library_name')
+            if library_name:
+                library.name = library_name
+                
+            description = request.POST.get('description')
+            if description:
+                library.description = description
+                
             # Handle theme color
-            if 'theme_color' in request.POST:
-                library.primary_color = request.POST.get('theme_color')
-            
-            # Save the library
+            theme_color = request.POST.get('theme_color')
+            if theme_color:
+                if not library.color_scheme:
+                    library.color_scheme = {}
+                library.color_scheme['primary'] = theme_color
+                
+            # Handle logo if provided
+            if request.FILES.get('logo'):
+                library.logo = request.FILES['logo']
+                
             library.save()
             
             # Process categories
-            from videos.models import Category
-            categories_json = request.POST.get('categories')
-            new_categories = []
-            
-            if categories_json:
+            if 'categories' in request.POST:
                 try:
-                    categories_data = json.loads(categories_json)
+                    categories_data = json.loads(request.POST.get('categories'))
                     
-                    # Create or update categories
+                    # Keep track of existing category IDs
+                    current_categories = set(Category.objects.filter(library=library).values_list('id', flat=True))
+                    processed_categories = set()
+                    
                     for category_data in categories_data:
-                        category_name = category_data.get('name')
-                        category_desc = category_data.get('description')
+                        category_id = category_data.get('id')
                         
-                        if not category_name:
-                            continue
-                            
-                        # Try to find existing category or create a new one
-                        try:
-                            category = Category.objects.get(name=category_name)
-                            # Update description if it has changed
-                            if category.description != category_desc:
-                                category.description = category_desc
-                                category.save()
-                        except Category.DoesNotExist:
-                            # Create new category
-                            category = Category.objects.create(
-                                name=category_name,
-                                description=category_desc
-                            )
-                        
-                        # Add to our list of categories
-                        new_categories.append(category)
-                        
-                        # Process category image if it's a new base64 image
-                        if 'image' in category_data and category_data['image'].startswith('data:image'):
+                        if category_id and not category_id.startswith('temp_'):
+                            # Update existing category
                             try:
-                                image_file = process_base64_image(
-                                    category_data['image'], 
-                                    name=f"category_{category_name}"
-                                )
-                                category.image = image_file
+                                category = Category.objects.get(id=category_id, library=library)
+                                category.name = category_data.get('name', category.name)
+                                category.description = category_data.get('description', category.description)
+                                
+                                # Handle image if provided
+                                if 'image' in category_data and category_data['image'] and category_data['image'].startswith('data:'):
+                                    image_file = process_base64_image(
+                                        category_data['image'],
+                                        name=f"category_{category.name}"
+                                    )
+                                    category.image = image_file
+                                    
                                 category.save()
-                            except Exception as e:
-                                print(f"Error saving category image: {e}")
+                                processed_categories.add(int(category_id))
                                 
-                    # If we have videos in this library, ensure they're associated with categories
-                    # For any videos without a category, assign them to the first category
-                    if new_categories:
-                        videos_without_category = library.videos.filter(category__isnull=True)
-                        if videos_without_category.exists() and new_categories:
-                            for video in videos_without_category:
-                                video.category = new_categories[0]
-                                video.save()
+                            except Category.DoesNotExist:
+                                pass  # Category might belong to another library or doesn't exist
+                        else:
+                            # Create new category
+                            new_category = Category(
+                                name=category_data.get('name'),
+                                description=category_data.get('description', ''),
+                                library=library
+                            )
+                            new_category.save()
+                            
+                            # Handle image if provided
+                            if 'image' in category_data and category_data['image'] and category_data['image'].startswith('data:'):
+                                image_file = process_base64_image(
+                                    category_data['image'],
+                                    name=f"category_{new_category.name}"
+                                )
+                                new_category.image = image_file
+                                new_category.save()
                                 
+                            processed_categories.add(new_category.id)
+                    
+                    # Delete categories that were removed
+                    categories_to_delete = current_categories - processed_categories
+                    if categories_to_delete:
+                        Category.objects.filter(id__in=categories_to_delete, library=library).delete()
+                        
                 except json.JSONDecodeError:
-                    print("Invalid JSON for categories")
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': "Invalid category data format"
+                    }, status=400)
             
             # Process contributors
-            contributors_json = request.POST.get('contributors')
-            if contributors_json:
+            if 'contributors' in request.POST:
                 try:
-                    contributors_data = json.loads(contributors_json)
+                    contributors_data = json.loads(request.POST.get('contributors'))
                     
-                    # Get current contributors
-                    current_contributors = set(LibraryMember.objects.filter(
+                    # Keep track of existing contributor IDs
+                    current_contributors = set(UserLibraryRole.objects.filter(
                         library=library, 
                         role='contributor'
-                    ).values_list('user__email', flat=True))
+                    ).values_list('id', flat=True))
                     
-                    # Process new contributors
+                    processed_contributors = set()
+                    
                     for contributor_data in contributors_data:
-                        email = contributor_data.get('email')
+                        contributor_id = contributor_data.get('id')
                         
-                        # Skip if already a contributor
-                        if email in current_contributors:
-                            current_contributors.remove(email)
-                            continue
+                        if contributor_id and not contributor_id.startswith('temp_'):
+                            # Existing contributor - just mark as processed
+                            processed_contributors.add(int(contributor_id))
+                        else:
+                            # New contributor to add
+                            from django.contrib.auth import get_user_model
+                            User = get_user_model()
                             
-                        # Try to find user with this email
-                        from accounts.models import User
-                        try:
-                            user = User.objects.get(email=email)
-                            
-                            # Add as contributor if not already a member
-                            if not LibraryMember.objects.filter(library=library, user=user).exists():
-                                LibraryMember.objects.create(
-                                    library=library,
-                                    user=user,
-                                    role='contributor'
-                                )
-                        except User.DoesNotExist:
-                            # User not found - could implement invitation system here
-                            print(f"User with email {email} not found")
+                            # Try to find user by email
+                            try:
+                                user = User.objects.get(email=contributor_data.get('email'))
+                                
+                                # Check if user already has a role in this library
+                                if not UserLibraryRole.objects.filter(library=library, user=user).exists():
+                                    role = UserLibraryRole.objects.create(
+                                        library=library,
+                                        user=user,
+                                        role='contributor'
+                                    )
+                                    processed_contributors.add(role.id)
+                            except User.DoesNotExist:
+                                # User doesn't exist - we might want to invite them
+                                # For now, just log it
+                                print(f"User with email {contributor_data.get('email')} not found")
                     
-                    # Remove contributors that were deleted
-                    if current_contributors:
-                        LibraryMember.objects.filter(
-                            library=library,
-                            role='contributor',
-                            user__email__in=current_contributors
-                        ).delete()
+                    # Remove contributors that were removed
+                    contributors_to_delete = current_contributors - processed_contributors
+                    if contributors_to_delete:
+                        UserLibraryRole.objects.filter(id__in=contributors_to_delete, library=library).delete()
                         
                 except json.JSONDecodeError:
-                    print("Invalid JSON for contributors")
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': "Invalid contributor data format"
+                    }, status=400)
             
-            # Redirect to the libraries management page
-            redirect_url = reverse('manage_libraries')
-            print(f"Generated redirect URL: {redirect_url}")
-            
-            # Clear session after successful update
-            if 'editing_library_id' in request.session:
-                del request.session['editing_library_id']
-            if 'editing_library_name' in request.session:
-                del request.session['editing_library_name']
-            
-            # Check if this is a regular form submission (not AJAX)
-            if request.POST.get('regular_submit') == 'true':
-                messages.success(request, 'Library updated successfully')
-                return redirect('manage_libraries')
-            else:
-                # AJAX response
-                response_data = {
-                    'status': 'success',
-                    'message': 'Library updated successfully',
-                    'redirect_url': redirect_url
-                }
-                print(f"Response data: {response_data}")
-                
-                # Ensure the response has the proper Content-Type
-                response = JsonResponse(response_data)
-                print("="*80)
-                print("SENDING RESPONSE")
-                print(f"Response Content-Type: {response['Content-Type']}")
-                print(f"Response status code: {response.status_code}")
-                print(f"Response content: {response.content}")
-                print("="*80)
-                
-                return response
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Library updated successfully',
+                'redirect_url': reverse('manage_libraries')
+            })
             
         except Library.DoesNotExist:
-            error_response = {
+            return JsonResponse({
                 'status': 'error',
-                'message': 'Library not found',
-                'redirect_url': reverse('manage_libraries')
-            }
-            print(f"Error response: {error_response}")
-            return JsonResponse(error_response, status=404)
+                'message': "Library not found"
+            }, status=404)
         except Exception as e:
-            import traceback
-            error_msg = str(e)
-            print(f"Error updating library: {error_msg}")
-            print(traceback.format_exc())
-            error_response = {
+            return JsonResponse({
                 'status': 'error',
-                'message': error_msg,
-                'redirect_url': reverse('manage_libraries')
-            }
-            print(f"Error response: {error_response}")
-            return JsonResponse(error_response, status=500)
+                'message': str(e)
+            }, status=500)

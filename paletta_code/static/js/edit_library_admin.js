@@ -1,4 +1,10 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // Get CURRENT_LIBRARY_ID from a data attribute on the form element
+  const editLibraryForm = document.getElementById("editLibraryForm");
+  const CURRENT_LIBRARY_ID = editLibraryForm
+    ? parseInt(editLibraryForm.dataset.libraryId)
+    : null;
+
   // Set up CSRF token for AJAX requests
   function getCookie(name) {
     let cookieValue = null;
@@ -77,7 +83,20 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   // Category management
-  let editingCategory = null;
+  let currentEditingCategory = null;
+
+  // Check if category list is empty and show/hide message
+  window.checkCategoriesEmpty = function () {
+    const categoryList = document.getElementById("categoryList");
+    const categoryItems = categoryList.querySelectorAll(".category-item");
+    const noMessage = document.getElementById("no-categories-message");
+
+    if (categoryItems.length === 0) {
+      noMessage.style.display = "block";
+    } else {
+      noMessage.style.display = "none";
+    }
+  };
 
   window.openCategoryModal = function () {
     document.getElementById("categoryModalTitle").innerText = "Add a Category";
@@ -86,36 +105,46 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("imagePreview").src = "";
     document.getElementById("imagePreview").style.display = "none";
     document.getElementById("saveCategoryBtn").innerText = "Add";
-    editingCategory = null;
-
     document.getElementById("categoryModal").style.display = "block";
+    document.getElementById("modalOverlay").style.display = "block";
+    currentEditingCategory = null;
   };
 
   window.closeCategoryModal = function () {
     document.getElementById("categoryModal").style.display = "none";
+    document.getElementById("modalOverlay").style.display = "none";
+    document.getElementById("errorText").textContent = "";
   };
 
-  window.editCategoryModal = function (event, categoryItem) {
+  window.editCategoryModal = function (event, categoryElement) {
     if (event.target.classList.contains("delete-btn")) {
       return;
     }
 
-    editingCategory = categoryItem;
+    event.stopPropagation();
+    const categoryId = categoryElement.dataset.id;
+    const categoryName =
+      categoryElement.querySelector(".category-name").textContent;
+    const categoryDesc =
+      categoryElement.querySelector(".category-desc").textContent;
+    const categoryImage = categoryElement.querySelector("img").src;
 
-    document.getElementById("categoryModalTitle").innerText = "Edit Category";
-    document.getElementById("categoryName").value =
-      categoryItem.querySelector(".category-name").innerText;
-    document.getElementById("categoryDescription").value =
-      categoryItem.querySelector(".category-desc").innerText;
+    document.getElementById("categoryModalTitle").textContent = "Edit Category";
+    document.getElementById("categoryName").value = categoryName;
+    document.getElementById("categoryDescription").value = categoryDesc;
 
-    let img = categoryItem.querySelector("img");
-    if (img) {
-      document.getElementById("imagePreview").src = img.src;
-      document.getElementById("imagePreview").style.display = "block";
-    }
+    const imagePreview = document.getElementById("imagePreview");
+    imagePreview.src = categoryImage;
+    imagePreview.style.display = "block";
 
-    document.getElementById("saveCategoryBtn").innerText = "Save";
+    document.getElementById("saveCategoryBtn").textContent = "Save Changes";
     document.getElementById("categoryModal").style.display = "block";
+    document.getElementById("modalOverlay").style.display = "block";
+
+    currentEditingCategory = {
+      element: categoryElement,
+      id: categoryId,
+    };
   };
 
   document
@@ -133,85 +162,132 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
   window.saveCategory = function () {
-    let name = document.getElementById("categoryName").value.trim();
-    let description = document
+    const name = document.getElementById("categoryName").value.trim();
+    const description = document
       .getElementById("categoryDescription")
       .value.trim();
-    let imagePreview = document.getElementById("imagePreview");
+    const imageInput = document.getElementById("categoryImage");
+    const errorText = document.getElementById("errorText");
 
-    if (!name || !description || imagePreview.style.display === "none") {
-      document.getElementById("errorText").innerText =
-        "All fields are required!";
+    // Validate input
+    if (!name) {
+      errorText.textContent = "Category name is required";
       return;
     }
 
-    if (editingCategory) {
-      editingCategory.querySelector(".category-name").innerText = name;
-      editingCategory.querySelector(".category-desc").innerText = description;
-      if (imagePreview.src) {
-        editingCategory.querySelector("img").src = imagePreview.src;
+    // Process image
+    let imagePromise = Promise.resolve(null);
+    if (imageInput.files && imageInput.files[0]) {
+      imagePromise = new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          resolve(e.target.result);
+        };
+        reader.readAsDataURL(imageInput.files[0]);
+      });
+    }
+
+    // Once we have the image (if any), create or update the category
+    imagePromise.then((imageData) => {
+      if (currentEditingCategory) {
+        // Update existing category
+        updateCategory(currentEditingCategory, name, description, imageData);
+      } else {
+        // Create new category
+        createCategory(name, description, imageData);
       }
-    } else {
-      let categoryList = document.getElementById("categoryList");
-      let categoryItem = document.createElement("div");
-      categoryItem.classList.add("category-item");
-      categoryItem.setAttribute("data-id", "new_" + Date.now()); // Temporary ID for new categories
-      categoryItem.onclick = function (event) {
-        editCategoryModal(event, categoryItem);
-      };
 
-      let img = document.createElement("img");
-      img.src = imagePreview.src;
-
-      let title = document.createElement("div");
-      title.classList.add("category-name");
-      title.innerText = name;
-
-      let desc = document.createElement("div");
-      desc.classList.add("category-desc");
-      desc.innerText = description;
-      desc.style.display = "none";
-
-      let deleteBtn = document.createElement("button");
-      deleteBtn.classList.add("delete-btn");
-      deleteBtn.innerHTML = "✖️";
-      deleteBtn.onclick = function (event) {
-        event.stopPropagation();
-        categoryList.removeChild(categoryItem);
-        updateCategoriesData();
-        checkCategoriesEmpty();
-      };
-
-      categoryItem.appendChild(img);
-      categoryItem.appendChild(title);
-      categoryItem.appendChild(desc);
-      categoryItem.appendChild(deleteBtn);
-      categoryList.appendChild(categoryItem);
-
-      // Hide the "no categories" message when adding a category
-      document.getElementById("no-categories-message").style.display = "none";
-    }
-
-    closeCategoryModal();
-    updateCategoriesData();
+      closeCategoryModal();
+    });
   };
 
-  // Check if categories are empty and show/hide the message
-  window.checkCategoriesEmpty = function () {
-    const categoryItems = document.querySelectorAll(
-      "#categoryList .category-item"
-    );
-    const noCategoriesMessage = document.getElementById(
-      "no-categories-message"
-    );
+  function createCategory(name, description, imageData) {
+    // Create category element
+    const categoryList = document.getElementById("categoryList");
+    const newCategory = document.createElement("div");
+    newCategory.className = "category-item";
+    newCategory.setAttribute("onclick", "editCategoryModal(event, this)");
 
-    if (categoryItems.length === 0) {
-      noCategoriesMessage.style.display = "block";
+    // Generate a temporary ID that'll be replaced with the real one after saving
+    const tempId = "temp_" + Date.now();
+    newCategory.dataset.id = tempId;
+
+    // Create category content
+    let categoryHTML = `
+        <div class="category-name">${name}</div>
+        <div class="category-desc" style="display: none;">${description}</div>
+        <button type="button" class="delete-btn" onclick="event.stopPropagation(); this.parentElement.remove(); checkCategoriesEmpty();">✖️</button>
+    `;
+
+    // Add image if provided
+    if (imageData) {
+      categoryHTML = `<img src="${imageData}" alt="${name}">` + categoryHTML;
     } else {
-      noCategoriesMessage.style.display = "none";
+      // Use default image path - this will be set by Django template in the HTML
+      const defaultImage = document.querySelector("#categoryList img")
+        ? document.querySelector("#categoryList img").src
+        : "/static/picture/default-category.jpg";
+      categoryHTML = `<img src="${defaultImage}" alt="${name}">` + categoryHTML;
     }
-  };
 
+    newCategory.innerHTML = categoryHTML;
+    categoryList.appendChild(newCategory);
+    checkCategoriesEmpty();
+
+    // Add to the form data that will be submitted
+    appendCategoryToFormData({
+      id: tempId,
+      name: name,
+      description: description,
+      image: imageData,
+      library: CURRENT_LIBRARY_ID,
+    });
+  }
+
+  function updateCategory(categoryData, name, description, imageData) {
+    const element = categoryData.element;
+
+    // Update name and description
+    element.querySelector(".category-name").textContent = name;
+    element.querySelector(".category-desc").textContent = description;
+
+    // Update image if new one provided
+    if (imageData) {
+      element.querySelector("img").src = imageData;
+    }
+
+    // Update form data
+    appendCategoryToFormData({
+      id: categoryData.id,
+      name: name,
+      description: description,
+      image: imageData ? imageData : null,
+      library: CURRENT_LIBRARY_ID,
+    });
+  }
+
+  function appendCategoryToFormData(category) {
+    const categoriesInput = document.getElementById("categoriesData");
+    let categories = [];
+
+    // Parse existing categories if any
+    if (categoriesInput.value) {
+      categories = JSON.parse(categoriesInput.value);
+    }
+
+    // Check if category exists (for update)
+    const existingIndex = categories.findIndex((c) => c.id === category.id);
+    if (existingIndex >= 0) {
+      categories[existingIndex] = category;
+    } else {
+      categories.push(category);
+    }
+
+    // Save back to input
+    categoriesInput.value = JSON.stringify(categories);
+  }
+
+  // Contributor Modal Functions
   window.openContributorModal = function () {
     document.getElementById("contributorModal").style.display = "block";
     document.getElementById("modalOverlay").style.display = "block";
@@ -223,27 +299,57 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   window.addContributor = function () {
-    let name = document.getElementById("contributorName").value;
-    let email = document.getElementById("contributorEmail").value;
+    const name = document.getElementById("contributorName").value.trim();
+    const email = document.getElementById("contributorEmail").value.trim();
+
     if (!name || !email) {
-      alert("Please fill in all fields");
+      alert("Both name and email are required");
       return;
     }
 
-    let contributorList = document.getElementById("contributorList");
-    let contributorItem = document.createElement("div");
-    contributorItem.classList.add("contributor-item");
-    contributorItem.setAttribute("data-id", "new_" + Date.now()); // Temporary ID for new contributors
-    contributorItem.innerHTML = `
-            <span>Name: ${name} | Email: ${email}</span>
-            <button class="delete-btn" onclick="this.parentElement.remove(); updateContributorsData();">Remove</button>
-        `;
-    contributorList.appendChild(contributorItem);
+    // Create contributor element
+    const contributorList = document.getElementById("contributorList");
+    const noContributors = contributorList.querySelector(".no-contributors");
+    if (noContributors) {
+      noContributors.remove();
+    }
 
+    const newContributor = document.createElement("div");
+    newContributor.className = "contributor-item";
+
+    // Generate a temporary ID
+    const tempId = "temp_" + Date.now();
+    newContributor.dataset.id = tempId;
+
+    newContributor.innerHTML = `
+        <span>Name: ${name} | Email: ${email}</span>
+        <button type="button" class="delete-btn" onclick="this.parentElement.remove()">Remove</button>
+    `;
+
+    contributorList.appendChild(newContributor);
+
+    // Add to form data
+    const contributorsInput = document.getElementById("contributorsData");
+    let contributors = [];
+
+    if (contributorsInput.value) {
+      contributors = JSON.parse(contributorsInput.value);
+    }
+
+    contributors.push({
+      id: tempId,
+      name: name,
+      email: email,
+      role: "contributor",
+    });
+
+    contributorsInput.value = JSON.stringify(contributors);
+
+    closeContributorModal();
+
+    // Reset form
     document.getElementById("contributorName").value = "";
     document.getElementById("contributorEmail").value = "";
-    closeContributorModal();
-    updateContributorsData();
   };
 
   // Collect form data for submission
@@ -251,12 +357,19 @@ document.addEventListener("DOMContentLoaded", function () {
     const categoryItems = document.querySelectorAll(
       "#categoryList .category-item"
     );
+
     const categories = Array.from(categoryItems).map((item) => {
+      const id = item.dataset.id;
+      const name = item.querySelector(".category-name").textContent;
+      const description = item.querySelector(".category-desc").textContent;
+      const imageSrc = item.querySelector("img").src;
+
       return {
-        id: item.dataset.id,
-        name: item.querySelector(".category-name").innerText,
-        description: item.querySelector(".category-desc").innerText,
-        image: item.querySelector("img").src,
+        id: id,
+        name: name,
+        description: description,
+        image: imageSrc.includes("data:image") ? imageSrc : null,
+        library: CURRENT_LIBRARY_ID,
       };
     });
 
@@ -268,15 +381,18 @@ document.addEventListener("DOMContentLoaded", function () {
     const contributorItems = document.querySelectorAll(
       "#contributorList .contributor-item"
     );
+
     const contributors = Array.from(contributorItems).map((item) => {
-      const text = item.querySelector("span").innerText;
+      const id = item.dataset.id;
+      const text = item.querySelector("span").textContent;
       const name = text.split("|")[0].replace("Name:", "").trim();
       const email = text.split("|")[1].replace("Email:", "").trim();
 
       return {
-        id: item.dataset.id,
+        id: id,
         name: name,
         email: email,
+        role: "contributor",
       };
     });
 
@@ -287,6 +403,17 @@ document.addEventListener("DOMContentLoaded", function () {
   // Initialize data collections
   updateCategoriesData();
   updateContributorsData();
+
+  // When the form is submitted, collect all category and contributor data
+  if (editLibraryForm) {
+    editLibraryForm.addEventListener("submit", function (e) {
+      // Ensure categories data is collected
+      updateCategoriesData();
+
+      // Ensure contributors data is collected
+      updateContributorsData();
+    });
+  }
 
   // Handle form submission
   const form = document.getElementById("editLibraryForm");
@@ -309,7 +436,8 @@ document.addEventListener("DOMContentLoaded", function () {
             "X-CSRFToken": csrftoken,
             "X-Requested-With": "XMLHttpRequest",
           },
-        }).then((response) => {
+        })
+          .then((response) => {
             console.log("Response status:", response.status);
             if (!response.ok) {
               throw new Error(`HTTP error! Status: ${response.status}`);
@@ -363,4 +491,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
+
+  // Initialize the page
+  window.checkCategoriesEmpty();
 });

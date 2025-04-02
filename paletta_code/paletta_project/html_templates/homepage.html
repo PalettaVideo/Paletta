@@ -12,7 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <script src="{% static 'js/homepage.js' %}" defer></script>
   <script src="{% static 'js/floating_label.js' %}" defer></script>
-  <title>Paletta Homepage</title>
+  <title>{% if current_library %}{{ current_library.name }} - Library {% else %}Paletta Homepage{% endif %}</title>
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
 
 </head>
@@ -92,10 +92,8 @@
         <h3>Quick Navigation</h3>
         <div class="more-libraries-nav" id="libraries-container">
             <!-- Default Paletta library -->
-            <!-- TODO: delete this after testing -->
-
             <div class="library-button">
-                <a href="{% url 'home' %}">
+                <a href="{% url 'home' %}" class="{% if not current_library or current_library.name == 'Paletta' %}active{% endif %}">
                     <img src="{% static 'picture/logo.jpg' %}" alt="Paletta">
                     <span>Paletta</span>
                 </a>
@@ -105,7 +103,7 @@
                 <!-- Dynamic libraries from database for authenticated users -->
                 {% for library in libraries %}
                 <div class="library-button">
-                    <a href="{% url 'library_view' library_id=library.id %}">
+                    <a href="{% url 'home' %}?library_id={{ library.id }}" class="{% if current_library and current_library.id == library.id %}active{% endif %}">
                         {% if library.logo %}
                             <img src="{{ library.logo.url }}" alt="{{ library.name }}">
                         {% else %}
@@ -132,13 +130,22 @@
     {% endif %}
     
     <div class="title-section">
-      <img src="{% static 'picture/logo.jpg' %}" alt="Logo">
-      <h1>
-        Bring out your<br>
-        own color here
-      </h1>
+      {% if current_library and current_library.name != 'Paletta' %}
+        <img src="{% if current_library.logo %}{{ current_library.logo.url }}{% else %}{% static 'picture/default-logo.jpg' %}{% endif %}" alt="{{ current_library.name }} Logo">
+        <h1>
+          Welcome to<br>
+          {{ current_library.name }}
+        </h1>
+      {% elif current_library and current_library.name == 'Paletta' %}
+        <img src="{% static 'picture/logo.jpg' %}" alt="Logo">
+        <h1>
+          Bring out your<br>
+          own color here
+        </h1>
+      {% endif %}
     </div>
 
+    <p>Discover Any Clip You Like From Your Library</p>
     <div class="search-bar">
       <input type="text" placeholder="Search...">
       <button>
@@ -149,20 +156,20 @@
       </button>
     </div>
 
-    <p>Discover Any Clip You Like From Our Library</p>
+    {% if user.is_authenticated %}
+
     <div class="categories" id="categories-container">
       <!-- "All" category is always shown -->
-      <a href="{% url 'clip_store' %}" style="text-decoration: none;">
+      <a href="{% url 'clip_store' %}{% if current_library and current_library.name != 'Paletta' %}?library_id={{ current_library.id }}{% endif %}" style="text-decoration: none;">
         <div class="category">
           <img src="{% static 'picture/All.png' %}" alt="All">
           <span>All</span>
         </div>
       </a>
       
-      {% if user.is_authenticated %}
         <!-- Dynamic categories from database for authenticated users -->
         {% for category in categories %}
-        <a href="{% url 'category' category=category.name|lower %}" style="text-decoration: none;">
+        <a href="{% url 'category' category=category.name|lower %}{% if current_library and current_library.name != 'Paletta' %}?library_id={{ current_library.id }}{% endif %}" style="text-decoration: none;">
           <div class="category">
             <!-- Use the category image URL if available, otherwise use a default image -->
             {% if category.image_url %}
@@ -180,29 +187,24 @@
         <p class="no-categories">No categories created yet. Reach out to Admin for more information.</p>
         {% endfor %}
       {% else %}
-        <!-- Featured categories for non-authenticated users -->
-        <div class="category">
-          <img src="{% static 'picture/Buildings.png' %}" alt="Buildings">
-          <span>Buildings</span>
-        </div>
-        <div class="category">
-          <img src="{% static 'picture/People.png' %}" alt="People">
-          <span>People</span>
-        </div>
-        <div class="category">
-          <img src="{% static 'picture/Science.png' %}" alt="Science">
-          <span>Science</span>
-        </div>
+        <!-- For non-authenticated users -->
+        <p class="no-categories">Unauthorised access. Please login to view categories.</p>
       {% endif %}
     </div>
 
     <div class="contributor-section">
-      <p>Want to be or recommend a clip contributor?</p>
-      {% if user.is_authenticated %}
+      {% if user.is_authenticated and user.role != 'customer' %}
+        <p>Want to recommend a video contributor?</p>
+        <a href="{% url 'contributor_apply' %}">
+          <button>Recommend Here</button>
+        </a>
+      {% elif user.is_authenticated and user.role == 'customer' %}
+        <p>Want to be a video contributor?</p>
         <a href="{% url 'contributor_apply' %}">
           <button>Apply Here</button>
         </a>
       {% else %}
+        <p>Create an account to recommend a video contributor.</p>
         <a href="{% url 'login' %}">
           <button>Login to Apply</button>
         </a>
@@ -210,7 +212,7 @@
     </div>
   </main>
 
-  {% include "footer_component.html" %}
+  {% include "html_components/footer_component.html" %}
   
 </body>
 </html>

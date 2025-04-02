@@ -17,7 +17,7 @@
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
 </head>
 <body>
-  {% include "navigation_internal.html" %}
+  {% include "html_components/navigation_internal.html" %}
   
   {% csrf_token %}
 
@@ -148,6 +148,6 @@
   </script>
   {% endcomment %}
 
-  {% include "footer.html" %}
+  {% include "html_components/footer_component.html" %}
 </body>
 </html>

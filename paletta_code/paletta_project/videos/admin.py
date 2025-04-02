@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Video, Category, Tag, VideoLog
+from .models import Video, Category, Tag, VideoLog, VideoTag, Upload
 from django.urls import reverse
 
 class VideoLogInline(admin.TabularInline):
@@ -49,18 +49,22 @@ class VideoLogInline(admin.TabularInline):
         return '-'
     file_size_display.short_description = 'File Size'
 
+class VideoTagInline(admin.TabularInline):
+    model = VideoTag
+    extra = 1
+    autocomplete_fields = ['tag']
+
 class VideoAdmin(admin.ModelAdmin):
-    list_display = ('title', 'uploader', 'category', 'upload_date', 'storage_status_display', 'file_size_display', 'duration_display', 'views_count', 'is_published')
-    list_filter = ('category', 'upload_date', 'is_published', 'storage_status')
+    list_display = ('title', 'uploader', 'category', 'library', 'upload_date', 'storage_status_display', 'file_size_display', 'duration_display', 'views_count', 'is_published')
+    list_filter = ('category', 'library', 'upload_date', 'is_published', 'storage_status')
     search_fields = ('title', 'description', 'uploader__username')
     readonly_fields = ('upload_date', 'updated_at', 'views_count', 'file_size', 'duration', 'storage_status', 'storage_url', 'storage_reference_id')
-    filter_horizontal = ('tags',)
     date_hierarchy = 'upload_date'
-    inlines = [VideoLogInline]
+    inlines = [VideoLogInline, VideoTagInline]
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('title', 'description', 'category', 'tags', 'is_published')
+            'fields': ('title', 'description', 'category', 'library', 'is_published')
         }),
         ('Upload Information', {
             'fields': ('uploader', 'upload_date', 'updated_at', 'views_count')
@@ -113,13 +117,14 @@ class VideoAdmin(admin.ModelAdmin):
     duration_display.short_description = 'Duration'
 
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description', 'created_at', 'image_preview')
+    list_display = ('name', 'library', 'description', 'created_at', 'image_preview')
+    list_filter = ('library',)
     search_fields = ('name', 'description')
     readonly_fields = ('created_at', 'image_preview')
     
     fieldsets = (
         ('Category Information', {
-            'fields': ('name', 'description', 'created_at')
+            'fields': ('name', 'description', 'library', 'created_at')
         }),
         ('Category Image', {
             'fields': ('image', 'image_preview'),
@@ -135,8 +140,21 @@ class CategoryAdmin(admin.ModelAdmin):
     image_preview.short_description = 'Image Preview'
 
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('name',)
+    list_display = ('name', 'library')
+    list_filter = ('library',)
     search_fields = ('name',)
+
+class VideoTagAdmin(admin.ModelAdmin):
+    list_display = ('video', 'tag')
+    list_filter = ('tag',)
+    search_fields = ('video__title', 'tag__name')
+
+class UploadAdmin(admin.ModelAdmin):
+    list_display = ('video', 'uploader', 'upload_date', 'status')
+    list_filter = ('status', 'upload_date')
+    search_fields = ('video__title', 'uploader__username')
+    readonly_fields = ('upload_date',)
+    date_hierarchy = 'upload_date'
 
 class VideoLogAdmin(admin.ModelAdmin):
     """Admin interface for VideoLog model."""
@@ -195,4 +213,6 @@ class VideoLogAdmin(admin.ModelAdmin):
 admin.site.register(Video, VideoAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Tag, TagAdmin)
+admin.site.register(VideoTag, VideoTagAdmin)
+admin.site.register(Upload, UploadAdmin)
 admin.site.register(VideoLog, VideoLogAdmin)

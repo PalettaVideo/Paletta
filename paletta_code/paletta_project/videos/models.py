@@ -7,44 +7,49 @@ from django.urls import reverse
 
 def category_image_path(instance, filename):
     """
-    File will be uploaded to MEDIA_ROOT/category_images/<category_name>/<filename>
+    File will be uploaded to MEDIA_ROOT/category_images/<library_name>/<category_name>/<filename>
     """
-    return f'category_images/{instance.name}/{filename}'
+    return f'category_images/{instance.library.name}/{instance.name}/{filename}'
 
 # SQL model for category
 class Category(models.Model):
-    """Model representing a video category."""
-    name = models.CharField(max_length=50, unique=True)
+    """Model representing a video category within a specific library."""
+    name = models.CharField(max_length=25)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    image = models.ImageField(upload_to='category_images/', blank=True, null=True)
-    banner = models.ImageField(upload_to='category_banners/', blank=True, null=True, 
-                               help_text="Banner image shown at the top of category pages")
+    image = models.ImageField(upload_to=category_image_path, blank=True, null=True)
+    library = models.ForeignKey('libraries.Library', on_delete=models.CASCADE, related_name='categories')
     
     class Meta:
         verbose_name_plural = "Categories"
         ordering = ['name']
+        # Ensure name is unique per library
+        unique_together = ['name', 'library']
     
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.library.name})"
         
     def get_absolute_url(self):
-        return reverse('category', kwargs={'category': self.name.lower()})
+        return reverse('category', kwargs={'library_name': self.library.name, 'category_name': self.name.lower()})
 
 # SQL model for tag
 class Tag(models.Model):
-  name = models.CharField(max_length=25)
+    name = models.CharField(max_length=25)
+    library = models.ForeignKey('libraries.Library', on_delete=models.CASCADE, related_name='tags')
+    
+    class Meta:
+        unique_together = ['name', 'library']
 
-  def __str__(self):
-    return self.name
+    def __str__(self):
+        return f"{self.name} ({self.library.name})"
 
 def video_upload_path(instance, filename):
-    # File will be uploaded to MEDIA_ROOT/videos/user_<id>/<filename>
-    return f'videos/user_{instance.uploader.id}/{filename}'
+    # File will be uploaded to MEDIA_ROOT/videos/library_<id>/user_<id>/<filename>
+    return f'videos/library_{instance.library.id}/user_{instance.uploader.id}/{filename}'
 
 def thumbnail_upload_path(instance, filename):
-    # File will be uploaded to MEDIA_ROOT/thumbnails/user_<id>/<filename>
-    return f'thumbnails/user_{instance.uploader.id}/{filename}'
+    # File will be uploaded to MEDIA_ROOT/thumbnails/library_<id>/user_<id>/<filename>
+    return f'thumbnails/library_{instance.library.id}/user_{instance.uploader.id}/{filename}'
 
 # SQL model for video
 class Video(models.Model):
@@ -59,10 +64,10 @@ class Video(models.Model):
   title = models.CharField(max_length=25)
   description = models.TextField(blank=True)
   category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='videos')
+  library = models.ForeignKey('libraries.Library', on_delete=models.CASCADE, related_name='library_videos')
   uploader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='videos')
   upload_date = models.DateTimeField(default=timezone.now)
   updated_at = models.DateTimeField(auto_now=True)
-  tags = models.ManyToManyField(Tag, related_name='videos', blank=True)
   
   # Video file field - now optional as we'll store in deep storage
   video_file = models.FileField(
@@ -173,6 +178,34 @@ class Video(models.Model):
             logger.info(f"Deleted thumbnail from filesystem: {thumbnail_path}")
         except Exception as e:
             logger.error(f"Error deleting thumbnail file: {e}")
+
+# Adding the VideoTag and Upload models from the new schema
+class VideoTag(models.Model):
+    """Model representing the many-to-many relationship between videos and tags."""
+    video = models.ForeignKey(Video, on_delete=models.CASCADE)
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
+    
+    class Meta:
+        unique_together = ['video', 'tag']
+        
+    def __str__(self):
+        return f"{self.video.title} - {self.tag.name}"
+
+class Upload(models.Model):
+    """Model representing the upload process for a video."""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name='uploads')
+    uploader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='uploads')
+    upload_date = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    def __str__(self):
+        return f"{self.video.title} - {self.get_status_display()}"
 
 # Video activity log model
 class VideoLog(models.Model):
