@@ -2,18 +2,13 @@
 body {
   margin: 0;
   font-family: 'Montserrat';
-  background-color: white;
+  background-color: #F8F8F8;
 }
-
-
-
 
 .filter{
   position: absolute; 
   right: 50px; 
   height:50px;
-  
-
 }
 .popup {
 display: none;
@@ -77,45 +72,40 @@ z-index: 2000;
 }
 
 
-
 .categorysearch {
-  
-    width: 400px; 
-    display: flex;
-    align-items: center;
-    border: 2px solid #80B824;
-    border-radius: 20px;
-    overflow: hidden;
-    background-color: white;
-  }
+  width: 400px; 
+  display: flex;
+  align-items: center;
+  border: 2px solid #80B824;
+  border-radius: 20px;
+  overflow: hidden;
+  background-color: white;
+}
 
-  .categorysearch input {
-    width: 1000px; 
-    padding: 10px;
-    border: none;
-    outline: none;
-    font-family: 'Montserrat';
-  }
+.categorysearch input {
+  width: 1000px; 
+  padding: 10px;
+  border: none;
+  outline: none;
+  font-family: 'Montserrat';
+}
 
-  .categorysearch button {
-    background-color: white;
-    border: none;
-    padding: 10px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 10px;
-  }
+.categorysearch button {
+  background-color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+}
 
-  .categorysearch button svg {
-    width: 15px;
-    height: 15px;
-    fill: #80B824;
-  }
-
-
-    
+.categorysearch button svg {
+  width: 15px;
+  height: 15px;
+  fill: #80B824;
+}
 
 .sidebar ul {
   list-style: none;
@@ -138,12 +128,13 @@ z-index: 2000;
 main {
   margin-left: 220px;
   padding: 20px;
-  margin-top:50px
+  margin-top: 10vh;
 }
 
 .main-content {
   display: flex;
   flex-direction: column;
+  height: calc(100vh - 10vh);
 }
 
 .clips-grid {

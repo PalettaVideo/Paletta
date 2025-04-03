@@ -1,13 +1,13 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload History</title>
-    {% load static %}
     <link href="{% static 'css/header_component.css' %}" rel="stylesheet">
     <link href="{% static 'css/footer_component.css' %}" rel="stylesheet">
-    <link href="{% static 'css/upload.css' %}" rel="stylesheet">
+    <link href="{% static 'css/upload_history.css' %}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
     <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
@@ -15,15 +15,17 @@
 <body>
   {% include "html_components/header_component.html" %}
   <div class="container">
-      <div class="menu">
-          <a href="{% url 'upload' %}">Upload</a>
-          <a href="{% url 'upload_history' %}" class="active">History</a>
+      <div class="sidebar">
+        <ul>
+          <li><a href="{% url 'upload' %}">Upload</a></li>
+          <li><a href="{% url 'upload_history' %}" class="active">History</a></li>
+        </ul>
       </div>
       <div class="main-content">
           <h1>Upload History</h1>
           
           {% if videos %}
-              <div class="history-list">
+              <div class="upload-history-container">
                   {% for video in videos %}
                       <div class="history-item">
                           <div class="video-thumbnail">
@@ -53,6 +55,7 @@
           
       </div>
   </div>
-  {% include "html_components/footer_component.html" %}
 </body>
+{% include "html_components/footer_component.html" %}
+
 </html>

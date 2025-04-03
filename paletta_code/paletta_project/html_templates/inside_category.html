@@ -1,10 +1,11 @@
+{% load static %}
+{% load video_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% if current_category %}{{ current_category.name }}{% else %}All Videos{% endif %} - Paletta</title>
-  {% load static %}
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <link href="{% static 'css/header_component.css' %}" rel="stylesheet">
   <link href="{% static 'css/footer_component.css' %}" rel="stylesheet">
@@ -40,9 +41,7 @@
         <div class="imagecontainer">
           <h1 class="banner-title">{{ current_category.name }}</h1>
           <!-- Simple image priority flow -->
-          {% if category_banner_url %}
-            <img src="{{ category_banner_url }}" alt="{{ current_category.name }}" class="category-image">
-          {% elif category_image_url %}
+          {% if category_image_url %}
             <img src="{{ category_image_url }}" alt="{{ current_category.name }}" class="category-image">
           {% else %}
             <!-- Default image when no images are available -->
@@ -103,60 +102,87 @@
       </div>
     </div>
     
-    <div class="clips-container" id="clips-container">
-      <div class="loading-indicator">
-        <div class="spinner"></div>
-        <p>Loading clips...</p>
+    <div class="scroll-container">
+      {% if videos %}
+      <div class="clips-grid">
+        {% for video in videos %}
+          <div class="clip">
+            <div class="clip-thumbnail" data-video-id="{{ video.id }}">
+              {% if video.thumbnail %}
+                <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}">
+              {% else %}
+                <img src="{% static 'picture/default-thumbnail.png' %}" alt="{{ video.title }}">
+              {% endif %}
+              
+              <div class="duration-badge">
+                {% if video.duration %}
+                  {{ video.duration|divisibleby:'60'|yesno:video.duration|divide:60|floatformat:'0' }}:{{ video.duration|modulo:60|stringformat:'02d' }}
+                {% else %}
+                  00:00
+                {% endif %}
+              </div>
+              
+              <div class="play-button">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 5V19L19 12L8 5Z" fill="white"/>
+                </svg>
+              </div>
+            </div>
+            <h2>{{ video.title }}</h2>
+            <div class="clipactions">
+              <button class="like" data-id="{{ video.id }}">
+                <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                  <rect fill="none" height="256" width="256"/>
+                  <path d="M224.6,51.9a59.5,59.5,0,0,0-43-19.9,60.5,60.5,0,0,0-44,17.6L128,59.1l-7.5-7.4C97.2,28.3,59.2,26.3,35.9,47.4a59.9,59.9,0,0,0-2.3,87l83.1,83.1a15.9,15.9,0,0,0,22.6,0l81-81C243.7,113.2,245.6,75.2,224.6,51.9Z"/>
+                </svg>
+                <span>add to collection</span>
+              </button>
+              <button class="add-to-cart" data-id="{{ video.id }}">
+                <svg baseProfile="tiny" height="24px" version="1.2" viewBox="0 0 24 24" width="24px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                  <g id="Layer_1">
+                    <g>
+                      <path d="M20.756,5.345C20.565,5.126,20.29,5,20,5H6.181L5.986,3.836C5.906,3.354,5.489,3,5,3H2.75c-0.553,0-1,0.447-1,1s0.447,1,1,1h1.403l1.86,11.164c0.008,0.045,0.031,0.082,0.045,0.124c0.016,0.053,0.029,0.103,0.054,0.151c0.032,0.066,0.075,0.122,0.12,0.179c0.031,0.039,0.059,0.078,0.095,0.112c0.058,0.054,0.125,0.092,0.193,0.13c0.038,0.021,0.071,0.049,0.112,0.065C6.748,16.972,6.87,17,6.999,17C7,17,18,17,18,17c0.553,0,1-0.447,1-1s-0.447-1-1-1H7.847l-0.166-1H19c0.498,0,0.92-0.366,0.99-0.858l1-7C21.031,5.854,20.945,5.563,20.756,5.345z M18.847,7l-0.285,2H15V7H18.847z M14,7v2h-3V7H14z M14,10v2h-3v-2H14z M10,7v2H7C6.947,9,6.899,9.015,6.852,9.03L6.514,7H10z M7.014,10H10v2H7.347L7.014,10z M15,12v-2h3.418l-0.285,2H15z"/>
+                      <circle cx="8.5" cy="19.5" r="1.5"/>
+                      <circle cx="17.5" cy="19.5" r="1.5"/>
+                    </g>
+                  </g>
+                </svg>
+                <span>add to cart</span>
+              </button>
+            </div>
+          </div>
+        {% endfor %}
       </div>
+      {% else %}
+        <div class="no-videos">No videos found in this category.</div>
+      {% endif %}
     </div>
     
+    {% if is_paginated %}
     <div class="pagination-controls" id="pagination-controls">
-      <!-- Pagination will be added dynamically by JavaScript -->
+      <div class="pagination-wrapper">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn prev">&laquo; Previous</a>
+        {% endif %}
+        
+        {% for num in paginator.page_range %}
+          {% if page_obj.number == num %}
+            <span class="pagination-btn page active">{{ num }}</span>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn page">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn next">Next &raquo;</a>
+        {% endif %}
+      </div>
     </div>
+    {% endif %}
   </section>
 </main>
 
-<!-- Video Preview Modal -->
-<div id="videoPreviewModal" class="modal">
-  <div class="modal-content">
-    <span class="close-modal">&times;</span>
-    <div class="video-preview-container">
-      <div class="video-player">
-        <video id="preview-video" controls>
-          <source src="" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
-      </div>
-      <div class="video-details">
-        <h2 id="modal-video-title">Video Title</h2>
-        <div class="video-meta">
-          <span class="meta-item">
-            <i class="fa fa-clock-o"></i>
-            <span id="modal-video-duration">00:00</span>
-          </span>
-          <span class="meta-item">
-            <i class="fa fa-user"></i>
-            <span id="modal-video-uploader">Username</span>
-          </span>
-          <span class="meta-item">
-            <i class="fa fa-calendar"></i>
-            <span id="modal-video-date">Date</span>
-          </span>
-        </div>
-        <div class="video-description">
-          <p id="modal-video-description">Loading video description...</p>
-        </div>
-        <div class="video-tags" id="modal-video-tags">
-          <!-- Tags will be added dynamically -->
-        </div>
-        <div class="video-actions">
-          <button class="add-to-cart-btn" id="add-to-cart-modal">Add to Cart</button>
-          <button class="add-to-favorites-btn" id="add-to-favorites-modal">Add to Collection</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-{% include "html_components/footer_component.html" %}
 </body>
+{% include "html_components/footer_component.html" %}
+
 </html> 

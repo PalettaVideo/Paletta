@@ -29,8 +29,14 @@ class VideoUploadForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
+        self.library = kwargs.pop('library', None)
         super().__init__(*args, **kwargs)
         self.fields['category'].empty_label = "Select a category"
+        
+        # Filter categories by library if library is provided
+        if self.library:
+            self.fields['category'].queryset = self.fields['category'].queryset.filter(library=self.library)
+            
         self.fields['video_file'].required = True
         
     def clean_video_file(self):
@@ -162,6 +168,64 @@ class UploadView(FormView):
         """Serve the upload page."""
         return super().get(request, *args, **kwargs)
     
+    def get_form_kwargs(self):
+        """Pass the current library to the form."""
+        kwargs = super().get_form_kwargs()
+        
+        # Get the current library from session or default to Paletta
+        library_id = self.request.session.get('current_library_id')
+        if library_id:
+            from libraries.models import Library
+            try:
+                library = Library.objects.get(id=library_id)
+                kwargs['library'] = library
+            except Library.DoesNotExist:
+                # Default to Paletta library if not found
+                try:
+                    library = Library.objects.get(name='Paletta')
+                    kwargs['library'] = library
+                except Library.DoesNotExist:
+                    pass
+        else:
+            # Default to Paletta library
+            from libraries.models import Library
+            try:
+                library = Library.objects.get(name='Paletta')
+                kwargs['library'] = library
+            except Library.DoesNotExist:
+                pass
+        
+        return kwargs
+    
+    def get_context_data(self, **kwargs):
+        """Add the current library to the context."""
+        context = super().get_context_data(**kwargs)
+        
+        # Get the current library from session or default to Paletta
+        library_id = self.request.session.get('current_library_id')
+        if library_id:
+            from libraries.models import Library
+            try:
+                library = Library.objects.get(id=library_id)
+                context['current_library'] = library
+            except Library.DoesNotExist:
+                # Default to Paletta library if not found
+                try:
+                    library = Library.objects.get(name='Paletta')
+                    context['current_library'] = library
+                except Library.DoesNotExist:
+                    pass
+        else:
+            # Default to Paletta library
+            from libraries.models import Library
+            try:
+                library = Library.objects.get(name='Paletta')
+                context['current_library'] = library
+            except Library.DoesNotExist:
+                pass
+        
+        return context
+    
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         """Handle the video upload."""
@@ -178,6 +242,33 @@ class UploadView(FormView):
             video = form.save(commit=False)
             video.uploader = self.request.user
             video.storage_status = 'pending'  # Set initial storage status
+            
+            # Set the library from the form
+            if form.library:
+                video.library = form.library
+            else:
+                # If no library in form, try to get from session or default to Paletta
+                library_id = self.request.session.get('current_library_id')
+                if library_id:
+                    from libraries.models import Library
+                    try:
+                        library = Library.objects.get(id=library_id)
+                        video.library = library
+                    except Library.DoesNotExist:
+                        # Default to Paletta library if not found
+                        try:
+                            library = Library.objects.get(name='Paletta')
+                            video.library = library
+                        except Library.DoesNotExist:
+                            raise ValueError("No library found for video upload")
+                else:
+                    # Default to Paletta library
+                    from libraries.models import Library
+                    try:
+                        library = Library.objects.get(name='Paletta')
+                        video.library = library
+                    except Library.DoesNotExist:
+                        raise ValueError("Paletta library not found")
             
             # Save to get an ID for the video
             video.save()
@@ -343,8 +434,12 @@ class VideoAPIUploadView(View):
             tags_text = request.POST.get('tags', '')
             is_published = request.POST.get('is_published', 'true').lower() == 'true'
             
+            # Log the received data
+            logger.info(f"Upload request data: title={title}, category_id={category_id}, tags={tags_text}")
+            
             # Check for files
             if 'video_file' not in request.FILES:
+                logger.warning("Missing video file in upload request")
                 return JsonResponse({
                     'success': False,
                     'message': 'Missing video file'
@@ -353,16 +448,29 @@ class VideoAPIUploadView(View):
             video_file = request.FILES.get('video_file')
             thumbnail = request.FILES.get('thumbnail')
             
+            # Log file info
+            logger.info(f"Received video file: {video_file.name}, size: {video_file.size}, "
+                         f"content type: {video_file.content_type}")
+            if thumbnail:
+                logger.info(f"Received thumbnail: {thumbnail.name}, size: {thumbnail.size}")
+            
             # Validate required fields
             if not all([title, category_id, video_file]):
+                missing = []
+                if not title: missing.append('title')
+                if not category_id: missing.append('category')
+                if not video_file: missing.append('video_file')
+                
+                logger.warning(f"Missing required fields: {', '.join(missing)}")
                 return JsonResponse({
                     'success': False,
-                    'message': 'Missing required fields'
+                    'message': f"Missing required fields: {', '.join(missing)}"
                 }, status=400)
             
             # Validate file size (limit to 5GB)
             max_size = 5 * 1024 * 1024 * 1024  # 5GB in bytes
             if video_file.size > max_size:
+                logger.warning(f"File size exceeds limit: {video_file.size} > {max_size}")
                 return JsonResponse({
                     'success': False,
                     'message': f"File size exceeds 5GB. Current size: {video_file.size / (1024 * 1024 * 1024):.2f}GB"
@@ -380,12 +488,48 @@ class VideoAPIUploadView(View):
                 storage_status='pending'  # Set initial storage status
             )
             
+            # Get library from session or default to Paletta
+            library_id = request.session.get('current_library_id')
+            if library_id:
+                from libraries.models import Library
+                try:
+                    library = Library.objects.get(id=library_id)
+                    video.library = library
+                    logger.info(f"Using library from session: {library.name} (ID: {library.id})")
+                except Library.DoesNotExist:
+                    # Default to Paletta library if not found
+                    try:
+                        library = Library.objects.get(name='Paletta')
+                        video.library = library
+                        logger.info(f"Session library not found, using Paletta: {library.id}")
+                    except Library.DoesNotExist:
+                        logger.error("No library found for video upload")
+                        return JsonResponse({
+                            'success': False,
+                            'message': 'No library found for video upload'
+                        }, status=500)
+            else:
+                # Default to Paletta library
+                from libraries.models import Library
+                try:
+                    library = Library.objects.get(name='Paletta')
+                    video.library = library
+                    logger.info(f"No library in session, using Paletta: {library.id}")
+                except Library.DoesNotExist:
+                    logger.error("Paletta library not found")
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Paletta library not found'
+                    }, status=500)
+            
             # Save to get an ID
             video.save()
+            logger.info(f"Created video record with ID: {video.id}")
             
             # Process tags
             if tags_text:
                 tag_names = [tag.strip() for tag in tags_text.split(',') if tag.strip()]
+                logger.info(f"Processing tags: {tag_names}")
                 for tag_name in tag_names:
                     tag, created = Tag.objects.get_or_create(name=tag_name)
                     video.tags.add(tag)
@@ -394,6 +538,7 @@ class VideoAPIUploadView(View):
             metadata = {}
             try:
                 if hasattr(video.video_file, 'path') and video.video_file.path and os.path.exists(video.video_file.path):
+                    logger.info(f"Extracting metadata from: {video.video_file.path}")
                     metadata = extract_video_metadata(video.video_file.path)
                     
                     # Update video model with metadata
@@ -416,12 +561,14 @@ class VideoAPIUploadView(View):
             
             # Save again with metadata
             video.save()
+            logger.info(f"Updated video with metadata: {metadata}")
             
             # Log the upload
             VideoLogService.log_upload(video, request.user, request)
             
             # Queue the video for upload to AWS S3 storage
             upload_video_to_storage.delay(video.id)
+            logger.info(f"Queued video {video.id} for storage upload")
             
             return JsonResponse({
                 'success': True,
@@ -430,9 +577,7 @@ class VideoAPIUploadView(View):
             })
             
         except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error in VideoAPIUploadView.post: {e}")
+            logger.error(f"Error in VideoAPIUploadView.post: {e}", exc_info=True)
             return JsonResponse({
                 'success': False,
                 'message': f'Error uploading video: {str(e)}'

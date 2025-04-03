@@ -76,6 +76,24 @@ class VideoListAPIView(generics.ListAPIView):
         
         return queryset.distinct()
 
+    def list(self, request, *args, **kwargs):
+        """Override list method to ensure empty results return a valid empty array"""
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # Check if queryset is empty and handle specifically
+        if not queryset.exists():
+            logger.info("Returning empty results array for videos request")
+            return Response({"count": 0, "results": []})
+            
+        # Continue with standard pagination if there are results
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 
 class VideoDetailAPIView(generics.RetrieveAPIView):
     """
@@ -177,6 +195,24 @@ class CategoryVideosAPIView(generics.ListAPIView):
         logger.info(f"Found {result_count} videos for category '{db_category_name}'")
         
         return queryset.distinct()
+
+    def list(self, request, *args, **kwargs):
+        """Override list method to ensure empty results return a valid empty array"""
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # Check if queryset is empty and handle specifically
+        if not queryset.exists():
+            logger.info("Returning empty results array for category videos request")
+            return Response({"count": 0, "results": []})
+            
+        # Continue with standard pagination if there are results
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class PopularTagsAPIView(APIView):

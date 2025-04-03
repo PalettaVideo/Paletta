@@ -492,17 +492,44 @@ document.addEventListener("DOMContentLoaded", function () {
             // Check if we have a response before parsing
             if (xhr.responseText && xhr.responseText.trim()) {
               try {
+                // Log raw response for debugging
+                console.log("Raw response text:", xhr.responseText);
+
+                // Try to parse as JSON
                 result = JSON.parse(xhr.responseText);
                 console.log("Upload response data (parsed JSON):", result);
               } catch (parseError) {
                 console.error("JSON parse error:", parseError);
                 console.log("Raw response text:", xhr.responseText);
 
-                // Even without proper JSON, if status is 200-299, we consider it success
-                result = {
-                  success: true,
-                  message: "Upload appears successful (non-JSON response)",
-                };
+                // Handle HTML response (likely a redirect or error page)
+                if (xhr.responseText.includes("<html")) {
+                  console.log("Received HTML response instead of JSON");
+
+                  // Check if it's a success page (look for success indicators)
+                  if (
+                    xhr.responseText.includes("success") ||
+                    xhr.responseText.includes("Upload complete") ||
+                    xhr.responseText.includes("history")
+                  ) {
+                    result = {
+                      success: true,
+                      message: "Upload appears successful (HTML response)",
+                    };
+                  } else {
+                    // Assume it's an error page
+                    throw new Error(
+                      "Server returned HTML instead of JSON. Check server logs."
+                    );
+                  }
+                } else {
+                  // Not HTML and not JSON, handle as text
+                  console.log("Non-HTML, non-JSON response");
+                  result = {
+                    success: true,
+                    message: "Upload appears successful (non-JSON response)",
+                  };
+                }
               }
             } else {
               // Empty response with success status - assume success

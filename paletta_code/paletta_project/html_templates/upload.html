@@ -18,14 +18,22 @@
 <body>
     {% include "html_components/header_component.html" %}
     <div class="container">
-        <div class="menu">
-            <a href="{% url 'upload' %}" class="active">Upload</a>
-            <a href="{% url 'upload_history' %}">History</a>
+        <div class="sidebar">
+            <ul>
+                <li><a href="{% url 'upload' %}" class="active">Upload</a></li>
+                <li><a href="{% url 'upload_history' %}">History</a></li>
+            </ul>
         </div>
         <div class="main-content">
           <form id="upload-form" method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
             <h1>Upload your clip</h1>
+            
+            {% if current_library %}
+            <div class="library-info">
+                <p>Uploading to library: <strong>{{ current_library.name }}</strong></p>
+            </div>
+            {% endif %}
             
             <div class="upload-box" id="upload-box">
                 <p>MPEG, MOV, MP4, AVI videos no larger than 5GB and no larger than 1920x1080px</p>
@@ -93,6 +101,7 @@
         </div>
     </div>
 
-    {% include "html_components/footer_component.html" %}
 </body>
+{% include "html_components/footer_component.html" %}
+
 </html>
