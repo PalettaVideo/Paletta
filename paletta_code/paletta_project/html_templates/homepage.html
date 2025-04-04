@@ -145,9 +145,12 @@
   <div class="categories" id="categories-container">
     <!-- "All" category is always shown -->
     {% if library_slug %}
-    <a href="{% url 'clip_store' %}" style="text-decoration: none;">
+    <a href="{% url 'library_clip_store' library_slug=library_slug %}" style="text-decoration: none;">
+    {% elif current_library %}
+    <a href="{% url 'library_clip_store' library_slug=current_library.name|slugify %}" style="text-decoration: none;">
     {% else %}
-    <a href="{% url 'clip_store' %}{% if current_library %}?library_id={{ current_library.id }}{% endif %}" style="text-decoration: none;">
+    <!-- Fallback if no library is selected - redirect to home -->
+    <a href="{% url 'home' %}" style="text-decoration: none;">
     {% endif %}
       <div class="category">
         <img src="{% static 'picture/All.png' %}" alt="All">
@@ -159,8 +162,11 @@
     {% for category in categories %}
     {% if library_slug %}
     <a href="{% url 'library_category' library_slug=library_slug category_slug=category.name|slugify %}" style="text-decoration: none;">
+    {% elif current_library %}
+    <a href="{% url 'library_category' library_slug=current_library.name|slugify category_slug=category.name|slugify %}" style="text-decoration: none;">
     {% else %}
-    <a href="{% url 'category' category=category.name|lower %}{% if current_library %}?library_id={{ current_library.id }}{% endif %}" style="text-decoration: none;">
+    <!-- Fallback if no library is selected -->
+    <a href="{% url 'home' %}" style="text-decoration: none;">
     {% endif %}
       <div class="category">
         <!-- Use the category image URL if available, otherwise use a default image -->

@@ -17,10 +17,6 @@ urlpatterns = [
     path('upload/', UploadView.as_view(), name='upload'),
     path('upload/history/', UploadHistoryView.as_view(), name='upload_history'),
     
-    # Clip store views
-    path('clips/', ClipStoreView.as_view(), name='clip_store'),
-    path('clips/category/<str:category>/', CategoryClipView.as_view(), name='category_clips'),
-    
     # API endpoint for categories that matches the frontend expectation
     path('categories/', CategoryViewSet.as_view({'get': 'list'}), name='api_categories'),
     

@@ -7,6 +7,9 @@ from ..models import Category, Tag, Video, VideoTag
 from ..serializers import CategorySerializer, VideoSerializer
 import urllib.parse
 import logging
+from django.shortcuts import redirect
+from django.urls import reverse
+
 from accounts.views.home_view import get_library_by_slug, get_library_slug
 from django.utils.text import slugify
 from libraries.models import Library
@@ -99,12 +102,9 @@ class ClipStoreView(TemplateView):
             category_filter='all',
             search_query=search_query,
             tags=tags,
-            sort_by=sort_by
+            sort_by=sort_by,
+            library=current_library  # Pass the library for filtering
         )
-        
-        # Filter by library if specified
-        if current_library:
-            videos_queryset = videos_queryset.filter(library=current_library)
         
         # Paginate results
         paginator = Paginator(videos_queryset, self.paginate_by)
@@ -123,7 +123,7 @@ class ClipStoreView(TemplateView):
         
         return context
     
-    def get_videos_queryset(self, category_filter=None, search_query=None, tags=None, sort_by=None):
+    def get_videos_queryset(self, category_filter=None, search_query=None, tags=None, sort_by=None, library=None):
         """
         Get videos with filters applied.
         
@@ -132,12 +132,17 @@ class ClipStoreView(TemplateView):
             search_query: Search term for title/description
             tags: List of tag names
             sort_by: Sorting option ('newest', 'oldest', 'popular')
+            library: Library object to filter videos by
             
         Returns:
             QuerySet of Video objects
         """
         # Start with all videos (including unpublished ones for development)
         queryset = Video.objects.all()
+        
+        # Filter by library if specified
+        if library:
+            queryset = queryset.filter(library=library)
         
         # Apply category filter if not 'all'
         if category_filter and category_filter.lower() != 'all':
@@ -202,8 +207,46 @@ class CategoryClipView(ClipStoreView):
                 except Library.DoesNotExist:
                     pass
         
+        # Special case for "clip-store" slug - this represents all videos
+        if category_slug == 'clip-store':
+            context['category_filter'] = 'all'
+            context['is_clip_store'] = True  # Flag to indicate we're in the all videos view
+            logger.info(f"Rendering clip-store (all videos) for library: {current_library.name if current_library else 'None'}")
+            
+            # Get filter parameters
+            search_query = self.request.GET.get('search', '')
+            tags = self.request.GET.getlist('tags', [])
+            sort_by = self.request.GET.get('sort_by', 'newest')
+            page = self.request.GET.get('page', 1)
+            
+            # Fetch videos with filters but no category filter
+            videos_queryset = self.get_videos_queryset(
+                category_filter='all',
+                search_query=search_query,
+                tags=tags,
+                sort_by=sort_by,
+                library=current_library  # Pass the library for filtering
+            )
+            
+            # Paginate results
+            paginator = Paginator(videos_queryset, self.paginate_by)
+            try:
+                videos_page = paginator.page(page)
+            except PageNotAnInteger:
+                videos_page = paginator.page(1)
+            except EmptyPage:
+                videos_page = paginator.page(paginator.num_pages)
+                
+            # Add pagination info to context
+            context['videos'] = videos_page.object_list
+            context['page_obj'] = videos_page
+            context['is_paginated'] = videos_page.has_other_pages()
+            context['paginator'] = paginator
+            
+            return context
+        
         # Get the category based on either the slug or the URL parameter
-        if category_slug:
+        if category_slug and category_slug != 'clip-store':
             # New format - get category by slug
             category = get_category_by_slug(category_slug, current_library)
             if category:
@@ -275,12 +318,9 @@ class CategoryClipView(ClipStoreView):
             category_filter=category_filter,
             search_query=search_query,
             tags=tags,
-            sort_by=sort_by
+            sort_by=sort_by,
+            library=current_library  # Pass the library for filtering
         )
-        
-        # Filter by library if specified
-        if current_library:
-            videos_queryset = videos_queryset.filter(library=current_library)
         
         # Paginate results
         paginator = Paginator(videos_queryset, self.paginate_by)

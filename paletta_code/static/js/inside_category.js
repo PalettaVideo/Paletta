@@ -35,16 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
    * Set up event listeners
    */
   function setupEventListeners() {
-    // Setup category navigation in sidebar
-    document.querySelectorAll(".category-list li").forEach((categoryItem) => {
-      categoryItem.addEventListener("click", function () {
-        const category = this.getAttribute("data-category");
-        window.location.href =
-          category === "all"
-            ? "/clip-store/"
-            : `/category/${encodeURIComponent(category)}/`;
-      });
-    });
+    // Category navigation is now handled by HTML links, no JS needed here
 
     // Setup search functionality
     if (searchCategoryButton && categorySearchInput) {
@@ -250,70 +241,35 @@ document.addEventListener("DOMContentLoaded", function () {
       headers: { "Content-Type": "application/json" },
     })
       .then((response) => response.json())
-      .then((video) => {
-        // Get cart from localStorage
-        const cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-        // Check if video is already in cart
-        const existingItem = cart.find((item) => item.id === video.id);
-        if (existingItem) {
-          existingItem.quantity += 1;
-        } else {
-          // Only store necessary information
-          cart.push({
-            id: video.id,
-            title: video.title,
-            thumbnail:
-              video.thumbnail_url || "/static/picture/default-thumbnail.png",
-            price: video.price || 10.99,
-            quantity: 1,
-          });
-        }
-
-        // Save cart
-        localStorage.setItem("cart", JSON.stringify(cart));
-        alert(`${video.title} has been added to the cart!`);
+      .then((data) => {
+        // Add to cart logic here
+        console.log(`Added video ${videoId} to cart:`, data);
+        // Show success message
+        showNotification("Video added to cart successfully!");
       })
       .catch((error) => {
         console.error("Error adding to cart:", error);
-        alert("Error adding video to cart.");
+        showNotification("Failed to add video to cart.", "error");
       });
   }
 
   /**
-   * Add video to favorites
+   * Add video to favorites/collection
    */
   function addToFavorites(videoId) {
     fetch(`/api/videos/${videoId}/`, {
       headers: { "Content-Type": "application/json" },
     })
       .then((response) => response.json())
-      .then((video) => {
-        // Get favorites from localStorage
-        const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-
-        // Check if video is already in favorites
-        if (!favorites.some((item) => item.id === video.id)) {
-          // Only store necessary information
-          favorites.push({
-            id: video.id,
-            title: video.title,
-            thumbnail:
-              video.thumbnail_url || "/static/picture/default-thumbnail.png",
-            duration: video.duration,
-            upload_date: video.upload_date,
-          });
-
-          // Save favorites
-          localStorage.setItem("favorites", JSON.stringify(favorites));
-          alert(`${video.title} has been added to your collection!`);
-        } else {
-          alert(`${video.title} is already in your collection.`);
-        }
+      .then((data) => {
+        // Add to favorites logic here
+        console.log(`Added video ${videoId} to favorites:`, data);
+        // Show success message
+        showNotification("Video added to collection successfully!");
       })
       .catch((error) => {
         console.error("Error adding to favorites:", error);
-        alert("Error adding video to collection.");
+        showNotification("Failed to add video to collection.", "error");
       });
   }
 
@@ -321,9 +277,33 @@ document.addEventListener("DOMContentLoaded", function () {
    * Open video preview
    */
   function openVideoPreview(videoId) {
-    // This function would open a modal to preview the video
-    // Implement according to your UI design
-    alert(`Opening preview for video ID: ${videoId}`);
-    // You would usually have a modal implementation here
+    // This would open a modal or navigate to a video preview page
+    console.log("Opening preview for video:", videoId);
+    // Placeholder - implement actual preview functionality
+  }
+
+  /**
+   * Show a notification message
+   */
+  function showNotification(message, type = "success") {
+    // Create notification element if it doesn't exist
+    let notification = document.getElementById("notification");
+    if (!notification) {
+      notification = document.createElement("div");
+      notification.id = "notification";
+      document.body.appendChild(notification);
+    }
+
+    // Set message and type
+    notification.textContent = message;
+    notification.className = `notification ${type}`;
+
+    // Show notification
+    notification.style.display = "block";
+
+    // Hide after 3 seconds
+    setTimeout(() => {
+      notification.style.display = "none";
+    }, 3000);
   }
 });

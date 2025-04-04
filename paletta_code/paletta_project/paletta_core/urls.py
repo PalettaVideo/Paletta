@@ -19,7 +19,7 @@ from accounts.views.forgot_password import ForgotPasswordView
 from accounts.views.home_view import HomeView, LogoutView
 from accounts.views.update_profile import ProfileView, ProfileUpdateView
 from videos.views.upload_view import UploadView, UploadHistoryView
-from videos.views.clip_store_view import ClipStoreView, CategoryClipView
+from videos.views.clip_store_view import CategoryClipView
 
 # Create a class for category views
 class CategoryView(TemplateView):
@@ -47,6 +47,7 @@ urlpatterns = [
     
     # New user-friendly URLs for libraries and categories
     path('library/<str:library_slug>/', HomeView.as_view(), name='library_detail'),
+    path('library/<str:library_slug>/category/clip-store/', CategoryClipView.as_view(), name='library_clip_store'),
     path('library/<str:library_slug>/category/<str:category_slug>/', CategoryClipView.as_view(), name='library_category'),
     
     # User profile and account pages
@@ -60,8 +61,6 @@ urlpatterns = [
     path('about/', TemplateView.as_view(template_name='about_us.html'), name='about_us'),
     path('contact/', TemplateView.as_view(template_name='contact_us.html'), name='contact_us'),
     path('help/', TemplateView.as_view(template_name='q_and_a.html'), name='q_and_a'),
-    path('clip-store/', ClipStoreView.as_view(), name='clip_store'),
-    path('category/<str:category>/', CategoryClipView.as_view(), name='category'),
     
     # Library management routes
     path('libraries/create/', login_required(CreateLibraryView.as_view()), name='create_library'),
