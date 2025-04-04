@@ -1,23 +1,28 @@
 {% load static %}
+{% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <title>Edit Library</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Library</title>
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <!-- CSS -->
     <link rel="stylesheet" href="{% static 'css/edit_library_admin.css' %}">
-    <link rel="stylesheet" href="{% static 'css/header_component.css' %}">
-    <link rel="stylesheet" href="{% static 'css/footer_component.css' %}">
     <link rel="stylesheet" href="{% static 'css/sidebar_admin.css' %}">
+    <!-- JS -->
     <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
     <script src="{% static 'js/edit_library_admin.js' %}" defer></script>
-    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
 
 </head>
 
 <body>
-    {% include "html_components/header_component.html" %}
+    {% include "html_reusables/header_reusable.html" %}
 
     <div class="container">
         <aside>
@@ -184,6 +189,10 @@
 
     <div id="modalOverlay" class="modal-overlay"></div>
     
-    {% include "html_components/footer_component.html" %}
+    {% include "html_reusables/footer_reusable.html" %}
 </body>
 </html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

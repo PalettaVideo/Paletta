@@ -1,21 +1,25 @@
+{% load static %}
+{% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <title>Paletta - My Order</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Order</title>
-    {% load static %}
-    <link href="{% static 'css/header_component.css' %}" rel="stylesheet">
-    <link href="{% static 'css/footer_component.css' %}" rel="stylesheet">
-    <link href="{% static 'css/my_order.css' %}" rel="stylesheet">
-    <script src="{% static 'js/my_order.js' %}" defer></script>
+    <!-- Styles -->
     <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/my_order.css' %}">
+    <!-- JS -->
+    <script src="{% static 'js/my_order.js' %}" defer></script>
 
 </head>
 <body>
-{% include "html_components/header_component.html" %}
-    
+{% include "html_reusables/header_reusable.html" %}
     <!-- Add the page-layout wrapper -->
     <div class="layout">
         <aside class="sidebar">
@@ -29,7 +33,7 @@
         <main class="main-content">
             <div class="container">
                 <div class="my-order">
-                    <h1>My Order (4)</h1>
+                    <h1>My Order (Demonstration!)</h1>
                     
                     <div class="order-item">
                         <img src="{% static 'picture/nature-book.jpg' %}" alt="Introduction of Nature: the book">
@@ -61,6 +65,10 @@
         </main>
     </div>
     
-{% include "html_components/footer_component.html" %}
+{% include "html_reusables/footer_reusable.html" %}
 </body>
 </html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

@@ -1,22 +1,28 @@
+{% load static %}
+{% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <title>Paletta - Contributor Application</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  {% load static %}
-  <link href="{% static 'css/header_component.css' %}" rel="stylesheet">
-  <link href="{% static 'css/footer_component.css' %}" rel="stylesheet">
-  <link href="{% static 'css/contributor_form.css' %}" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <!-- CSS Reusables -->
+  <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+  <!-- CSS -->
+  <link rel="stylesheet" href="{% static 'css/contributor_form.css' %}">
+  <!-- JS -->
   <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
-  <title>Paletta Contributor Application</title>
+  <script src="{% static 'js/contributor_form.js' %}" defer></script>
 </head>
 <body>
-  {% include "html_components/header_component.html" %}
+  {% include "html_reusables/header_reusable.html" %}
   <main>
     <a href="{% url 'home' %}">
-      <button class="back-button">⬅ Back</button>
+      <button class="back-button">Back</button>
     </a>
 
   <div class="title-section">
@@ -53,7 +59,7 @@
       
   </div>
   </main>
-  {% include "html_components/footer_component.html" %}
+  {% include "html_reusables/footer_reusable.html" %}
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -72,3 +78,7 @@
   </script>
 </body>
 </html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

@@ -52,6 +52,19 @@ const DOM = {
   },
 };
 
+function getUserData() {
+  try {
+    const userDataElement = document.getElementById("user-data");
+    if (!userDataElement) {
+      throw new Error("User data element not found");
+    }
+    return JSON.parse(userDataElement.textContent);
+  } catch (error) {
+    console.error("Error parsing user data:", error);
+    return null;
+  }
+}
+
 /**
  * Initialise all event listeners and setup
  */
@@ -61,10 +74,11 @@ function initializeProfile() {
 
   // load user data
   try {
-    if (window.userData) {
-      populateProfile(window.userData);
+    const userData = getUserData();
+    if (userData) {
+      populateProfile(userData);
     } else {
-      console.error("User data not found");
+      console.error("User data not found or invalid");
       alert("Failed to load user profile.");
     }
   } catch (error) {

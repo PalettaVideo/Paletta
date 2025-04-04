@@ -1,21 +1,26 @@
 {% load static %}
+{% if user.is_authenticated %}
 {% load video_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <title>{% if current_category %}{{ current_category.name }}{% else %}All Videos{% endif %} - Paletta</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% if current_category %}{{ current_category.name }}{% else %}All Videos{% endif %} - Paletta</title>
+  <!-- Styles -->
+  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-  <link href="{% static 'css/header_component.css' %}" rel="stylesheet">
-  <link href="{% static 'css/footer_component.css' %}" rel="stylesheet">
-  <link href="{% static 'css/inside_category.css' %}" rel="stylesheet">
+  <!-- CSS Reusables -->
+  <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+  <!-- CSS -->
+  <link rel="stylesheet" href="{% static 'css/inside_category.css' %}">
+  <!-- JS -->
   <script src="{% static 'js/inside_category.js' %}" defer></script>
   <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
-  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
 </head>
 <body>
-{% include "html_components/header_component.html" %}
+{% include "html_reusables/header_reusable.html" %}
 <main>
   <aside class="sidebar">
     <div class="backbutton">
@@ -183,6 +188,9 @@
 </main>
 
 </body>
-{% include "html_components/footer_component.html" %}
-
+{% include "html_reusables/footer_reusable.html" %}
 </html> 
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

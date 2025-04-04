@@ -35,7 +35,7 @@ class LibrarySerializer(serializers.ModelSerializer):
         model = Library
         fields = [
             'id', 'name', 'description', 'logo', 'owner', 'owner_details', 
-            'storage_tier', 'storage_limit', 'storage_limit_display', 'storage_limit_gb',
+            'storage_tier', 'storage_limit_display', 'storage_limit_gb',
             'is_active', 'created_at', 'updated_at', 
             'member_count', 'color_scheme', 'user_roles', 'categories_count', 'videos_count', 'logo_url'
         ]

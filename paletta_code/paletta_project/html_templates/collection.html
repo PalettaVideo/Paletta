@@ -1,24 +1,27 @@
+{% load static %}
+{% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <title>Paletta - My Collection</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  {% load static %}
-  <link href="{% static 'css/collection.css' %}" rel="stylesheet">
+  <!-- Styles -->
+  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <!-- CSS Reusables -->
+  <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+  <!-- CSS -->
+  <link rel="stylesheet" href="{% static 'css/collection.css' %}">
+  <!-- JS -->
   <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
   <script src="{% static 'js/collection.js' %}" defer></script>
-  <link href="{% static 'css/header_component.css' %}" rel="stylesheet">
-  <link href="{% static 'css/footer_component.css' %}" rel="stylesheet">
-  <title>My Collection</title>
-  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
 </head>
 
-
 <body>
-  {% include "html_components/header_component.html" %}
+  {% include "html_reusables/header_reusable.html" %}
   
-  {% if user.is_authenticated %}
   <div class="layout">
     <!-- sidebar -->
     <aside class="sidebar">
@@ -79,22 +82,12 @@
       </div>
     </main>
   </div>
-  {% else %}
-  <div class="unauthorized-message">
-    <h2>Please log in to view your collection</h2>
-    <p>You need to be logged in to view and manage your collection.</p>
-    <div class="action-buttons">
-      <a href="{% url 'login' %}">
-        <button class="add-to-cart">Log In</button>
-      </a>
-      <a href="{% url 'register' %}">
-        <button class="add-to-cart">Register</button>
-      </a>
-    </div>
-  </div>
-  {% endif %}
   
   {% csrf_token %}
-  {% include "html_components/footer_component.html" %}
+  {% include "html_reusables/footer_reusable.html" %}
 </body>
 </html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

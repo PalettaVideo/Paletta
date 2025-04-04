@@ -1,21 +1,25 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <title>Contact Us - Paletta</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% load static %}
-    <link href="{% static 'css/navigation_internal.css' %}" rel="stylesheet">
-    <link href="{% static 'css/contact_us.css' %}" rel="stylesheet">
-    <link href="{% static 'css/header_component.css' %}" rel="stylesheet">
-    <link href="{% static 'css/footer_component.css' %}" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-    <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
-    <title>Contact Us - PALETTA</title>
+    <!-- Styles -->
     <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/contact_us.css' %}">
+    <!-- JS -->
+    <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
+    <script src="{% static 'js/contact_us.js' %}" defer></script>
 
 </head>
 <body>
-  {% include "html_components/header_component.html" %}
+  {% include "html_reusables/header_reusable.html" %}
 
 <div class="title-section">
     <div class="image-container">
@@ -47,6 +51,6 @@
     </div>
 </div>
 
-{% include "html_components/footer_component.html" %}
+{% include "html_reusables/footer_reusable.html" %}
 </body>
 </html>

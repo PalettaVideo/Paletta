@@ -1,20 +1,24 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <title>Paletta - Help Center</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% load static %}
-    <link href="{% static 'css/header_component.css' %}" rel="stylesheet">
-    <link href="{% static 'css/footer_component.css' %}" rel="stylesheet">
-    <link href="{% static 'css/q_and_a.css' %}" rel="stylesheet">
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/q_and_a.css' %}">
+    <!-- JS -->
     <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
     <script src="{% static 'js/q_and_a.js' %}" defer></script>
-    <title>Paletta Help Center</title>
-    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
 </head>
 <body>
-{% include "html_components/header_component.html" %}
+{% include "html_reusables/header_reusable.html" %}
 <div class="title-section">
     <div class="image-container">
         <img src="{% static 'picture/main_campus.png' %}">
@@ -52,7 +56,7 @@
     <a href="{% url 'contact_us' %}"><button>Contact Us</button></a>
 </div>
 
-{% include "html_components/footer_component.html" %}
+{% include "html_reusables/footer_reusable.html" %}
 
 </body>
 </html>

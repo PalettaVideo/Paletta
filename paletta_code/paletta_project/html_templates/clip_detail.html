@@ -1,23 +1,29 @@
+{% load static %}
+{% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <title>{{ clip.title|default:"Clip Detail" }}</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  {% load static %}
   {% if clip %}
   <meta name="clip-id" content="{{ clip.id }}">
   {% endif %}
-  <link href="{% static 'css/navigation_internal.css' %}" rel="stylesheet">
-  <link href="{% static 'css/clip_detail.css' %}" rel="stylesheet">
-  <link href="{% static 'css/footer.css' %}" rel="stylesheet">
+  <!-- Styles -->
+  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <!-- CSS Reusables -->
+  <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+  <!-- CSS -->
+  <link rel="stylesheet" href="{% static 'css/navigation_internal.css' %}">
+  <link rel="stylesheet" href="{% static 'css/clip_detail.css' %}">
+  <!-- JS -->
   <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
   <script src="{% static 'js/clip_detail.js' %}" defer></script>
-  <title>{{ clip.title|default:"Clip Detail" }}</title>
-  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
 </head>
 <body>
-  {% include "html_components/navigation_internal.html" %}
+  {% include "html_reusables/header_reusable.html" %}
   
   {% csrf_token %}
 
@@ -106,8 +112,6 @@
     </div>
   </div>
 
-  {% include "footer.html" %}
-
   {% comment %}
   <!-- We'll move this script to an external file -->
   <script>
@@ -148,6 +152,10 @@
   </script>
   {% endcomment %}
 
-  {% include "html_components/footer_component.html" %}
+{% include "html_reusables/footer_reusable.html" %}
 </body>
 </html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

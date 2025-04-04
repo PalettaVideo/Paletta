@@ -4,23 +4,6 @@ body {
     padding: 0;
 }
 
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #f8f8f8;
-    padding: 10px 20px;
-    border-bottom: 1px solid #ddd;
-}
-
-.navbar input[type="text"] {
-    width: 300px;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 14px;
-}
-
 .container {
     display: flex;
     flex-direction: row;
@@ -68,7 +51,7 @@ body {
     overflow-y: auto;
     max-width: 300vh;
     margin: 0 auto;
-  }
+}
 
 h1 {
     font-size: 24px;

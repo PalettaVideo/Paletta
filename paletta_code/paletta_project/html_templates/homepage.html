@@ -1,25 +1,27 @@
 {% load static %}
+{% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <title>{% if current_library %}{{ current_library.name }} - Library {% else %}Paletta Homepage{% endif %}</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- CSS -->
-  <link href="{% static 'css/footer_component.css' %}" rel="stylesheet">
-  <link href="{% static 'css/homepage.css' %}" rel="stylesheet">
-  <link href="{% static 'css/floating.css' %}" rel="stylesheet">
-  <!-- JS -->
+  <!-- Styles -->
+  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+  <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+  <!-- CSS -->
+  <link rel="stylesheet" href="{% static 'css/floating.css' %}">
+  <link rel="stylesheet" href="{% static 'css/homepage.css' %}">
+  <!-- JS -->
   <script src="{% static 'js/homepage.js' %}" defer></script>
   <script src="{% static 'js/floating_label.js' %}" defer></script>
-  <title>{% if current_library %}{{ current_library.name }} - Library {% else %}Paletta Homepage{% endif %}</title>
-  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
 
 </head>
 <body>
   <header>
     <div class="actions">
-      {% if user.is_authenticated %}
         {% if user.role != 'customer' %}
         <a href="{% url 'upload' %}" style="text-decoration: none;">
           <button>
@@ -53,166 +55,147 @@
           <a href="{% url 'order' %}">My Order</a>
           <a href="{% url 'logout' %}">Log Out</a>
         </div>
-      {% else %}
-        <a href="{% url 'login' %}" style="text-decoration: none;">
-          <button>
-            Login
-          </button>
-        </a>
-        <a href="{% url 'register' %}" style="text-decoration: none;">
-          <button>
-            Register
-          </button>
-        </a>
-      {% endif %}
     </div>
   </header>
 
-  <main>
-    {% if user.is_authenticated and user.role != 'customer' and user.role != 'contributor' %}
-      <!--- Floating label -->
-      <div id="floating-label" class="floating-label" onclick="toggleSidebar()">
-        <span>&#9776; More Libraries</span>
-      </div>
-    
-      <!-- sidebar -->
-      <div id="sidebar" class="sidebar">
-        <button class="close-btn" onclick="closeSidebar()">×</button>
-        <h2>Explore more libraries</h2>
-    
-        <div class="search-bar">
-          <input type="text" placeholder="Search libraries">
-          <button>
-            <svg viewBox="0 0 24 24" width="24" height="24">
-              <path d="M18.856,14.624a10.022,10.022,0,1,0-4.234,4.234l4.254,4.255a2.994,2.994,0,1,0,4.239-4.23ZM2,10a8,8,0,1,1,8,8A8.009,8.009,0,0,1,2,10ZM21.7,21.708a1,1,0,0,1-1.4,0l-3.967-3.968a10.092,10.092,0,0,0,1.4-1.406L21.705,20.3a.976.976,0,0,1-.009,1.407Z"/>
-            </svg>
-          </button>
-        </div>
-    
-        <h3>Quick Navigation</h3>
-        <div class="more-libraries-nav" id="libraries-container">
-            <!-- Default Paletta library -->
-            <div class="library-button">
-                <a href="{% url 'home' %}" class="{% if not current_library or current_library.name == 'Paletta' %}active{% endif %}">
-                    <img src="{% static 'picture/logo.jpg' %}" alt="Paletta">
-                    <span>Paletta</span>
-                </a>
-            </div>
-            
-            {% if user.is_authenticated %}
-                <!-- Dynamic libraries from database for authenticated users -->
-                {% for library in libraries %}
-                <div class="library-button">
-                    <a href="{% url 'home' %}?library_id={{ library.id }}" class="{% if current_library and current_library.id == library.id %}active{% endif %}">
-                        {% if library.logo %}
-                            <img src="{{ library.logo.url }}" alt="{{ library.name }}">
-                        {% else %}
-                            <img src="{% static 'picture/default-logo.jpg' %}" alt="{{ library.name }}">
-                        {% endif %}
-                        <span>{{ library.name }}</span>
-                    </a>
-                </div>
-                {% empty %}
-                <!-- No additional libraries message for authenticated users -->
-                <p class="no-libraries">No additional libraries available.</p>
-                {% endfor %}
-            {% endif %}
-        </div>
+<main>
+  <!--- Floating label -->
+  <div id="floating-label" class="floating-label" onclick="toggleSidebar()">
+    <span>&#9776; More Libraries</span>
+  </div>
 
-        <div class="admin-nav-btns">
-            <button class="admin-nav-btn"><a href="{% url 'create_library' %}" style="text-decoration: none;">Create a Library</a></button>
-            <button class="admin-nav-btn"><a href="{% url 'manage_libraries' %}" style="text-decoration: none;">Manage All Libraries</a></button>
-            <button class="admin-nav-btn"><a href="{% url 'manage_administrators' %}" style="text-decoration: none;">Manage Administrator</a></button>
-        </div>
-      </div>
-    <!-- sidebar-overlay -->
-    <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
-    {% endif %}
-    
-    <div class="title-section">
-      {% if current_library and current_library.name != 'Paletta' %}
-        <img src="{% if current_library.logo %}{{ current_library.logo.url }}{% else %}{% static 'picture/default-logo.jpg' %}{% endif %}" alt="{{ current_library.name }} Logo">
-        <h1>
-          Welcome to<br>
-          {{ current_library.name }}
-        </h1>
-      {% elif current_library and current_library.name == 'Paletta' %}
-        <img src="{% static 'picture/logo.jpg' %}" alt="Logo">
-        <h1>
-          Bring out your<br>
-          own color here
-        </h1>
-      {% endif %}
-    </div>
+  <!-- sidebar -->
+  <div id="sidebar" class="sidebar">
+    <button class="close-btn" onclick="closeSidebar()">×</button>
+    <h2>Explore more libraries</h2>
 
-    <p>Discover Any Clip You Like From Your Library</p>
     <div class="search-bar">
-      <input type="text" placeholder="Search...">
+      <input type="text" placeholder="Search libraries">
       <button>
-        <svg id="Icons" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
-          <path class="cls-1" d="M18.856,14.624a10.022,10.022,0,1,0-4.234,4.234l4.254,4.255a2.994,2.994,0,1,0,4.239-4.23ZM2,10a8,8,0,1,1,8,8A8.009,8.009,0,0,1,2,10ZM21.7,21.708a1,1,0,0,1-1.4,0l-3.967-3.968a10.092,10.092,0,0,0,1.4-1.406L21.705,20.3a.976.976,0,0,1-.009,1.407Z" />
-          <path class="cls-1" d="M10,4a6.006,6.006,0,0,0-6,6,1,1,0,0,0,2,0,4,4,0,0,1,4-4,1,1,0,0,0,0-2Z" />
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <path d="M18.856,14.624a10.022,10.022,0,1,0-4.234,4.234l4.254,4.255a2.994,2.994,0,1,0,4.239-4.23ZM2,10a8,8,0,1,1,8,8A8.009,8.009,0,0,1,2,10ZM21.7,21.708a1,1,0,0,1-1.4,0l-3.967-3.968a10.092,10.092,0,0,0,1.4-1.406L21.705,20.3a.976.976,0,0,1-.009,1.407Z"/>
         </svg>
       </button>
     </div>
 
-    {% if user.is_authenticated %}
-
-    <div class="categories" id="categories-container">
-      <!-- "All" category is always shown -->
-      <a href="{% url 'clip_store' %}{% if current_library and current_library.name != 'Paletta' %}?library_id={{ current_library.id }}{% endif %}" style="text-decoration: none;">
-        <div class="category">
-          <img src="{% static 'picture/All.png' %}" alt="All">
-          <span>All</span>
+    <h3>Quick Navigation</h3>
+    <div class="more-libraries-nav" id="libraries-container">
+      <!-- Default Paletta library -->
+      <div class="library-button">
+        <a href="{% url 'home' %}" class="{% if not current_library or current_library.name == 'Paletta' %}active{% endif %}">
+            <img src="{% static 'picture/logo.jpg' %}" alt="Paletta">
+            <span>Paletta</span>
+        </a>
+      </div>
+      <!-- Dynamic libraries from database for authenticated users -->
+        {% for library in libraries %}
+        <div class="library-button">
+            <a href="{% url 'home' %}?library_id={{ library.id }}" class="{% if current_library and current_library.id == library.id %}active{% endif %}">
+                {% if library.logo %}
+                    <img src="{{ library.logo.url }}" alt="{{ library.name }}">
+                {% else %}
+                    <img src="{% static 'picture/default-logo.jpg' %}" alt="{{ library.name }}">
+                {% endif %}
+                <span>{{ library.name }}</span>
+            </a>
         </div>
-      </a>
-      
-        <!-- Dynamic categories from database for authenticated users -->
-        {% for category in categories %}
-        <a href="{% url 'category' category=category.name|lower %}{% if current_library and current_library.name != 'Paletta' %}?library_id={{ current_library.id }}{% endif %}" style="text-decoration: none;">
-          <div class="category">
-            <!-- Use the category image URL if available, otherwise use a default image -->
-            {% if category.image_url %}
-              <img src="{{ category.image_url }}" alt="{{ category.name }}" 
-                  data-category="{{ category.name }}" class="category-image">
-            {% else %}
-              <img src="{% static 'picture/main_campus.png' %}" alt="{{ category.name }}" 
-                  data-category="{{ category.name }}" class="category-image">
-            {% endif %}
-            <span>{{ category.name }}</span>
-          </div>
-        </a>
         {% empty %}
-        <!-- If no categories are found, show a message -->
-        <p class="no-categories">No categories created yet. Reach out to Admin for more information.</p>
+        <!-- No additional libraries message for authenticated users -->
+        <p class="no-libraries">No additional libraries available.</p>
         {% endfor %}
-      {% else %}
-        <!-- For non-authenticated users -->
-        <p class="no-categories">Unauthorised access. Please login to view categories.</p>
-      {% endif %}
     </div>
 
-    <div class="contributor-section">
-      {% if user.is_authenticated and user.role != 'customer' %}
-        <p>Want to recommend a video contributor?</p>
-        <a href="{% url 'contributor_apply' %}">
-          <button>Recommend Here</button>
-        </a>
-      {% elif user.is_authenticated and user.role == 'customer' %}
-        <p>Want to be a video contributor?</p>
-        <a href="{% url 'contributor_apply' %}">
-          <button>Apply Here</button>
-        </a>
-      {% else %}
-        <p>Create an account to recommend a video contributor.</p>
-        <a href="{% url 'login' %}">
-          <button>Login to Apply</button>
-        </a>
-      {% endif %}
+    <div class="admin-nav-btns">
+        <button class="admin-nav-btn"><a href="{% url 'create_library' %}" style="text-decoration: none;">Create a Library</a></button>
+        <button class="admin-nav-btn"><a href="{% url 'manage_libraries' %}" style="text-decoration: none;">Manage All Libraries</a></button>
+        <button class="admin-nav-btn"><a href="{% url 'manage_administrators' %}" style="text-decoration: none;">Manage Administrator</a></button>
     </div>
-  </main>
-
-  {% include "html_components/footer_component.html" %}
+  </div>
+  <!-- sidebar-overlay -->
+  <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
   
+  <div class="title-section">
+    {% if current_library and current_library.name != 'Paletta' %}
+      <img src="{% if current_library.logo %}{{ current_library.logo.url }}{% else %}{% static 'picture/default-logo.jpg' %}{% endif %}" alt="{{ current_library.name }} Logo">
+      <h1>
+        Welcome to<br>
+        {{ current_library.name }}
+      </h1>
+    {% elif current_library and current_library.name == 'Paletta' %}
+      <img src="{% static 'picture/logo.jpg' %}" alt="Logo">
+      <h1>
+        Bring out your<br>
+        own color here
+      </h1>
+    {% endif %}
+  </div>
+
+  <p>Discover Any Clip You Like From Your Library</p>
+  <div class="search-bar">
+    <input type="text" placeholder="Search...">
+    <button>
+      <svg id="Icons" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+        <path class="cls-1" d="M18.856,14.624a10.022,10.022,0,1,0-4.234,4.234l4.254,4.255a2.994,2.994,0,1,0,4.239-4.23ZM2,10a8,8,0,1,1,8,8A8.009,8.009,0,0,1,2,10ZM21.7,21.708a1,1,0,0,1-1.4,0l-3.967-3.968a10.092,10.092,0,0,0,1.4-1.406L21.705,20.3a.976.976,0,0,1-.009,1.407Z" />
+        <path class="cls-1" d="M10,4a6.006,6.006,0,0,0-6,6,1,1,0,0,0,2,0,4,4,0,0,1,4-4,1,1,0,0,0,0-2Z" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="categories" id="categories-container">
+    <!-- "All" category is always shown -->
+    <a href="{% url 'clip_store' %}{% if current_library and current_library.name != 'Paletta' %}?library_id={{ current_library.id }}{% endif %}" style="text-decoration: none;">
+      <div class="category">
+        <img src="{% static 'picture/All.png' %}" alt="All">
+        <span>All</span>
+      </div>
+    </a>
+    
+    <!-- Dynamic categories from database for authenticated users -->
+    {% for category in categories %}
+    <a href="{% url 'category' category=category.name|lower %}{% if current_library and current_library.name != 'Paletta' %}?library_id={{ current_library.id }}{% endif %}" style="text-decoration: none;">
+      <div class="category">
+        <!-- Use the category image URL if available, otherwise use a default image -->
+        {% if category.image_url %}
+          <img src="{{ category.image_url }}" alt="{{ category.name }}" 
+              data-category="{{ category.name }}" class="category-image">
+        {% else %}
+          <img src="{% static 'picture/main_campus.png' %}" alt="{{ category.name }}" 
+              data-category="{{ category.name }}" class="category-image">
+        {% endif %}
+        <span>{{ category.name }}</span>
+      </div>
+    </a>
+    {% empty %}
+    <!-- If no categories are found, show a message -->
+    <p class="no-categories">No categories created yet. Reach out to Admin for more information.</p>
+    {% endfor %}
+  </div>
+
+  <div class="contributor-section">
+    {% if user.role != 'customer' %}
+      <p>Want to recommend a video contributor?</p>
+      <a href="{% url 'contributor_apply' %}">
+        <button>Recommend Here</button>
+      </a>
+    {% elif user.role == 'customer' %}
+      <p>Want to be a video contributor?</p>
+      <a href="{% url 'contributor_apply' %}">
+        <button>Apply Here</button>
+      </a>
+    {% else %}
+      <p>Create an account to recommend a video contributor.</p>
+      <a href="{% url 'login' %}">
+        <button>Login to Apply</button>
+      </a>
+    {% endif %}
+  </div>
+</main>
+
+{% include "html_reusables/footer_reusable.html" %}
+
 </body>
 </html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

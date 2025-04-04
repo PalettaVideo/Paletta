@@ -16,6 +16,8 @@ import tempfile
 import mimetypes
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+import logging
+
 
 class VideoUploadForm(forms.ModelForm):
     """Form for uploading videos with tags."""
@@ -54,7 +56,6 @@ def extract_video_metadata(file_path):
     Extract basic metadata from a video file using ffmpeg/ffprobe.
     Returns a dictionary with metadata information needed for storage.
     """
-    import logging
     logger = logging.getLogger(__name__)
     
     metadata = {

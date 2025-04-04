@@ -1,13 +1,16 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <title>Paletta - Login</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% load static %}
-    <title>Login - Paletta</title>
+    <!-- Styles -->
     <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
-    <link href="{% static 'css/login.css' %}" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS -->
+    <link href="{% static 'css/login.css' %}" rel="stylesheet">
+    <!-- JS -->
     <script src="{% static 'js/login.js' %}" defer></script>
 </head>
 <body>
@@ -40,7 +43,7 @@
                     <input type="password" id="password" name="password" placeholder="Enter your password" required>
                 </div>
                 <div class="forgot-password">
-                    <a href="{% url 'forgot_password' %}">Forget the password</a>
+                    <a href="{% url 'forgot_password' %}">Forgot My Password</a>
                 </div>
                 <button type="submit" class="login-btn">Log In</button>
             </form>

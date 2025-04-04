@@ -1,38 +1,33 @@
+{% load static %}
+{% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% load static %}
-    <link href="{% static 'css/header_component.css' %}" rel="stylesheet">
-    <link href="{% static 'css/footer_component.css' %}" rel="stylesheet">
-    <link href="{% static 'css/my_profile.css' %}" rel="stylesheet">
-    <link href="{% static 'css/password_message.css' %}" rel="stylesheet">
-    <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
-    <script>
-        // pass user data from Django to JavaScript
-        window.userData = {
-            email: "{{ user_data.email }}",
-            first_name: "{{ user_data.first_name }}",
-            last_name: "{{ user_data.last_name }}",
-            institution: "{{ user_data.institution }}",
-            company: "{{ user_data.company }}",
-            role: "{{ user_data.role }}"
-        };
-    </script>
-    <script src="{% static 'js/my_profile.js' %}" defer type="module"></script>
-    <title>Profile Page</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
- 
+  <title>Paletta - Profile Page</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Styles -->
+  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <!-- CSS Reusables -->
+  <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+  <!-- CSS -->
+  <link rel="stylesheet" href="{% static 'css/my_profile.css' %}">
+  <link rel="stylesheet" href="{% static 'css/password_message.css' %}">
+
+  <!-- JS -->
+  <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
+  {{ user_data|json_script:"user-data" }}
+  <script src="{% static 'js/my_profile.js' %}" defer type="module"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+
 </head>
 
-
-
 <body>
-  {% include "html_components/header_component.html" %}
+  {% include "html_reusables/header_reusable.html" %}
     <div class="container">
-      {% if user.is_authenticated %}
         <div class="sidebar">
             <ul>
                 <li><a href="{% url 'profile' %}" class="active">My profile</a></li>
@@ -115,8 +110,11 @@
                 </form>
             </div>
         </div>
-      {% endif %}
     </div>
-    {% include "html_components/footer_component.html" %}
+    {% include "html_reusables/footer_reusable.html" %}
 </body>
 </html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

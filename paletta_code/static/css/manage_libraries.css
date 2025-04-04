@@ -26,26 +26,6 @@
     margin-bottom: 20px;
 }
 
-.search-bar {
-    display: flex;
-    border: 1px solid #ddd;
-    border-radius: 20px;
-    overflow: hidden;
-}
-
-.search-bar input {
-    border: none;
-    padding: 8px 12px;
-    outline: none;
-    flex: 1;
-}
-
-.search-bar button {
-    border: none;
-    background: none;
-    padding: 8px;
-}
-
 .actions {
     display: flex;
     gap: 10px;
@@ -91,10 +71,10 @@
 
 .library-actions {
     display: flex;
-    flex-direction: column;  /* 让按钮垂直排列 */
-    gap: 8px;  /* 按钮之间的间距 */
-    align-items: flex-start; /* 按钮左侧对齐 */
-    justify-content: flex-end; /* 让按钮整体靠右 */
+    flex-direction: column;
+    gap: 8px;  
+    align-items: flex-start; 
+    justify-content: flex-end; 
 }
 
 .library-actions button {
