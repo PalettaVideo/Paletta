@@ -45,6 +45,10 @@ urlpatterns = [
     path('upload/', UploadView.as_view(), name='upload'),
     path('upload/history/', UploadHistoryView.as_view(), name='upload_history'),
     
+    # New user-friendly URLs for libraries and categories
+    path('library/<str:library_slug>/', HomeView.as_view(), name='library_detail'),
+    path('library/<str:library_slug>/category/<str:category_slug>/', CategoryClipView.as_view(), name='library_category'),
+    
     # User profile and account pages
     path('profile/', ProfileView.as_view(), name='profile'),
     path('profile/update/', ProfileUpdateView.as_view(), name='profile_update'),

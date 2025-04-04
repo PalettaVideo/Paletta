@@ -2,29 +2,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // initialize the popup menu for the user center
   initPopupMenu();
 
-  // fetch categories if they're not already loaded from the server-side
-  const categoriesContainer = document.getElementById("categories-container");
-  if (
-    categoriesContainer &&
-    categoriesContainer.querySelectorAll(".category").length <= 1
-  ) {
-    fetchCategories();
-  } else {
-    // try to load category-specific images
-    loadCategoryImages();
-  }
-
-  // fetch libraries for the more-libraries-nav section
-  const librariesContainer = document.getElementById("libraries-container");
-  if (
-    librariesContainer &&
-    librariesContainer.querySelectorAll(".library-button").length <= 1
-  ) {
-    fetchLibraries();
-  }
-
   // initialize search functionality
-  initSearch();
+  initVideoSearch();
+  initLibrarySearch();
 
   // initialize sidebar toggle
   initSidebar();
@@ -83,288 +63,175 @@ function initSidebar() {
   };
 }
 
-function loadCategoryImages() {
-  // Find all category images
-  const categoryImages = document.querySelectorAll(".category-image");
+function initVideoSearch() {
+  // Main content search for videos
+  const videoSearchInput = document.getElementById("video-search-input");
+  const videoSearchButton = document.getElementById("video-search-button");
 
-  // try to load images from the API with cache control
-  fetch("/api/videos/categories/", {
-    method: "GET",
-    cache: "no-cache",
-    headers: {
-      "Cache-Control": "no-cache",
-      Pragma: "no-cache",
-    },
-  })
-    .then((response) =>
-      response.ok
-        ? response.json()
-        : Promise.reject("Failed to fetch categories")
-    )
-    .then((data) => {
-      if (data.results && data.results.length > 0) {
-        // create a map of category names to image URLs
-        const categoryImageMap = {};
-        data.results.forEach((category) => {
-          if (category.image_url) {
-            categoryImageMap[category.name] = category.image_url;
-          }
-        });
-
-        // update images with URLs from the API
-        categoryImages.forEach((img) => {
-          const categoryName = img.getAttribute("data-category");
-          if (categoryName && categoryImageMap[categoryName]) {
-            img.src = categoryImageMap[categoryName];
-          } else {
-            // if no image in API, try static file as fallback
-            tryLoadStaticImage(img, categoryName);
-          }
-        });
-      } else {
-        // if API returns no results, fall back to static files
-        categoryImages.forEach((img) => {
-          const categoryName = img.getAttribute("data-category");
-          tryLoadStaticImage(img, categoryName);
-        });
-      }
-    })
-    .catch((error) => {
-      console.error("Error fetching category images:", error);
-      // if API fails, fall back to static files
-      categoryImages.forEach((img) => {
-        const categoryName = img.getAttribute("data-category");
-        tryLoadStaticImage(img, categoryName);
-      });
-    });
-}
-
-function tryLoadStaticImage(imgElement, categoryName) {
-  if (!categoryName) return;
-
-  // try to load the category-specific image from static files
-  const specificImage = new Image();
-  specificImage.onload = function () {
-    // if the image loads successfully, replace the default image
-    imgElement.src = this.src;
-  };
-  specificImage.onerror = function () {
-    // if the image fails to load, keep the default image
-    console.log(`No specific image found for category: ${categoryName}`);
-  };
-  specificImage.src = `/static/picture/${categoryName}.png`;
-}
-
-function fetchCategories() {
-  // Get the current library ID from the URL or session
-  const urlParams = new URLSearchParams(window.location.search);
-  const libraryId = urlParams.get("library_id");
-
-  // Construct the API URL with library context if available
-  let apiUrl = "/api/videos/categories/";
-  if (libraryId) {
-    apiUrl += `?library_id=${libraryId}`;
-  }
-
-  fetch(apiUrl, {
-    method: "GET",
-    cache: "no-cache",
-    headers: {
-      "Cache-Control": "no-cache",
-      Pragma: "no-cache",
-    },
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Failed to fetch categories");
-      }
-      return response.json();
-    })
-    .then((data) => {
-      if (data.results && data.results.length > 0) {
-        updateCategoriesUI(data.results);
-      } else {
-        // No categories found yet, text is generated from the backend
-        pass;
-      }
-    })
-    .catch((error) => {
-      console.error("Error fetching categories:", error);
-    });
-}
-
-function fetchLibraries() {
-  fetch("/api/libraries/", {
-    method: "GET",
-    cache: "no-cache",
-    headers: {
-      "Cache-Control": "no-cache",
-      Pragma: "no-cache",
-    },
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Failed to fetch libraries");
-      }
-      return response.json();
-    })
-    .then((data) => {
-      if (data.results && data.results.length > 0) {
-        updateLibrariesUI(data.results);
-      }
-    })
-    .catch((error) => {
-      console.error("Error fetching libraries:", error);
-    });
-}
-
-function updateLibrariesUI(libraries) {
-  const librariesContainer = document.getElementById("libraries-container");
-  if (!librariesContainer) return;
-
-  // Keep the default Paletta library which should already be there
-  const defaultLibrary = librariesContainer.querySelector(".library-button");
-
-  // Clear existing libraries except the default one
-  if (defaultLibrary) {
-    librariesContainer.innerHTML = "";
-    librariesContainer.appendChild(defaultLibrary);
-  }
-
-  // Add each library from the API
-  libraries.forEach((library) => {
-    // Skip adding duplicate of default Paletta if it exists in the API results
-    if (library.name.toLowerCase() === "paletta") return;
-
-    const libraryDiv = document.createElement("div");
-    libraryDiv.className = "library-button";
-
-    const libraryLink = document.createElement("a");
-    libraryLink.href = `/home/?library_id=${library.id}`;
-
-    const img = document.createElement("img");
-    // Use the logo from the API if available, otherwise use default
-    if (library.logo) {
-      img.src = library.logo;
-    } else {
-      img.src = "/static/picture/default-logo.jpg";
-    }
-    img.alt = library.name;
-
-    const span = document.createElement("span");
-    span.textContent = library.name;
-
-    libraryLink.appendChild(img);
-    libraryLink.appendChild(span);
-    libraryDiv.appendChild(libraryLink);
-    librariesContainer.appendChild(libraryDiv);
-  });
-
-  // If no libraries were added (and only the default remains), show a message
-  if (librariesContainer.querySelectorAll(".library-button").length <= 1) {
-    const noLibraries = document.createElement("p");
-    noLibraries.classList.add("no-libraries");
-    noLibraries.textContent = "No additional libraries available.";
-    librariesContainer.appendChild(noLibraries);
-  }
-}
-
-function updateCategoriesUI(categories) {
-  const categoriesContainer = document.getElementById("categories-container");
-  if (!categoriesContainer) return;
-
-  // keep the "All" category which should already be there
-  const allCategoryElement = categoriesContainer.querySelector(
-    'a[href*="clip_store"]'
-  );
-
-  // clear existing categories except "All"
-  categoriesContainer.innerHTML = "";
-
-  // add back the "All" category
-  if (allCategoryElement) {
-    categoriesContainer.appendChild(allCategoryElement);
-  }
-
-  // add each category from the API
-  categories.forEach((category) => {
-    const categoryLink = document.createElement("a");
-
-    // Get the current library ID from the URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const libraryId = urlParams.get("library_id");
-
-    // Construct the category URL with library context if available
-    categoryLink.href = `/category/${category.name.toLowerCase()}/`;
-    if (libraryId) {
-      categoryLink.href += `?library_id=${libraryId}`;
-    }
-
-    categoryLink.style.textDecoration = "none";
-
-    const categoryDiv = document.createElement("div");
-    categoryDiv.className = "category";
-
-    const img = document.createElement("img");
-    // use the image from the API if available, otherwise use default
-    if (category.image_url) {
-      img.src = category.image_url;
-    } else {
-      // path to default image
-      img.src = "/static/picture/main_campus.png";
-    }
-    img.alt = category.name;
-    img.className = "category-image";
-    img.setAttribute("data-category", category.name);
-
-    const span = document.createElement("span");
-    span.textContent = category.name;
-
-    categoryDiv.appendChild(img);
-    categoryDiv.appendChild(span);
-    categoryLink.appendChild(categoryDiv);
-    categoriesContainer.appendChild(categoryLink);
-  });
-
-  // if no image is available from the API, try to load from static files
-  const categoryImages = document.querySelectorAll(".category-image");
-  categoryImages.forEach((img) => {
-    if (img.src.includes("default_category.png")) {
-      const categoryName = img.getAttribute("data-category");
-      tryLoadStaticImage(img, categoryName);
-    }
-  });
-}
-
-function initSearch() {
-  const searchInput = document.querySelector(".search-bar input");
-  const searchButton = document.querySelector(".search-bar button");
-
-  if (searchInput && searchButton) {
-    searchButton.addEventListener("click", function () {
-      performSearch(searchInput.value);
+  if (videoSearchInput && videoSearchButton) {
+    videoSearchButton.addEventListener("click", function () {
+      performVideoSearch(videoSearchInput.value);
     });
 
-    searchInput.addEventListener("keypress", function (e) {
+    videoSearchInput.addEventListener("keypress", function (e) {
       if (e.key === "Enter") {
-        performSearch(searchInput.value);
+        performVideoSearch(videoSearchInput.value);
       }
     });
   }
 }
 
-function performSearch(query) {
-  if (query.trim()) {
-    // Get the current library ID from the URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const libraryId = urlParams.get("library_id");
+function initLibrarySearch() {
+  // Sidebar search for libraries
+  const librarySearchInput = document.getElementById("library-search-input");
+  const librarySearchButton = document.getElementById("library-search-button");
+  const clearButton = document.getElementById("library-search-clear");
 
-    // Construct the search URL with library context if available
-    let searchUrl = `/clip-store/?search=${encodeURIComponent(query.trim())}`;
-    if (libraryId) {
-      searchUrl += `&library_id=${libraryId}`;
+  if (librarySearchInput && librarySearchButton) {
+    // Filter on button click
+    librarySearchButton.addEventListener("click", function () {
+      performLibrarySearch(librarySearchInput.value);
+    });
+
+    // Filter on Enter key
+    librarySearchInput.addEventListener("keypress", function (e) {
+      if (e.key === "Enter") {
+        performLibrarySearch(librarySearchInput.value);
+      }
+    });
+
+    // Filter dynamically on each keystroke
+    librarySearchInput.addEventListener("input", function () {
+      performLibrarySearch(librarySearchInput.value);
+
+      // Show/hide clear button based on input content
+      if (clearButton) {
+        clearButton.style.display = librarySearchInput.value.trim()
+          ? "block"
+          : "none";
+      }
+    });
+
+    // Clear button functionality
+    if (clearButton) {
+      clearButton.addEventListener("click", function () {
+        librarySearchInput.value = "";
+        performLibrarySearch("");
+        clearButton.style.display = "none";
+        librarySearchInput.focus();
+      });
+    }
+  }
+}
+
+function performVideoSearch(query) {
+  if (query.trim()) {
+    // Check if we're using the new URL structure by looking for a library slug
+    const librarySlugMatch =
+      window.location.pathname.match(/\/library\/([^/]+)\//);
+
+    if (librarySlugMatch) {
+      // New URL structure
+      const librarySlug = librarySlugMatch[1];
+      window.location.href = `/clip-store/?search=${encodeURIComponent(
+        query.trim()
+      )}&library_slug=${librarySlug}`;
+    } else {
+      // Legacy URL structure
+      const urlParams = new URLSearchParams(window.location.search);
+      const libraryId = urlParams.get("library_id");
+
+      // Construct the search URL with library context if available
+      let searchUrl = `/clip-store/?search=${encodeURIComponent(query.trim())}`;
+      if (libraryId) {
+        searchUrl += `&library_id=${libraryId}`;
+      }
+
+      window.location.href = searchUrl;
+    }
+  }
+}
+
+function performLibrarySearch(query) {
+  // Filter libraries in the sidebar based on the search query
+  const libraryButtons = document.querySelectorAll(".library-button");
+  const searchTermLower = query.trim().toLowerCase();
+  let matchFound = false;
+
+  // Get the search input and button for visual feedback
+  const searchInput = document.getElementById("library-search-input");
+  const searchButton = document.getElementById("library-search-button");
+  const clearButton = document.getElementById("library-search-clear");
+
+  // If search is empty, show all libraries
+  if (!searchTermLower) {
+    libraryButtons.forEach((button) => {
+      button.style.display = "block";
+    });
+
+    // Remove any "no results" message
+    const tempMsg = document.querySelector(".no-search-results");
+    if (tempMsg) tempMsg.remove();
+
+    // Show the original "no libraries" message if it exists
+    const noLibrariesMsg = document.querySelector(
+      ".no-libraries:not(.no-search-results)"
+    );
+    if (noLibrariesMsg) {
+      noLibrariesMsg.style.display = "block";
     }
 
-    window.location.href = searchUrl;
+    // Reset visual indicator
+    if (searchInput) searchInput.classList.remove("active-filter");
+    if (searchButton) searchButton.classList.remove("active-filter");
+
+    // Hide clear button
+    if (clearButton) clearButton.style.display = "none";
+
+    return;
+  }
+
+  // Otherwise filter based on search term
+  libraryButtons.forEach((button) => {
+    const libraryName = button.querySelector("span").innerText.toLowerCase();
+    if (libraryName.includes(searchTermLower)) {
+      button.style.display = "block";
+      matchFound = true;
+    } else {
+      button.style.display = "none";
+    }
+  });
+
+  // Show visual indicator that filter is active
+  if (searchInput) searchInput.classList.add("active-filter");
+  if (searchButton) searchButton.classList.add("active-filter");
+
+  // Show clear button
+  if (clearButton) clearButton.style.display = "block";
+
+  // Hide the original "no libraries" message during search
+  const originalNoLibrariesMsg = document.querySelector(
+    ".no-libraries:not(.no-search-results)"
+  );
+  if (originalNoLibrariesMsg) {
+    originalNoLibrariesMsg.style.display = "none";
+  }
+
+  // Show/hide the "no search results" message
+  let noResultsMsg = document.querySelector(".no-search-results");
+
+  if (!matchFound && libraryButtons.length > 0) {
+    // Create or update the no results message
+    if (!noResultsMsg) {
+      noResultsMsg = document.createElement("p");
+      noResultsMsg.className = "no-libraries no-search-results";
+      const container = document.getElementById("libraries-container");
+      container.appendChild(noResultsMsg);
+    }
+    noResultsMsg.textContent = `No libraries matching "${query}"`;
+    noResultsMsg.style.display = "block";
+  } else if (noResultsMsg) {
+    // Hide the message if we have matches
+    noResultsMsg.style.display = "none";
   }
 }

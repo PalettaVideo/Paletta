@@ -70,8 +70,9 @@
     <h2>Explore more libraries</h2>
 
     <div class="search-bar">
-      <input type="text" placeholder="Search libraries">
-      <button>
+      <input type="text" id="library-search-input" placeholder="Filter libraries by name...">
+      <button id="library-search-clear" class="search-clear-btn" style="display: none;">×</button>
+      <button id="library-search-button">
         <svg viewBox="0 0 24 24" width="24" height="24">
           <path d="M18.856,14.624a10.022,10.022,0,1,0-4.234,4.234l4.254,4.255a2.994,2.994,0,1,0,4.239-4.23ZM2,10a8,8,0,1,1,8,8A8.009,8.009,0,0,1,2,10ZM21.7,21.708a1,1,0,0,1-1.4,0l-3.967-3.968a10.092,10.092,0,0,0,1.4-1.406L21.705,20.3a.976.976,0,0,1-.009,1.407Z"/>
         </svg>
@@ -90,7 +91,7 @@
       <!-- Dynamic libraries from database for authenticated users -->
         {% for library in libraries %}
         <div class="library-button">
-            <a href="{% url 'home' %}?library_id={{ library.id }}" class="{% if current_library and current_library.id == library.id %}active{% endif %}">
+            <a href="{% url 'library_detail' library_slug=library.name|slugify %}" class="{% if current_library and current_library.id == library.id %}active{% endif %}">
                 {% if library.logo %}
                     <img src="{{ library.logo.url }}" alt="{{ library.name }}">
                 {% else %}
@@ -132,8 +133,8 @@
 
   <p>Discover Any Clip You Like From Your Library</p>
   <div class="search-bar">
-    <input type="text" placeholder="Search...">
-    <button>
+    <input type="text" id="video-search-input" placeholder="Search...">
+    <button id="video-search-button">
       <svg id="Icons" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
         <path class="cls-1" d="M18.856,14.624a10.022,10.022,0,1,0-4.234,4.234l4.254,4.255a2.994,2.994,0,1,0,4.239-4.23ZM2,10a8,8,0,1,1,8,8A8.009,8.009,0,0,1,2,10ZM21.7,21.708a1,1,0,0,1-1.4,0l-3.967-3.968a10.092,10.092,0,0,0,1.4-1.406L21.705,20.3a.976.976,0,0,1-.009,1.407Z" />
         <path class="cls-1" d="M10,4a6.006,6.006,0,0,0-6,6,1,1,0,0,0,2,0,4,4,0,0,1,4-4,1,1,0,0,0,0-2Z" />
@@ -143,7 +144,11 @@
 
   <div class="categories" id="categories-container">
     <!-- "All" category is always shown -->
-    <a href="{% url 'clip_store' %}{% if current_library and current_library.name != 'Paletta' %}?library_id={{ current_library.id }}{% endif %}" style="text-decoration: none;">
+    {% if library_slug %}
+    <a href="{% url 'clip_store' %}" style="text-decoration: none;">
+    {% else %}
+    <a href="{% url 'clip_store' %}{% if current_library %}?library_id={{ current_library.id }}{% endif %}" style="text-decoration: none;">
+    {% endif %}
       <div class="category">
         <img src="{% static 'picture/All.png' %}" alt="All">
         <span>All</span>
@@ -152,7 +157,11 @@
     
     <!-- Dynamic categories from database for authenticated users -->
     {% for category in categories %}
-    <a href="{% url 'category' category=category.name|lower %}{% if current_library and current_library.name != 'Paletta' %}?library_id={{ current_library.id }}{% endif %}" style="text-decoration: none;">
+    {% if library_slug %}
+    <a href="{% url 'library_category' library_slug=library_slug category_slug=category.name|slugify %}" style="text-decoration: none;">
+    {% else %}
+    <a href="{% url 'category' category=category.name|lower %}{% if current_library %}?library_id={{ current_library.id }}{% endif %}" style="text-decoration: none;">
+    {% endif %}
       <div class="category">
         <!-- Use the category image URL if available, otherwise use a default image -->
         {% if category.image_url %}

@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Upload History</title>
+    <title>Your Uploads</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Styles -->
@@ -23,11 +23,11 @@
       <div class="sidebar">
         <ul>
           <li><a href="{% url 'upload' %}">Upload</a></li>
-          <li><a href="{% url 'upload_history' %}" class="active">History</a></li>
+          <li><a href="{% url 'upload_history' %}" class="active">Your Uploads</a></li>
         </ul>
       </div>
       <div class="main-content">
-          <h1>Upload History</h1>
+          <h1> Your Upload History</h1>
           
           {% if videos %}
               <div class="upload-history-container">
