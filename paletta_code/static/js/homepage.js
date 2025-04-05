@@ -133,21 +133,35 @@ function performVideoSearch(query) {
     if (librarySlugMatch) {
       // New URL structure
       const librarySlug = librarySlugMatch[1];
-      window.location.href = `/clip-store/?search=${encodeURIComponent(
+      window.location.href = `/library/${librarySlug}/category/clip-store/?search=${encodeURIComponent(
         query.trim()
-      )}&library_slug=${librarySlug}`;
+      )}`;
     } else {
-      // Legacy URL structure
-      const urlParams = new URLSearchParams(window.location.search);
-      const libraryId = urlParams.get("library_id");
+      // Try to find library slug in the URL path
+      const pathParts = window.location.pathname
+        .split("/")
+        .filter((part) => part);
 
-      // Construct the search URL with library context if available
-      let searchUrl = `/clip-store/?search=${encodeURIComponent(query.trim())}`;
-      if (libraryId) {
-        searchUrl += `&library_id=${libraryId}`;
+      // Look for library slug in URL
+      let librarySlug = null;
+      if (
+        pathParts.includes("library") &&
+        pathParts.length > pathParts.indexOf("library") + 1
+      ) {
+        librarySlug = pathParts[pathParts.indexOf("library") + 1];
       }
 
-      window.location.href = searchUrl;
+      // If we have a library slug, use it
+      if (librarySlug) {
+        window.location.href = `/library/${librarySlug}/category/clip-store/?search=${encodeURIComponent(
+          query.trim()
+        )}`;
+      } else {
+        // Default to the home page with search parameter
+        window.location.href = `/home/?search=${encodeURIComponent(
+          query.trim()
+        )}`;
+      }
     }
   }
 }

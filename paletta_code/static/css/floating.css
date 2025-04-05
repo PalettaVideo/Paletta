@@ -19,7 +19,7 @@
   background-color: #89a962;
 }
 
-.sidebar {
+.sidebar-floating {
   position: fixed;
   top: 0;
   right: -350px;
@@ -33,7 +33,7 @@
   padding: 20px;
 }
 
-.sidebar.active {
+.sidebar-floating.active {
   right: 0;
 }
 
@@ -47,21 +47,21 @@
   cursor: pointer;
 }
 
-.sidebar h2 {
+.sidebar-floating h2 {
   color: #333;
   margin-bottom: 20px;
   text-align: center;
   font-size: 22px;
 }
 
-.sidebar h3 {
+.sidebar-floating h3 {
   color: #80B824;
   margin-top: 30px;
   margin-bottom: 15px;
   font-size: 18px;
 }
 
-.sidebar .search-bar {
+.sidebar-floating .search-bar {
   width: 90%;
   margin: 15px auto;
   max-width: 300px;
@@ -72,7 +72,7 @@
   overflow: hidden;
 }
 
-.sidebar .search-bar input {
+.sidebar-floating .search-bar input {
   width: 100%;
   padding: 8px 12px;
   border: none;
@@ -81,7 +81,7 @@
   font-size: 14px;
 }
 
-.sidebar .search-bar button {
+.sidebar-floating .search-bar button {
   background-color: white;
   border: none;
   padding: 8px;
@@ -91,27 +91,27 @@
   justify-content: center;
 }
 
-.sidebar .search-bar button svg {
+.sidebar-floating .search-bar button svg {
   width: 18px;
   height: 18px;
   fill: #80B824;
 }
 
-.sidebar .search-bar input.active-filter {
+.sidebar-floating .search-bar input.active-filter {
   background-color: #f8fff0;
   border-left: 3px solid #80B824;
   padding-left: 9px; /* Compensate for the border */
 }
 
-.sidebar .search-bar button.active-filter {
+.sidebar-floating .search-bar button.active-filter {
   background-color: #f8fff0;
 }
 
-.sidebar .search-bar button.active-filter svg {
+.sidebar-floating .search-bar button.active-filter svg {
   fill: #6ca31e;
 }
 
-.sidebar img{
+.sidebar-floating img{
   width:100px
 }
 
@@ -226,7 +226,7 @@
   width: 100%;
 }
 
-.sidebar-overlay {
+.sidebar-floating-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -238,7 +238,7 @@
 }
 
 @media (max-width: 768px) {
-  .sidebar {
+  .sidebar-floating {
     width: 300px;
   }
 }

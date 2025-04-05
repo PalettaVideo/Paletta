@@ -15,7 +15,6 @@
   <!-- CSS -->
   <link rel="stylesheet" href="{% static 'css/collection.css' %}">
   <!-- JS -->
-  <script src="{% static 'js/navigation_scripts.js' %}" defer></script>
   <script src="{% static 'js/collection.js' %}" defer></script>
 </head>
 
@@ -74,7 +73,7 @@
         {% else %}
           <div class="no-clips">
             <p>Your collection is empty. Browse the clip store to add items to your collection.</p>
-            <a href="{% url 'clip_store' %}">
+            <a href="{% url 'library_detail' library_slug='paletta' %}">
               <button class="add-to-cart">Browse Clip Store</button>
             </a>
           </div>

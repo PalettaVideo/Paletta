@@ -11,8 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <!-- CSS Reusables -->
   <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
-  <!-- CSS -->
   <link rel="stylesheet" href="{% static 'css/floating.css' %}">
+  <!-- CSS -->
   <link rel="stylesheet" href="{% static 'css/homepage.css' %}">
   <!-- JS -->
   <script src="{% static 'js/homepage.js' %}" defer></script>
@@ -59,62 +59,7 @@
   </header>
 
 <main>
-  <!--- Floating label -->
-  <div id="floating-label" class="floating-label" onclick="toggleSidebar()">
-    <span>&#9776; More Libraries</span>
-  </div>
-
-  <!-- sidebar -->
-  <div id="sidebar" class="sidebar">
-    <button class="close-btn" onclick="closeSidebar()">×</button>
-    <h2>Explore more libraries</h2>
-
-    <div class="search-bar">
-      <input type="text" id="library-search-input" placeholder="Filter libraries by name...">
-      <button id="library-search-clear" class="search-clear-btn" style="display: none;">×</button>
-      <button id="library-search-button">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <path d="M18.856,14.624a10.022,10.022,0,1,0-4.234,4.234l4.254,4.255a2.994,2.994,0,1,0,4.239-4.23ZM2,10a8,8,0,1,1,8,8A8.009,8.009,0,0,1,2,10ZM21.7,21.708a1,1,0,0,1-1.4,0l-3.967-3.968a10.092,10.092,0,0,0,1.4-1.406L21.705,20.3a.976.976,0,0,1-.009,1.407Z"/>
-        </svg>
-      </button>
-    </div>
-
-    <h3>Quick Navigation</h3>
-    <div class="more-libraries-nav" id="libraries-container">
-      <!-- Default Paletta library -->
-      <div class="library-button">
-        <a href="{% url 'home' %}" class="{% if not current_library or current_library.name == 'Paletta' %}active{% endif %}">
-            <img src="{% static 'picture/logo.jpg' %}" alt="Paletta">
-            <span>Paletta</span>
-        </a>
-      </div>
-      <!-- Dynamic libraries from database for authenticated users -->
-        {% for library in libraries %}
-        <div class="library-button">
-            <a href="{% url 'library_detail' library_slug=library.name|slugify %}" class="{% if current_library and current_library.id == library.id %}active{% endif %}">
-                {% if library.logo %}
-                    <img src="{{ library.logo.url }}" alt="{{ library.name }}">
-                {% else %}
-                    <img src="{% static 'picture/default-logo.jpg' %}" alt="{{ library.name }}">
-                {% endif %}
-                <span>{{ library.name }}</span>
-            </a>
-        </div>
-        {% empty %}
-        <!-- No additional libraries message for authenticated users -->
-        <p class="no-libraries">No additional libraries available.</p>
-        {% endfor %}
-    </div>
-
-    <div class="admin-nav-btns">
-        <button class="admin-nav-btn"><a href="{% url 'create_library' %}" style="text-decoration: none;">Create a Library</a></button>
-        <button class="admin-nav-btn"><a href="{% url 'manage_libraries' %}" style="text-decoration: none;">Manage All Libraries</a></button>
-        <button class="admin-nav-btn"><a href="{% url 'manage_administrators' %}" style="text-decoration: none;">Manage Administrator</a></button>
-    </div>
-  </div>
-  <!-- sidebar-overlay -->
-  <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
-  
+  {% include "html_reusables/sidebar_library_reusable.html" %}
   <div class="title-section">
     {% if current_library and current_library.name != 'Paletta' %}
       <img src="{% if current_library.logo %}{{ current_library.logo.url }}{% else %}{% static 'picture/default-logo.jpg' %}{% endif %}" alt="{{ current_library.name }} Logo">
