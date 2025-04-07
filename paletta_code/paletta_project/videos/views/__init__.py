@@ -10,6 +10,7 @@ from .api_views import (
     PopularTagsAPIView
 )
 from .video_detail_view import VideoDetailView
+from .tag_views import assign_tags, TagsAPIView
 
 # Export all views to make them available when importing from videos.views
 __all__ = [
@@ -26,5 +27,7 @@ __all__ = [
     'PopularTagsAPIView',
     'VideoMetadataAPIView',
     'VideoAPIUploadView',
-    'VideoDetailView'
+    'VideoDetailView',
+    'assign_tags',
+    'TagsAPIView'
 ] 

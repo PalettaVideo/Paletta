@@ -1,4 +1,5 @@
 {% load static %}
+{% load order_filters %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
@@ -6,6 +7,7 @@
   <title>Paletta - Shopping Cart</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="clip-store-url" content="{% url 'library_clip_store' library_slug='all' %}">
   <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
@@ -28,28 +30,28 @@
           <li><a href="{% url 'profile' %}">My profile</a></li>
           <li><a href="{% url 'collection' %}">My collection</a></li>
           <li><a href="{% url 'cart' %}" class="active">My cart</a></li>
-          <li><a href="{% url 'order' %}">My order</a></li>
+          <li><a href="{% url 'orders_list' %}">My orders</a></li>
         </ul>
       </nav>
     </aside>
 
     <!-- Main content -->
     <main class="content">
-      <h1>My Cart (<span id="cart-count">0</span>)</h1>
+      <h1>My Cart (<span id="cart-count">{{ cart_items|length }}</span>)</h1>
       
       <div class="cart-container">
         <div class="cart-items" id="cart-items">
           {% if cart_items %}
             {% for item in cart_items %}
             <div class="cart-item" data-id="{{ item.id }}">
-              {% if item.thumbnail %}
-                <img src="{{ item.thumbnail }}" alt="{{ item.title }}">
+              {% if item.video.thumbnail %}
+                <img src="{{ item.video.thumbnail.url }}" alt="{{ item.video.title }}">
               {% else %}
-                <img src="{% static 'picture/default_thumbnail.png' %}" alt="{{ item.title }}">
+                <img src="{% static 'picture/default_thumbnail.png' %}" alt="{{ item.video.title }}">
               {% endif %}
               
               <div class="cart-item-details">
-                <h3>{{ item.title }}</h3>
+                <h3>{{ item.video.title }}</h3>
                 <p>Resolution: {{ item.resolution }}</p>
                 <p class="cart-item-price">£{{ item.price }}</p>
               </div>
@@ -61,26 +63,28 @@
             {% endfor %}
           {% else %}
             <div class="empty-cart">
-              <p>Your cart is empty. <a href="{% url 'library_detail' library_slug='paletta' %}">Browse clip store</a> to add items.</p>
-              <a href="{% url 'library_detail' library_slug='paletta' %}">
-                <button>Browse Clip Store</button>
-              </a>
+              <p>Your cart is empty. <a href="{% url 'library_clip_store' library_slug='all' %}">Browse all clips</a> to add items.</p>
             </div>
           {% endif %}
         </div>
         
         <div class="cart-summary">
           <h3>Order Summary</h3>
-          <p>Subtotal: <span id="subtotal">£0.00</span></p>
-          <p>VAT (20%): <span id="vat">£0.00</span></p>
-          <p class="total">Total: <span id="cart-total">£0.00</span></p>
-          <button id="checkout-button" {% if not cart_items %}disabled{% endif %}>Proceed to Checkout</button>
+          <p>Subtotal: <span id="subtotal">£{{ total_price|default:'0.00' }}</span></p>
+          {% with vat=total_price|default:0|floatformat:2|multiply:0.2 %}
+          <p>VAT (20%): <span id="vat">£{{ vat|default:'0.00' }}</span></p>
+          <p class="total">Total: <span id="cart-total">£{{ total_price|default:0|add:vat|floatformat:2 }}</span></p>
+          {% endwith %}
+          <a href="{% url 'checkout' %}">
+            <button id="checkout-button" {% if not cart_items %}disabled{% endif %}>Proceed to Checkout</button>
+          </a>
         </div>
       </div>
     </main>
   </div>
 
   {% csrf_token %}
+  
   {% include "html_reusables/footer_reusable.html" %}
 </body>
 </html>

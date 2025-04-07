@@ -63,6 +63,7 @@ class Video(models.Model):
 
   title = models.CharField(max_length=25)
   description = models.TextField(blank=True)
+  tags = models.ManyToManyField(Tag, through='VideoTag', related_name='videos')
   category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='videos')
   library = models.ForeignKey('libraries.Library', on_delete=models.CASCADE, related_name='library_videos')
   uploader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='videos')

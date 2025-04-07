@@ -279,8 +279,17 @@ class UploadView(FormView):
             if tags_text:
                 tag_names = [tag.strip() for tag in tags_text.split(',') if tag.strip()]
                 for tag_name in tag_names:
-                    tag, created = Tag.objects.get_or_create(name=tag_name)
+                    # Pass the library when creating tags to satisfy the NOT NULL constraint
+                    tag, created = Tag.objects.get_or_create(
+                        name=tag_name,
+                        library=video.library  # Use the video's library for the tag
+                    )
                     video.tags.add(tag)
+                    
+                    # Log when new tags are created
+                    if created:
+                        logger = logging.getLogger(__name__)
+                        logger.info(f"Created new tag '{tag_name}' in library '{video.library.name}'")
             
             # Extract video metadata
             if video.video_file:
@@ -532,8 +541,16 @@ class VideoAPIUploadView(View):
                 tag_names = [tag.strip() for tag in tags_text.split(',') if tag.strip()]
                 logger.info(f"Processing tags: {tag_names}")
                 for tag_name in tag_names:
-                    tag, created = Tag.objects.get_or_create(name=tag_name)
+                    # Pass the library when creating tags to satisfy the NOT NULL constraint
+                    tag, created = Tag.objects.get_or_create(
+                        name=tag_name,
+                        library=video.library  # Use the video's library for the tag
+                    )
                     video.tags.add(tag)
+                    
+                    # Log when new tags are created
+                    if created:
+                        logger.info(f"Created new tag '{tag_name}' in library '{video.library.name}'")
             
             # Extract metadata - with improved error handling
             metadata = {}

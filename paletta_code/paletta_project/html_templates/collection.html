@@ -6,6 +6,7 @@
   <title>Paletta - My Collection</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="clip-store-url" content="{% url 'library_clip_store' library_slug='all' %}">
   <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
@@ -29,7 +30,7 @@
             <li><a href="{% url 'profile' %}">My profile</a></li>
             <li><a href="{% url 'collection' %}" class="active">My collection</a></li>
             <li><a href="{% url 'cart' %}">My cart</a></li>
-            <li><a href="{% url 'order' %}">My order</a></li>
+            <li><a href="{% url 'orders_list' %}">My orders</a></li>
         </ul>
       </nav>
     </aside>
@@ -73,7 +74,7 @@
         {% else %}
           <div class="no-clips">
             <p>Your collection is empty. Browse the clip store to add items to your collection.</p>
-            <a href="{% url 'library_detail' library_slug='paletta' %}">
+            <a href="{% url 'library_clip_store' library_slug='all' %}">
               <button class="add-to-cart">Browse Clip Store</button>
             </a>
           </div>

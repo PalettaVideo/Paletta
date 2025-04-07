@@ -22,10 +22,15 @@ function renderCollection() {
   const favorites = getFavorites();
   collectionGrid.innerHTML = "";
 
+  // Get the clip store URL from a data attribute in the document
+  // This avoids hardcoding URLs in JavaScript
+  const clipStoreUrl =
+    document.querySelector('meta[name="clip-store-url"]')?.content || "/";
+
   if (favorites.length === 0) {
     collectionGrid.innerHTML = `
       <div class="empty-collection">
-        <p>Your collection is empty. Browse and add clips from the <a href="clip_store_all_external.html">Clip Store</a>.</p>
+        <p>Your collection is empty. Browse and add clips from the <a href="${clipStoreUrl}">Clip Store</a>.</p>
       </div>
     `;
     return;
@@ -132,10 +137,14 @@ document.addEventListener("DOMContentLoaded", () => {
               if (remainingClips.length === 0) {
                 // If no clips left, show empty state
                 const clipsGrid = document.querySelector(".clips-grid");
+                const clipStoreUrl =
+                  document.querySelector('meta[name="clip-store-url"]')
+                    ?.content || "/";
+
                 clipsGrid.innerHTML = `
                 <div class="no-clips">
                   <p>Your collection is empty. Browse the clip store to add items to your collection.</p>
-                  <a href="/clip-store/">
+                  <a href="${clipStoreUrl}">
                     <button class="add-to-cart">Browse Clip Store</button>
                   </a>
                 </div>

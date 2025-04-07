@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'accounts',
     'videos',
     'libraries',
+    'orders',
     
     # Django built-in apps
     'django.contrib.admin',

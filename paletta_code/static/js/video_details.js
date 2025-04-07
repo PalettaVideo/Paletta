@@ -20,47 +20,44 @@ document.addEventListener("DOMContentLoaded", function () {
       if (selectedResolution) {
         const resolution = selectedResolution.value;
         const price = selectedResolution.dataset.price;
-        const clipId = document.querySelector('meta[name="clip-id"]').content;
+        // Get clip ID from meta tag in the document
+        const clipId =
+          document.querySelector('meta[name="clip-id"]')?.content || "0";
 
         // Get CSRF token for Django
         const csrftoken = document.querySelector(
           "[name=csrfmiddlewaretoken]"
         ).value;
 
-        // Create form data for the request
-        const formData = new FormData();
-        formData.append("clip_id", clipId);
-        formData.append("resolution", resolution);
-        formData.append("csrfmiddlewaretoken", csrftoken);
-
-        // Send POST request to add item to cart
+        // Send AJAX request to add to cart
         fetch("/cart/add/", {
           method: "POST",
-          body: formData,
           headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
             "X-CSRFToken": csrftoken,
           },
-          credentials: "same-origin",
+          body: `video_id=${clipId}&resolution=${resolution}&price=${price}`,
         })
-          .then((response) => {
-            if (response.ok) {
-              return response.json();
-            }
-            throw new Error("Network response was not ok");
-          })
+          .then((response) => response.json())
           .then((data) => {
             if (data.success) {
-              alert("Item added to cart!");
+              alert(
+                `Item added to cart! Resolution: ${resolution}, Price: £${price}`
+              );
+              popupOverlay.style.display = "none";
+
+              // Update cart count in header if exists
+              const cartCountElement = document.querySelector(".cart-count");
+              if (cartCountElement) {
+                cartCountElement.textContent = data.cart_count;
+              }
             } else {
-              alert("Error: " + data.error);
+              alert("Error: " + (data.message || data.error));
             }
           })
           .catch((error) => {
             console.error("Error:", error);
-            alert("Failed to add item to cart. Please try again.");
-          })
-          .finally(() => {
-            popupOverlay.style.display = "none";
+            alert("An error occurred while adding the item to cart.");
           });
       } else {
         alert("Please select a resolution");
@@ -122,5 +119,5 @@ document.addEventListener("DOMContentLoaded", function () {
       const clipId = document.querySelector('meta[name="clip-id"]').content;
       window.location.href = `/request/${clipId}/`;
     });
-      }
-    });
+  }
+});

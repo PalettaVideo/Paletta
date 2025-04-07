@@ -18,7 +18,6 @@ from accounts.views.signup import SignupView
 from accounts.views.forgot_password import ForgotPasswordView
 from accounts.views.home_view import HomeView, LogoutView
 from accounts.views.update_profile import ProfileView, ProfileUpdateView
-from videos.views.upload_view import UploadView, UploadHistoryView
 from videos.views.clip_store_view import CategoryClipView
 from videos.views.video_detail_view import VideoDetailView
 
@@ -34,7 +33,11 @@ class CategoryView(TemplateView):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/accounts/', include('accounts.urls')),
+    
+    # Include videos app URLs at various paths
     path('api/videos/', include('videos.urls')),
+    path('videos/', include('videos.urls')),  # Include without the api/ prefix
+    
     path('api/libraries/', include('libraries.urls')),
     
     # HTML page routes
@@ -43,8 +46,6 @@ urlpatterns = [
     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
     path('home/', HomeView.as_view(), name='home'),
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('upload/', UploadView.as_view(), name='upload'),
-    path('upload/history/', UploadHistoryView.as_view(), name='upload_history'),
     
     # New user-friendly URLs for libraries and categories
     path('library/<str:library_slug>/', HomeView.as_view(), name='library_detail'),
@@ -55,8 +56,9 @@ urlpatterns = [
     path('profile/', ProfileView.as_view(), name='profile'),
     path('profile/update/', ProfileUpdateView.as_view(), name='profile_update'),
     path('collection/', TemplateView.as_view(template_name='collection.html'), name='collection'),
-    path('cart/', TemplateView.as_view(template_name='cart.html'), name='cart'),
-    path('order/', TemplateView.as_view(template_name='my_order.html'), name='order'),
+    
+    # Order management routes - include the orders app URLs
+    path('', include('orders.urls')),
     
     # Additional page routes
     path('about/', TemplateView.as_view(template_name='about_us.html'), name='about_us'),
@@ -88,4 +90,3 @@ if settings.DEBUG:
     
     # Serve media files during development
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-

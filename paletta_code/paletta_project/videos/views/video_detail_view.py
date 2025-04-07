@@ -39,7 +39,14 @@ class VideoDetailView(TemplateView):
             
             # Get the video's tags through the VideoTag model
             video_tags = VideoTag.objects.filter(video=clip).select_related('tag')
-            tags = [vt.tag.name for vt in video_tags]
+            
+            # Create tag objects that are template-friendly
+            tags = []
+            for vt in video_tags:
+                tags.append({
+                    'name': vt.tag.name,
+                    'id': vt.tag.id
+                })
             
             # Format duration for display
             duration_formatted = "Unknown"
@@ -71,8 +78,8 @@ class VideoDetailView(TemplateView):
                     'slug': get_library_slug(clip.library.name)
                 }
             
-            # Add video data to context
-            context['clip'] = {
+            # Create a clip dictionary with all needed properties
+            clip_dict = {
                 'id': clip.id,
                 'title': clip.title,
                 'description': clip.description,
@@ -85,6 +92,19 @@ class VideoDetailView(TemplateView):
                 'format': getattr(clip, 'format', 'Unknown'),
                 'video_url': clip.video_file.url if clip.video_file else clip.storage_url
             }
+            
+            # Add a tags.all property to match the template expectations
+            class TagList:
+                def __init__(self, tags):
+                    self.tags = tags
+                
+                def all(self):
+                    return self.tags
+            
+            clip_dict['tags'] = TagList(tags)
+            
+            # Add clip data to context
+            context['clip'] = clip_dict
             
             # Add related clips to context
             context['related_clips'] = related_clips_data

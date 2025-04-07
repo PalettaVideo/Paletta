@@ -318,8 +318,15 @@ class VideoAPIUploadView(APIView):
                 
                 # Handle tags
                 for tag_name in tags_data:
-                    tag, created = Tag.objects.get_or_create(name=tag_name)
+                    tag, created = Tag.objects.get_or_create(
+                        name=tag_name,
+                        library=video.library  # Use the video's library for the tag
+                    )
                     video.tags.add(tag)
+                    
+                    # Log when new tags are created
+                    if created:
+                        logger.info(f"API: Created new tag '{tag_name}' in library '{video.library.name}'")
                 
                 # Return the serialized video data
                 return Response(

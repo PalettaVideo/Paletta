@@ -56,13 +56,9 @@
         </div>
         <div class="tags">
           <strong>Tags:</strong>
-          {% if clip.tags %}
-            {% for tag in clip.tags %}
-              <span>{{ tag }}</span>
-            {% endfor %}
-          {% else %}
-            <span>No tags</span>
-          {% endif %}
+          {% for tag in clip.tags.all %}
+            <span>{{ tag.name }}</span>
+          {% endfor %}
         </div>
       </div>
       <div class="attributes">
@@ -109,46 +105,6 @@
       <button id="confirmAddToCart">Add to Cart</button>
     </div>
   </div>
-
-  {% comment %}
-  <!-- We'll move this script to an external file -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-    const addToCartButton = document.getElementById('addToCartButton');
-    const popupOverlay = document.getElementById('popupOverlay');
-    const confirmAddToCart = document.getElementById('confirmAddToCart');
-
-    addToCartButton.addEventListener('click', () => {
-      popupOverlay.style.display = 'flex';
-    });
-
-    confirmAddToCart.addEventListener('click', () => {
-        const selectedResolution = document.querySelector('input[name="resolution"]:checked');
-        if (selectedResolution) {
-          const resolution = selectedResolution.value;
-          const price = selectedResolution.dataset.price;
-          
-          // CSRF token for Django
-          const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-          
-          // Here we would send a POST request to add to cart
-          // For demo purposes, just show an alert
-          alert(`Item added to cart! Resolution: ${resolution}, Price: £${price}`);
-          
-      popupOverlay.style.display = 'none';
-        } else {
-          alert('Please select a resolution');
-        }
-    });
-
-    popupOverlay.addEventListener('click', (event) => {
-      if (event.target === popupOverlay) {
-        popupOverlay.style.display = 'none';
-      }
-      });
-    });
-  </script>
-  {% endcomment %}
 
 {% include "html_reusables/footer_reusable.html" %}
 </body>

@@ -1,0 +1,178 @@
+{% load static %}
+{% if user.is_authenticated %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Edit Video</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/edit_video.css' %}">
+    <!-- JS -->
+    <script src="{% static 'js/edit_video.js' %}" defer></script>
+</head>
+
+<body>
+    {% include "html_reusables/header_reusable.html" %}
+
+    <div class="container">
+        <div class="sidebar">
+            <ul>
+                <li><a href="{% url 'upload' %}">Upload</a></li>
+                <li><a href="{% url 'upload_history' %}">Your Uploads</a></li>
+                <li><a href="#" class="active">Edit Video</a></li>
+            </ul>
+        </div>
+
+        <main>
+            {% if video_not_found %}
+            <div class="error-message">
+                <h2>Video Not Found</h2>
+                <p>The requested video could not be found. <a href="{% url 'upload_history' %}">Return to upload history</a>.</p>
+            </div>
+            {% elif permission_error %}
+            <div class="error-message">
+                <h2>Permission Denied</h2>
+                <p>You don't have permission to edit this video. <a href="{% url 'upload_history' %}">Return to upload history</a>.</p>
+            </div>
+            {% elif error %}
+            <div class="error-message">
+                <h2>Error</h2>
+                <p>{{ error }}</p>
+                <p><a href="{% url 'upload_history' %}">Return to upload history</a>.</p>
+            </div>
+            {% else %}
+            <h2>Edit Video</h2>
+            
+            <form method="post" enctype="multipart/form-data" id="editVideoForm">
+                {% csrf_token %}
+                <input type="hidden" name="video_id" value="{{ video.id }}">
+                <input type="hidden" name="tags_list" id="tagsData">
+
+                <div class="form-group">
+                    <label for="video-title">Title</label>
+                    <div class="input-group">
+                        <input type="text" id="videoTitle" name="title" value="{{ video.title }}" maxlength="25">
+                    </div>
+                    {% if form.title.errors %}
+                    <p class="error-text">{{ form.title.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label>Thumbnail</label>
+                    <div class="thumbnail-container">
+                        <img id="videoThumbnail" src="{% if video.thumbnail %}{{ video.thumbnail.url }}{% else %}{% static 'picture/default_thumbnail.png' %}{% endif %}" alt="{{ video.title }} Thumbnail">
+                        <input type="file" id="thumbnailUpload" name="thumbnail" accept="image/*" style="display: none;">
+                        <button type="button" class="change-btn" onclick="document.getElementById('thumbnailUpload').click();">Change</button>
+                    </div>
+                    {% if form.thumbnail.errors %}
+                    <p class="error-text">{{ form.thumbnail.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="video-description">Description</label>
+                    <textarea id="videoDescription" name="description" rows="4">{{ video.description }}</textarea>
+                    {% if form.description.errors %}
+                    <p class="error-text">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="video-category">Category</label>
+                    <select id="videoCategory" name="category">
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if video.category.id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if form.category.errors %}
+                    <p class="error-text">{{ form.category.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label>Tags</label>
+                    <div class="tags-input-container">
+                        <div id="tagsContainer" class="tags-container">
+                            {% for tag in video.tags.all %}
+                                <span class="tag-item" data-id="{{ tag.id }}">
+                                    {{ tag.name }}
+                                    <button type="button" class="tag-remove" onclick="removeTag(this.parentElement)">×</button>
+                                </span>
+                            {% endfor %}
+                        </div>
+                        <div class="tags-input-wrapper">
+                            <input type="text" id="tagInput" placeholder="Add a tag and press Enter">
+                            <button type="button" id="addTagBtn">Add</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="video-published">Published</label>
+                    <div class="toggle-container">
+                        <input type="checkbox" id="isPublished" name="is_published" {% if video.is_published %}checked{% endif %}>
+                        <label for="isPublished" class="toggle-label"></label>
+                        <span class="toggle-text">{% if video.is_published %}Published{% else %}Not Published{% endif %}</span>
+                    </div>
+                </div>
+
+                <div class="form-group video-details">
+                    <h3>Video Details</h3>
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Duration:</span>
+                            <span class="detail-value">{{ video.duration_formatted }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Format:</span>
+                            <span class="detail-value">{{ video.format|default:"Unknown" }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">File Size:</span>
+                            <span class="detail-value">{{ video.file_size_formatted|default:"Unknown" }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Upload Date:</span>
+                            <span class="detail-value">{{ video.upload_date|date:"F j, Y" }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Storage Status:</span>
+                            <span class="detail-value storage-status {{ video.storage_status }}">{{ video.get_storage_status_display }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Views:</span>
+                            <span class="detail-value">{{ video.views_count }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="save-btn">Save Changes</button>
+                    <a href="{% url 'upload_history' %}" class="cancel-btn">Cancel</a>
+                </div>
+            </form>
+            {% endif %}
+        </main>
+    </div>
+    
+    <!-- Tag search suggestions popup -->
+    <div id="tagSuggestions" class="tag-suggestions"></div>
+    
+    <!-- Toast notification container -->
+    <div id="toast-container"></div>
+    
+    {% include "html_reusables/footer_reusable.html" %}
+</body>
+</html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %} 

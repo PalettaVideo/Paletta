@@ -15,6 +15,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const totalElement = document.getElementById("cart-total");
     const checkoutButton = document.getElementById("checkout-button");
 
+    // Get the clip store URL from a data attribute in the document
+    const clipStoreUrl =
+      document.querySelector('meta[name="clip-store-url"]')?.content || "/";
+
     // Update cart count
     if (cartCount) {
       cartCount.textContent = cartItems.length;
@@ -49,8 +53,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (cartItemsContainer && cartItems.length === 0) {
       cartItemsContainer.innerHTML = `
                 <div class="empty-cart">
-                    <p>Your cart is empty. <a href="/clip-store/">Browse clip store</a> to add items.</p>
-                    <a href="/clip-store/">
+                    <p>Your cart is empty. <a href="${clipStoreUrl}">Browse clip store</a> to add items.</p>
+                    <a href="${clipStoreUrl}">
                         <button>Browse Clip Store</button>
                     </a>
           </div>
@@ -85,51 +89,58 @@ document.addEventListener("DOMContentLoaded", function () {
       "[name=csrfmiddlewaretoken]"
     ).value;
 
-    // Create form data for the request
-    const formData = new FormData();
-    formData.append("item_id", itemId);
-    formData.append("csrfmiddlewaretoken", csrftoken);
+    // Get the clip store URL from a data attribute in the document
+    const clipStoreUrl =
+      document.querySelector('meta[name="clip-store-url"]')?.content || "/";
 
-    // Send POST request to remove item from cart
+    // Send AJAX request to remove item
     fetch("/cart/remove/", {
       method: "POST",
-      body: formData,
       headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
         "X-CSRFToken": csrftoken,
       },
-      credentials: "same-origin",
+      body: "order_detail_id=" + itemId,
     })
-      .then((response) => {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error("Network response was not ok");
-      })
+      .then((response) => response.json())
       .then((data) => {
         if (data.success) {
-          // Find the cart item element and remove it
-          const cartItem = buttonElement.closest(".cart-item");
-          if (cartItem) {
-            cartItem.style.opacity = "0";
-            setTimeout(() => {
-              cartItem.remove();
-              updateCartSummary();
-
-              // Show success message
-              showNotification("Item removed from cart");
-            }, 300);
-          }
-        } else {
-          // Show error message
-          showNotification(
-            "Error: " + (data.error || "Failed to remove item"),
-            "error"
+          // Remove the item from the UI
+          const item = document.querySelector(
+            `.cart-item[data-id="${itemId}"]`
           );
+          if (item) {
+            item.remove();
+          }
+
+          // Update cart count
+          document.getElementById("cart-count").textContent = data.cart_count;
+
+          // If cart is empty, show empty cart message
+          if (data.cart_count === 0) {
+            const cartItems = document.getElementById("cart-items");
+            cartItems.innerHTML = `
+            <div class="empty-cart">
+              <p>Your cart is empty. <a href="${clipStoreUrl}">Browse clip store</a> to add items.</p>
+              <a href="${clipStoreUrl}">
+                <button>Browse Clip Store</button>
+              </a>
+            </div>
+          `;
+
+            // Disable checkout button
+            document.getElementById("checkout-button").disabled = true;
+          }
+
+          // Reload the page to update the totals
+          window.location.reload();
+        } else {
+          alert("Error removing item: " + data.message);
         }
       })
       .catch((error) => {
         console.error("Error:", error);
-        showNotification("Failed to remove item from cart", "error");
+        alert("An error occurred while removing the item from cart.");
       });
   }
 
@@ -142,7 +153,13 @@ document.addEventListener("DOMContentLoaded", function () {
     if (checkoutButton) {
       checkoutButton.addEventListener("click", function () {
         if (!this.disabled) {
-          window.location.href = "/checkout/";
+          // Use the checkout URL from the existing href if available
+          const checkoutLink = document.querySelector('a[href*="checkout"]');
+          if (checkoutLink) {
+            window.location.href = checkoutLink.href;
+          } else {
+            window.location.href = "/checkout/";
+          }
         }
       });
     }

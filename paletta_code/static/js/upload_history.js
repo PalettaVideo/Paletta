@@ -80,3 +80,141 @@ function formatDate(isoString) {
 
   return date.toLocaleDateString(undefined, options);
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Handle edit video buttons
+  const editButtons = document.querySelectorAll(".video-actions .edit");
+  editButtons.forEach((button) => {
+    button.addEventListener("click", function (e) {
+      e.preventDefault();
+      const videoId = this.getAttribute("data-id");
+      window.location.href = `/videos/edit/${videoId}/`;
+    });
+  });
+
+  // Handle delete video buttons
+  const deleteButtons = document.querySelectorAll(".video-actions .delete");
+  deleteButtons.forEach((button) => {
+    button.addEventListener("click", function (e) {
+      e.preventDefault();
+      const videoId = this.getAttribute("data-id");
+      const videoTitle = this.getAttribute("data-title");
+
+      // Show delete confirmation modal
+      const modal = document.getElementById("deleteModal");
+      const overlay = document.getElementById("modalOverlay");
+      const videoTitleElement = document.getElementById("videoTitle");
+      const confirmDeleteBtn = document.getElementById("confirmDelete");
+
+      videoTitleElement.textContent = videoTitle;
+      confirmDeleteBtn.setAttribute("data-id", videoId);
+
+      modal.style.display = "block";
+      overlay.style.display = "block";
+    });
+  });
+
+  // Handle confirm delete button
+  const confirmDeleteBtn = document.getElementById("confirmDelete");
+  if (confirmDeleteBtn) {
+    confirmDeleteBtn.addEventListener("click", function () {
+      const videoId = this.getAttribute("data-id");
+      const csrfToken = document.querySelector(
+        "[name=csrfmiddlewaretoken]"
+      ).value;
+
+      // Send AJAX request to delete the video
+      fetch(`/videos/delete/${videoId}/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // Remove the video item from the DOM
+            const videoElement = document.querySelector(
+              `.history-item[data-id="${videoId}"]`
+            );
+            if (videoElement) {
+              videoElement.remove();
+
+              // Check if there are no more videos
+              const remainingVideos =
+                document.querySelectorAll(".history-item");
+              if (remainingVideos.length === 0) {
+                const uploadHistoryContainer = document.querySelector(
+                  ".upload-history-container"
+                );
+                const noVideosElement = document.createElement("div");
+                noVideosElement.className = "no-videos";
+                noVideosElement.innerHTML = `
+                                <p>You haven't uploaded any videos yet.</p>
+                                <a href="/videos/upload/" class="button">Upload Your First Video</a>
+                            `;
+                uploadHistoryContainer.replaceWith(noVideosElement);
+              }
+            }
+
+            // Show success message
+            showToast("Video successfully deleted");
+          } else {
+            // Show error message
+            showToast(`Error: ${data.message || "Failed to delete video"}`);
+          }
+
+          // Close the modal
+          closeDeleteModal();
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          showToast("An error occurred while deleting the video");
+          closeDeleteModal();
+        });
+    });
+  }
+
+  // Handle close modal button
+  const closeModalBtn = document.querySelector(".delete-modal .close");
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener("click", closeDeleteModal);
+  }
+
+  // Close modal when clicking outside
+  const modalOverlay = document.getElementById("modalOverlay");
+  if (modalOverlay) {
+    modalOverlay.addEventListener("click", closeDeleteModal);
+  }
+
+  // Toast notification function
+  function showToast(message) {
+    const toast = document.createElement("div");
+    toast.className = "toast";
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Show toast
+    setTimeout(() => {
+      toast.classList.add("show");
+
+      // Hide and remove toast after 3 seconds
+      setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => {
+          toast.remove();
+        }, 300);
+      }, 3000);
+    }, 100);
+  }
+
+  // Close delete modal function
+  function closeDeleteModal() {
+    const modal = document.getElementById("deleteModal");
+    const overlay = document.getElementById("modalOverlay");
+
+    if (modal) modal.style.display = "none";
+    if (overlay) overlay.style.display = "none";
+  }
+});
