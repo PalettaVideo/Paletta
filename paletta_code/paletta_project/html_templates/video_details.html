@@ -16,10 +16,9 @@
   <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
   <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
   <!-- CSS -->
-  <link rel="stylesheet" href="{% static 'css/navigation_internal.css' %}">
-  <link rel="stylesheet" href="{% static 'css/clip_detail.css' %}">
+  <link rel="stylesheet" href="{% static 'css/video_details.css' %}">
   <!-- JS -->
-  <script src="{% static 'js/clip_detail.js' %}" defer></script>
+  <script src="{% static 'js/video_details.js' %}" defer></script>
 </head>
 <body>
   {% include "html_reusables/header_reusable.html" %}
@@ -31,8 +30,8 @@
     <!-- Video and Details -->
     <div class="content">
       <div class="video-container">
-        <a href="{% url 'clip_store' %}">
-        <button class="back-button">⬅ Back to Clip Store</button></a>
+          <a href="{% url 'library_clip_store' library_slug=library.slug %}">
+          <button class="back-button">⬅ Back to {{ library.name }} Clip Store</button></a>
         <video src="{{ clip.video_url|default:'' }}" controls{% if not clip.video_url %} poster="{% static 'picture/video_placeholder.jpg' %}"{% endif %}></video>
       </div>
       <div class="details">

@@ -1,5 +1,5 @@
 # Import views from individual files
-from .upload_view import UploadView, UploadHistoryView
+from .upload_view import UploadView, UploadHistoryView, VideoAPIUploadView, VideoMetadataAPIView
 from .viewsets import VideoViewSet, CategoryViewSet
 from .download_view import DownloadRequestView
 from .clip_store_view import ClipStoreView, CategoryClipView
@@ -7,10 +7,9 @@ from .api_views import (
     VideoListAPIView, 
     VideoDetailAPIView, 
     CategoryVideosAPIView, 
-    PopularTagsAPIView,
-    VideoMetadataAPIView,
-    VideoAPIUploadView
+    PopularTagsAPIView
 )
+from .video_detail_view import VideoDetailView
 
 # Export all views to make them available when importing from videos.views
 __all__ = [
@@ -26,5 +25,6 @@ __all__ = [
     'CategoryVideosAPIView',
     'PopularTagsAPIView',
     'VideoMetadataAPIView',
-    'VideoAPIUploadView'
+    'VideoAPIUploadView',
+    'VideoDetailView'
 ] 

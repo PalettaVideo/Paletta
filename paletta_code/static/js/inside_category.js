@@ -277,9 +277,8 @@ document.addEventListener("DOMContentLoaded", function () {
    * Open video preview
    */
   function openVideoPreview(videoId) {
-    // This would open a modal or navigate to a video preview page
-    console.log("Opening preview for video:", videoId);
-    // Placeholder - implement actual preview functionality
+    // Navigate to the video detail page
+    window.location.href = `/clip/${videoId}/`;
   }
 
   /**

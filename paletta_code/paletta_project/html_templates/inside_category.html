@@ -41,30 +41,12 @@
     </div>
     <ul class="category-list">
       {% if library_slug %}
-      <li class="{% if category_filter == 'all' %}active{% endif %}" data-category="all">
+      <li class="{% if category_filter == 'all' or not category_filter or is_clip_store %}active{% endif %}" data-category="all">
         <a href="{% url 'library_clip_store' library_slug=library_slug %}" style="display: block; text-decoration: none; color: inherit;">All Clips</a>
       </li>
       {% for category in categories %}
-      <li class="{% if category_filter == category.name|lower %}active{% endif %}" data-category="{{ category.name|lower }}">
+      <li class="{% if category_filter|lower == category.name|lower or category_slug == category.name|slugify or current_category and current_category.id == category.id %}active{% endif %}" data-category="{{ category.name|lower }}">
         <a href="{% url 'library_category' library_slug=library_slug category_slug=category.name|slugify %}" style="display: block; text-decoration: none; color: inherit;">{{ category.name }}</a>
-      </li>
-      {% endfor %}
-      {% elif current_library %}
-      <li class="{% if category_filter == 'all' %}active{% endif %}" data-category="all">
-        <a href="{% url 'library_clip_store' library_slug=current_library.name|slugify %}" style="display: block; text-decoration: none; color: inherit;">All Clips</a>
-      </li>
-      {% for category in categories %}
-      <li class="{% if category_filter == category.name|lower %}active{% endif %}" data-category="{{ category.name|lower }}">
-        <a href="{% url 'library_category' library_slug=current_library.name|slugify category_slug=category.name|slugify %}" style="display: block; text-decoration: none; color: inherit;">{{ category.name }}</a>
-      </li>
-      {% endfor %}
-      {% else %}
-      <li class="{% if category_filter == 'all' %}active{% endif %}" data-category="all">
-        <a href="{% url 'home' %}" style="display: block; text-decoration: none; color: inherit;">All Clips</a>
-      </li>
-      {% for category in categories %}
-      <li class="{% if category_filter == category.name|lower %}active{% endif %}" data-category="{{ category.name|lower }}">
-        <a href="{% url 'home' %}" style="display: block; text-decoration: none; color: inherit;">{{ category.name }}</a>
       </li>
       {% endfor %}
       {% endif %}

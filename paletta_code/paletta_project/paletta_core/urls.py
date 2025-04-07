@@ -20,6 +20,7 @@ from accounts.views.home_view import HomeView, LogoutView
 from accounts.views.update_profile import ProfileView, ProfileUpdateView
 from videos.views.upload_view import UploadView, UploadHistoryView
 from videos.views.clip_store_view import CategoryClipView
+from videos.views.video_detail_view import VideoDetailView
 
 # Create a class for category views
 class CategoryView(TemplateView):
@@ -61,6 +62,9 @@ urlpatterns = [
     path('about/', TemplateView.as_view(template_name='about_us.html'), name='about_us'),
     path('contact/', TemplateView.as_view(template_name='contact_us.html'), name='contact_us'),
     path('help/', TemplateView.as_view(template_name='q_and_a.html'), name='q_and_a'),
+    
+    # Video detail route
+    path('clip/<int:video_id>/', VideoDetailView.as_view(), name='clip_detail'),
     
     # Library management routes
     path('libraries/create/', login_required(CreateLibraryView.as_view()), name='create_library'),
