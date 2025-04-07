@@ -55,6 +55,7 @@ def extract_video_metadata(file_path):
     """
     Extract basic metadata from a video file using ffmpeg/ffprobe.
     Returns a dictionary with metadata information needed for storage.
+    If ffmpeg/ffprobe is not available, returns basic file metadata.
     """
     logger = logging.getLogger(__name__)
     
@@ -77,8 +78,9 @@ def extract_video_metadata(file_path):
             # Still not found, raise an error with detailed information
             raise FileNotFoundError(f"Video file not found at: {file_path}. Please check file permissions and path.")
     
-    # Get file size
+    # Get basic file metadata that doesn't require ffmpeg
     try:
+        # Get file size
         metadata['file_size'] = os.path.getsize(file_path)
         # Convert to human-readable format
         if metadata['file_size'] < 1024 * 1024:  # Less than 1MB
@@ -89,11 +91,8 @@ def extract_video_metadata(file_path):
                 metadata['file_size_display'] = f"{size_mb:.1f} MB"
             else:
                 metadata['file_size_display'] = f"{size_mb / 1024:.2f} GB"
-    except (OSError, IOError) as e:
-        logger.error(f"Error getting file size: {e}")
-    
-    # Get file format from extension
-    try:
+                
+        # Get file format from extension
         file_extension = os.path.splitext(file_path)[1]
         if file_extension:
             metadata['format'] = file_extension.strip('.').upper()
@@ -102,10 +101,10 @@ def extract_video_metadata(file_path):
         mime_type, _ = mimetypes.guess_type(file_path)
         if mime_type:
             metadata['mime_type'] = mime_type
-    except Exception as e:
-        logger.error(f"Error getting file format: {e}")
+    except (OSError, IOError) as e:
+        logger.error(f"Error getting basic file metadata: {e}")
     
-    # Extract duration using ffprobe
+    # Try to extract advanced metadata using ffprobe if available
     try:
         # Try to import ffmpeg-python
         try:
@@ -140,22 +139,29 @@ def extract_video_metadata(file_path):
                         metadata['codec'] = video_stream['codec_name']
             
         except ImportError:
-            logger.error("ffmpeg-python package is not installed. Please install it with: pip install ffmpeg-python")
-            raise RuntimeError("ffmpeg-python package is required but not installed")
+            logger.warning("ffmpeg-python package is not installed. Using basic metadata only.")
+            metadata['extraction_method'] = 'basic'
+            return metadata
             
         except ffmpeg.Error as e:
             error_message = e.stderr.decode() if hasattr(e, 'stderr') else str(e)
-            logger.error(f"ffmpeg error: {error_message}")
+            logger.warning(f"ffmpeg error: {error_message}")
             if "No such file or directory" in str(e) or "not found" in str(e):
-                logger.error("ffmpeg/ffprobe is not installed or not in PATH. Please install ffmpeg on your system.")
-                raise RuntimeError("ffmpeg/ffprobe is required but not installed on the system")
-            raise
+                logger.warning("ffmpeg/ffprobe is not installed or not in PATH. Using basic metadata only.")
+                metadata['extraction_method'] = 'basic'
+                return metadata
+            
+            # For other ffmpeg errors, log but continue with basic metadata
+            logger.error(f"Other ffmpeg error: {error_message}")
+            metadata['extraction_method'] = 'basic'
+            return metadata
             
     except Exception as e:
-        logger.error(f"Error extracting duration: {e}")
-        # Don't silently fail - raise the exception to make it clear what's missing
-        raise
+        logger.warning(f"Error extracting advanced metadata with ffmpeg: {e}. Using basic metadata only.")
+        metadata['extraction_method'] = 'basic'
+        return metadata
     
+    metadata['extraction_method'] = 'advanced'
     return metadata
 
 class UploadView(FormView):
@@ -238,36 +244,57 @@ class UploadView(FormView):
     
     def form_valid(self, form):
         """Process the valid form data and create a video record."""
+        logger = logging.getLogger(__name__)
         try:
             # Create video object but don't save to DB yet
             video = form.save(commit=False)
             video.uploader = self.request.user
             video.storage_status = 'pending'  # Set initial storage status
             
-            # Set the library from the form
-            if form.library:
+            # Check for library in form data or parameters
+            library_id = self.request.POST.get('library_id')
+            
+            # Priority 1: If library_id is explicitly provided in the form
+            if library_id:
+                from libraries.models import Library
+                try:
+                    library = Library.objects.get(id=library_id)
+                    video.library = library
+                    logger.info(f"Using library from form POST data: {library.name} (ID: {library.id})")
+                except Library.DoesNotExist:
+                    logger.warning(f"Library with ID {library_id} from form data not found")
+                    # Fall back to other methods
+                    library_id = None
+            
+            # Priority 2: If library is in the form object (from get_form_kwargs)
+            if not library_id and form.library:
                 video.library = form.library
-            else:
-                # If no library in form, try to get from session or default to Paletta
+                logger.info(f"Using library from form object: {form.library.name} (ID: {form.library.id})")
+            # Priority 3: Try to get from session or default to Paletta
+            elif not library_id:
+                # Try to get from session
                 library_id = self.request.session.get('current_library_id')
                 if library_id:
                     from libraries.models import Library
                     try:
                         library = Library.objects.get(id=library_id)
                         video.library = library
+                        logger.info(f"Using library from session: {library.name} (ID: {library.id})")
                     except Library.DoesNotExist:
                         # Default to Paletta library if not found
                         try:
                             library = Library.objects.get(name='Paletta')
                             video.library = library
+                            logger.info(f"Session library not found, using Paletta: {library.id}")
                         except Library.DoesNotExist:
-                            raise ValueError("No library found for video upload")
+                            raise ValueError("Paletta library not found")
                 else:
                     # Default to Paletta library
                     from libraries.models import Library
                     try:
                         library = Library.objects.get(name='Paletta')
                         video.library = library
+                        logger.info(f"No library in session, using Paletta: {library.id}")
                     except Library.DoesNotExist:
                         raise ValueError("Paletta library not found")
             
@@ -288,12 +315,10 @@ class UploadView(FormView):
                     
                     # Log when new tags are created
                     if created:
-                        logger = logging.getLogger(__name__)
                         logger.info(f"Created new tag '{tag_name}' in library '{video.library.name}'")
             
             # Extract video metadata
             if video.video_file:
-                logger = logging.getLogger(__name__)
                 logger.info(f"Extracting metadata from: {video.video_file.path}")
                 try:
                     if hasattr(video.video_file, 'path') and video.video_file.path:
@@ -338,8 +363,6 @@ class UploadView(FormView):
             
         except Exception as e:
             # Log the error and show error message
-            import logging
-            logger = logging.getLogger(__name__)
             logger.error(f"Error in form_valid: {e}")
             messages.error(self.request, f"Error uploading video: {str(e)}")
             return self.form_invalid(form)
@@ -384,21 +407,36 @@ class VideoMetadataAPIView(View):
                     'message': f'File not found error: {str(e)}',
                     'error_type': 'file_not_found'
                 }, status=500)
-            except RuntimeError as e:
-                # Handle specific dependency errors
-                if "ffmpeg" in str(e).lower() and ("not installed" in str(e).lower() or "not found" in str(e).lower()):
-                    return JsonResponse({
-                        'success': False,
-                        'message': 'Server configuration error: ffmpeg is not installed. Please contact the administrator.',
-                        'error_type': 'dependency_missing',
-                        'error_details': str(e)
-                    }, status=500)
-                else:
-                    return JsonResponse({
-                        'success': False,
-                        'message': f'Runtime error: {str(e)}',
-                        'error_type': 'runtime_error'
-                    }, status=500)
+            except Exception as e:
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error extracting metadata: {str(e)}")
+                
+                # Create basic metadata from the file information
+                basic_metadata = {
+                    'file_size': os.path.getsize(temp_path) if os.path.exists(temp_path) else video_file.size,
+                    'format': os.path.splitext(video_file.name)[1].strip('.').upper(),
+                    'mime_type': video_file.content_type,
+                    'extraction_method': 'fallback',
+                    'error_message': str(e)
+                }
+                
+                # Convert file size to human-readable format
+                size_bytes = basic_metadata['file_size']
+                if size_bytes < 1024 * 1024:  # Less than 1MB
+                    basic_metadata['file_size_display'] = f"{size_bytes / 1024:.1f} KB"
+                else:  # MB or GB
+                    size_mb = size_bytes / (1024 * 1024)
+                    if size_mb < 1024:
+                        basic_metadata['file_size_display'] = f"{size_mb:.1f} MB"
+                    else:
+                        basic_metadata['file_size_display'] = f"{size_mb / 1024:.2f} GB"
+                
+                # Return limited metadata with a warning
+                return JsonResponse({
+                    'success': True,
+                    'metadata': basic_metadata,
+                    'warning': 'Limited metadata available due to extraction issues'
+                })
             finally:
                 # Clean up the temporary file
                 try:
@@ -498,39 +536,55 @@ class VideoAPIUploadView(View):
                 storage_status='pending'  # Set initial storage status
             )
             
-            # Get library from session or default to Paletta
-            library_id = request.session.get('current_library_id')
+            # Get library from request data, session, or default to Paletta
+            library_id = request.POST.get('library_id')
+            
+            # If library_id is provided in POST data, use it
             if library_id:
                 from libraries.models import Library
                 try:
                     library = Library.objects.get(id=library_id)
                     video.library = library
-                    logger.info(f"Using library from session: {library.name} (ID: {library.id})")
+                    logger.info(f"Using library from POST data: {library.name} (ID: {library.id})")
                 except Library.DoesNotExist:
-                    # Default to Paletta library if not found
+                    logger.warning(f"Library with ID {library_id} from POST data not found")
+                    # Fall back to session or default
+                    library_id = None
+            
+            # If no library_id from POST data or it was invalid, try session
+            if not library_id:
+                library_id = request.session.get('current_library_id')
+                if library_id:
+                    from libraries.models import Library
+                    try:
+                        library = Library.objects.get(id=library_id)
+                        video.library = library
+                        logger.info(f"Using library from session: {library.name} (ID: {library.id})")
+                    except Library.DoesNotExist:
+                        # Default to Paletta library if not found
+                        try:
+                            library = Library.objects.get(name='Paletta')
+                            video.library = library
+                            logger.info(f"Session library not found, using Paletta: {library.id}")
+                        except Library.DoesNotExist:
+                            logger.error("No library found for video upload")
+                            return JsonResponse({
+                                'success': False,
+                                'message': 'No library found for video upload'
+                            }, status=500)
+                else:
+                    # Default to Paletta library
+                    from libraries.models import Library
                     try:
                         library = Library.objects.get(name='Paletta')
                         video.library = library
-                        logger.info(f"Session library not found, using Paletta: {library.id}")
+                        logger.info(f"No library in session, using Paletta: {library.id}")
                     except Library.DoesNotExist:
-                        logger.error("No library found for video upload")
+                        logger.error("Paletta library not found")
                         return JsonResponse({
                             'success': False,
-                            'message': 'No library found for video upload'
+                            'message': 'Paletta library not found'
                         }, status=500)
-            else:
-                # Default to Paletta library
-                from libraries.models import Library
-                try:
-                    library = Library.objects.get(name='Paletta')
-                    video.library = library
-                    logger.info(f"No library in session, using Paletta: {library.id}")
-                except Library.DoesNotExist:
-                    logger.error("Paletta library not found")
-                    return JsonResponse({
-                        'success': False,
-                        'message': 'Paletta library not found'
-                    }, status=500)
             
             # Save to get an ID
             video.save()

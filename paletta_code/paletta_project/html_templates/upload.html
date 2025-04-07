@@ -34,8 +34,9 @@
             <h1>Upload your clip</h1>
             
             {% if current_library %}
-            <div class="library-info">
+            <div class="library-info" data-library-id="{{ current_library.id }}">
                 <p>Uploading to library: <strong>{{ current_library.name }}</strong></p>
+                <input type="hidden" name="library_id" value="{{ current_library.id }}">
             </div>
             {% endif %}
             
@@ -62,15 +63,18 @@
             <div class="form-group">
                 <label for="description">Description</label>
                 <textarea id="description" name="description" maxlength="600"></textarea>
-                <div class="word-count" id="description-word-count">0/100 words</div>
+                <div class="word-count" id="description-word-count">0/25 words</div>
             </div>
             <div class="form-group">
                 <label for="category">Category</label>
-                <div class="select-wrapper">
-                    <select id="category" name="category" required>
-                        <option value="">Select a category</option>
-                        <!-- Categories will be loaded from API via JavaScript -->
-                    </select>
+                <div class="select-container">
+                    <div class="select-wrapper">
+                        <select id="category" name="category" required>
+                            <option value="">Select a category</option>
+                            <!-- Categories will be loaded from API via JavaScript -->
+                        </select>
+                    </div>
+                    <button type="button" class="button add-btn" id="add-category-btn">+ Add Category</button>
                 </div>
             </div>
             <div class="form-group">
@@ -106,6 +110,28 @@
     </div>
 
 </body>
+
+<!-- Category Modal -->
+<div id="category-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="close-category-modal">&times;</span>
+        <h2>Add a Category</h2>
+
+        <label for="category-name">Category Name</label>
+        <input type="text" id="category-name" placeholder="Enter category name">
+
+        <label for="category-description">Category Description</label>
+        <textarea id="category-description" placeholder="Enter description"></textarea>
+
+        <label for="category-image">Category Image</label>
+        <input type="file" id="category-image" accept="image/*">
+        <div id="category-image-preview" style="display: none; margin-top: 10px;"></div>
+
+        <p id="error-text" class="error-text" style="color: #d9534f; display: none;"></p>
+        <button type="button" class="button" id="save-category-btn">Add Category</button>
+    </div>
+</div>
+
 {% include "html_reusables/footer_reusable.html" %}
 
 </html>

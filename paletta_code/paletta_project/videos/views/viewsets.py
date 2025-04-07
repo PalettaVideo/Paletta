@@ -17,9 +17,39 @@ class CategoryViewSet(viewsets.ModelViewSet):
     """
     API viewset for managing video categories.
     Provides CRUD operations for categories.
+    
+    Query parameters:
+    - library: Filter categories by library ID
     """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    
+    def get_queryset(self):
+        """
+        Filter categories based on query parameters.
+        If library ID is provided, filter categories by that library.
+        If no library ID is provided, use the current library from session.
+        """
+        queryset = super().get_queryset()
+        
+        # Get library ID from query parameter
+        library_id = self.request.query_params.get('library', None)
+        
+        # If library ID is provided in the request, filter by it
+        if library_id:
+            queryset = queryset.filter(library_id=library_id)
+        # Otherwise, try to get the current library from session
+        elif self.request.session.get('current_library_id'):
+            library_id = self.request.session.get('current_library_id')
+            queryset = queryset.filter(library_id=library_id)
+        
+        # Add library information to the log for debugging
+        if library_id:
+            logger.debug(f"Filtering categories by library_id: {library_id}")
+        else:
+            logger.debug("No library_id filter applied to categories query")
+            
+        return queryset
     
     def get_serializer_context(self):
         """
@@ -57,6 +87,63 @@ class CategoryViewSet(viewsets.ModelViewSet):
             logger.error(f"Error in category image action: {str(e)}")
             return Response(
                 {'error': 'Failed to retrieve category image'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new category.
+        If library_id is provided in the form data, use it.
+        Otherwise, use the current library from session.
+        """
+        try:
+            # Get library ID from request data
+            library_id = request.data.get('library_id')
+            
+            # If no library ID is provided in the request, try to get from session
+            if not library_id:
+                library_id = request.session.get('current_library_id')
+            
+            # If still no library ID, return error
+            if not library_id:
+                return Response(
+                    {"detail": "No library specified for category. Please select a library first."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get library
+            from libraries.models import Library
+            try:
+                library = Library.objects.get(id=library_id)
+            except Library.DoesNotExist:
+                return Response(
+                    {"detail": f"Library with ID {library_id} not found."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Add library to request data for serializer
+            data = request.data.copy()
+            data['library'] = library.id
+            
+            # Create serializer with updated data
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            
+            # Log the creation
+            logger.info(f"Category '{serializer.instance.name}' created for library '{library.name}' (ID: {library.id})")
+            
+            headers = self.get_success_headers(serializer.data)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+                headers=headers
+            )
+            
+        except Exception as e:
+            logger.error(f"Error creating category: {str(e)}")
+            return Response(
+                {"detail": f"Failed to create category: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
