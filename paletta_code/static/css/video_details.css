@@ -1,0 +1,249 @@
+
+body {
+  font-family: 'Montserrat';
+  margin-top: 120px;
+  padding: 0;
+}
+
+/* Main content */
+main {
+  padding-left: 15vh;
+  padding-right: 15vh;
+  background-color: white;
+}
+
+.content {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  margin-top: 30px;
+}
+
+.video-container {
+  position: relative;
+  width: 90vh;
+  margin-top: 10vh;
+}
+
+.video-container video {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.video-container .back-button {
+  background-color: #80B824 ;
+  border: 2px solid #80B824;
+  color:white ;
+  padding: 8px 15px;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: bold;
+
+}
+
+.video-container .back-button:hover {
+  background-color: #eaeaea;
+}
+
+.navigation-buttons {
+  display: flex;
+  margin-bottom: 10px;
+  justify-content: space-between;
+}
+
+.details {
+  max-width: 350px;
+  margin-top: 16vh;
+  padding-right: 32vh;
+}
+
+.details h1 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.details p {
+  margin: 5px 0;
+}
+
+.details .actions button {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: #80B824;
+  color: white;
+  font-size: 16px;
+}
+
+.details .actions button:hover {
+  background-color: #6aa839;
+}
+
+/* Video description section */
+.description {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
+}
+
+.video-info {
+  max-width: 60%;
+}
+
+.video-info h2 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.category span {
+  display: inline-block;
+  background-color: #7fb82476;
+  padding: 5px 10px;
+  margin: 5px 5px 5px 0;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.tags span {
+  display: inline-block;
+  background-color: #7fb82476;
+  padding: 5px 10px;
+  margin: 5px 5px 5px 0;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.attributes {
+  width: 35%;
+  background-color: #f4f4f4;
+  padding: 15px;
+  border-radius: 5px;
+}
+
+.attributes p {
+  margin: 10px 0;
+}
+
+/* Related clips section */
+.related-clips {
+  margin-top: 30px;
+}
+
+.related-clips h2 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.related-container {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+
+.related-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.related-container::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 10px;
+}
+
+.related-container .clip-card {
+  width: 200px;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.related-container .clip-card img {
+  width: 100%;
+  height: auto;
+}
+
+.related-container .clip-card p {
+  padding: 10px;
+  font-size: 14px;
+  margin: 0;
+}
+
+
+
+/* Popup styles */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.resolution {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.resolution h2 {
+  margin-bottom: 20px;
+}
+
+.resolution button {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  background-color: #7bbd42;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.resolution button:hover {
+  background-color: #6aa839;
+}
+
+input[type="radio"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  background-color: white;
+  position: relative;
+  cursor: pointer;
+}
+
+
+input[type="radio"]:checked {
+  background-color: green; 
+  border-color: green; 
+}
+
+
+input[type="radio"]:checked::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 8px;
+  height: 8px;
+  background-color: white; 
+  border-radius: 50%;
+}
+

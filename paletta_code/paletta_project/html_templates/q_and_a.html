@@ -1,0 +1,61 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Paletta - Help Center</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/q_and_a.css' %}">
+    <!-- JS -->
+    <script src="{% static 'js/q_and_a.js' %}" defer></script>
+</head>
+<body>
+{% include "html_reusables/header_reusable.html" %}
+<div class="title-section">
+    <div class="image-container">
+        <img src="{% static 'picture/main_campus.png' %}">
+        <div class="overlay">Help Centre</div>
+    </div>
+    <div class="logo-container">
+        <img src="{% static 'picture/logo.jpg' %}" alt="PALETTA Logo">
+    </div>
+</div>
+
+<div class="faq-container">
+    <div class="faq-questions">
+        <ul>
+            <li onclick="selectQuestion(this, 0)">1. What is Paletta?</li>
+            <li onclick="selectQuestion(this, 1)">2. Who can use Paletta?</li>
+            <li onclick="selectQuestion(this, 2)">3. What types of footage are available on Paletta?</li>
+            <li onclick="selectQuestion(this, 3)">4. How do I purchase footage from Paletta?</li>
+            <li onclick="selectQuestion(this, 4)">5. What formats are the videos available in?</li>
+            <li onclick="selectQuestion(this, 5)">6. Are there licensing restrictions for using the footage?</li>
+            <li onclick="selectQuestion(this, 6)">7. Can I request custom footage?</li>
+            <li onclick="selectQuestion(this, 7)">8. Is there a subscription plan available?</li>
+            <li onclick="selectQuestion(this, 8)">9. Can I preview the footage before purchasing?</li>
+            <li onclick="selectQuestion(this, 9)">10. How can I contact Paletta for support?</li>
+            <li onclick="selectQuestion(this, 10)">11. Does Paletta offer footage outside the UK?</li>
+            <li onclick="selectQuestion(this, 11)">12. How often is the library updated?</li>
+        </ul>
+    </div>
+    <div class="faq-answers" id="faq-answer">
+        <p>Select a question to see the answer here.</p>
+    </div>
+</div>
+
+<div class="contact-us">
+    <p>Still have unsolved questions?</p>
+    <a href="{% url 'contact_us' %}"><button>Contact Us</button></a>
+</div>
+
+{% include "html_reusables/footer_reusable.html" %}
+
+</body>
+</html>

@@ -1,5 +1,5 @@
 # virtual environment folder
-venv/
+.venv/
 
 # python cache files
 __pycache__/
@@ -7,3 +7,7 @@ __pycache__/
 
 # environment files
 .env
+
+# Media files
+/paletta_code/media/
+media/

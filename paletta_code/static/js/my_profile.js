@@ -4,98 +4,191 @@ import {
   initialisePasswordValidation,
 } from "./passwordVerification.js";
 
-// initialise password validation for real-time password validation
-document.addEventListener("DOMContentLoaded", initialisePasswordValidation);
+/**
+ * Helper function to interact with DOM elements
+ */
+const DOM = {
+  // get element by ID
+  get: (id) => document.getElementById(id),
 
-// load the user data and populate the profile
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    const token = localStorage.getItem("access_token");
-    const response = await fetch("/users/me", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (!response.ok) {
-      console.error("Response status:", response.status);
-      throw new Error("Failed to fetch user data");
+  // get element value
+  getValue: (id, defaultValue = "") => {
+    const element = document.getElementById(id);
+    return element ? element.value : defaultValue;
+  },
+
+  // get element text
+  getText: (id, defaultValue = "") => {
+    const element = document.getElementById(id);
+    return element ? element.innerText : defaultValue;
+  },
+
+  // update element text
+  setText: (id, value) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.innerText = value || "";
+    } else {
+      console.warn(`Element with ID '${id}' not found`);
     }
+  },
 
-    const userData = await response.json();
-    populateProfile(userData);
+  // update input value
+  setValue: (id, value) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.value = value || "";
+    } else {
+      console.warn(`Input element with ID '${id}' not found`);
+    }
+  },
+
+  // set display style
+  setDisplay: (id, display) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.style.display = display;
+    }
+  },
+};
+
+function getUserData() {
+  try {
+    const userDataElement = document.getElementById("user-data");
+    if (!userDataElement) {
+      throw new Error("User data element not found");
+    }
+    return JSON.parse(userDataElement.textContent);
   } catch (error) {
-    console.error("Error fetching user data:", error);
+    console.error("Error parsing user data:", error);
+    return null;
+  }
+}
+
+/**
+ * Initialise all event listeners and setup
+ */
+function initializeProfile() {
+  // initialise password validation
+  initialisePasswordValidation();
+
+  // load user data
+  try {
+    const userData = getUserData();
+    if (userData) {
+      populateProfile(userData);
+    } else {
+      console.error("User data not found or invalid");
+      alert("Failed to load user profile.");
+    }
+  } catch (error) {
+    console.error("Error loading user data:", error);
     alert("Failed to load user profile.");
   }
 
-  togglePasswordVisibility("password-input", "toggle-password");
-  togglePasswordVisibility("confirm-password-input", "toggle-confirm-password");
-});
+  // setup password visibility toggles
+  setupPasswordToggles();
 
-function populateProfile(user) {
-  // populate the display fields with the user data
-  document.getElementById("email-display").innerText = user.email;
-  document.getElementById("name-display").innerText = user.username;
-  document.getElementById("institution-display").innerText = user.institution;
-  document.getElementById("company-display").innerText = user.company;
+  // setup password change checkbox
+  setupPasswordChangeCheckbox();
 
-  // populate the input fields with the user data
-  document.getElementById("email-input").value = user.email;
-  document.getElementById("name-input").value = user.username;
-  // no change of institution for now, requirements are to be discussed in future
-  // document.getElementById("institution-input").value = user.institution;
-  document.getElementById("company-input").value = user.company;
+  // setup password validation
+  const passwordInput = DOM.get("password-input");
+  if (passwordInput) {
+    passwordInput.addEventListener("input", function () {
+      updatePasswordRequirements(this.value);
+    });
+  }
 }
 
-// enable the edit model when the button is clicked
-window.enableEdit = function enableEdit() {
-  document.getElementById("view-mode").style.display = "none";
-  document.getElementById("edit-mode").style.display = "block";
-};
+/**
+ * Populate profile with user data
+ */
+function populateProfile(user) {
+  // update display elements
+  DOM.setText("email-display", user.email);
+  DOM.setText("first-name-display", user.first_name);
+  DOM.setText("last-name-display", user.last_name);
+  DOM.setText("institution-display", user.institution);
+  DOM.setText("company-display", user.company);
 
-// event listener for password change checkbox
-const passwordChangeCheckbox = document.getElementById(
-  "password-change-checkbox"
-);
-const passwordFields = document.getElementById("password-fields");
+  // update input fields
+  DOM.setValue("email-input", user.email);
+  DOM.setValue("first-name-input", user.first_name);
+  DOM.setValue("last-name-input", user.last_name);
+  DOM.setValue("company-input", user.company);
+}
 
-passwordChangeCheckbox.addEventListener("change", function () {
-  if (this.checked) {
-    passwordFields.style.display = "block";
-    document.getElementById("message").style.display = "block";
-  } else {
-    passwordFields.style.display = "none";
-    document.getElementById("message").style.display = "none";
-  }
-});
+/**
+ * Setup password visibility toggles
+ */
+function setupPasswordToggles() {
+  const setupToggle = (inputId, buttonId) => {
+    const input = DOM.get(inputId);
+    const button = DOM.get(buttonId);
 
-// event listeners for password validation
-const passwordInput = document.getElementById("password-input");
-passwordInput.addEventListener("input", function () {
-  updatePasswordRequirements(this.value);
-});
-
-// saves the changes to the profile and updates the user data
-window.saveChanges = function saveChanges() {
-  const email = document.getElementById("email-input").value;
-  const name = document.getElementById("name-input").value;
-  const company = document.getElementById("company-input").value;
-  const institution = document.getElementById("institution-display").innerText;
-
-  const token = localStorage.getItem("access_token");
-
-  const body = {
-    email,
-    username: name,
-    company,
-    institution,
+    if (input && button) {
+      button.addEventListener("click", () => {
+        const isPassword = input.type === "password";
+        input.type = isPassword ? "text" : "password";
+        button.textContent = isPassword ? "Hide" : "Show";
+      });
+    } else {
+      console.warn(
+        `Could not set up password toggle for ${inputId} and ${buttonId}`
+      );
+    }
   };
 
-  if (passwordChangeCheckbox.checked) {
-    const password = passwordInput.value;
-    const confirmPassword = document.getElementById(
-      "confirm-password-input"
-    ).value;
+  setupToggle("password-input", "toggle-password");
+  setupToggle("confirm-password-input", "toggle-confirm-password");
+}
+
+/**
+ * Setup password change checkbox behavior
+ */
+function setupPasswordChangeCheckbox() {
+  const checkbox = DOM.get("password-change-checkbox");
+  const fields = DOM.get("password-fields");
+  const message = DOM.get("message");
+
+  if (checkbox && fields) {
+    checkbox.addEventListener("change", function () {
+      const display = this.checked ? "block" : "none";
+      fields.style.display = display;
+
+      if (message) {
+        message.style.display = display;
+      }
+    });
+  }
+}
+
+/**
+ * Enable edit mode
+ */
+function enableEdit() {
+  DOM.setDisplay("view-mode", "none");
+  DOM.setDisplay("edit-mode", "block");
+}
+
+/**
+ * Save profile changes
+ */
+function saveChanges() {
+  const body = {
+    email: DOM.getValue("email-input"),
+    first_name: DOM.getValue("first-name-input"),
+    last_name: DOM.getValue("last-name-input"),
+    company: DOM.getValue("company-input"),
+    institution: DOM.getText("institution-display"),
+  };
+
+  // handle password change if checkbox is checked
+  const passwordChangeCheckbox = DOM.get("password-change-checkbox");
+  if (passwordChangeCheckbox && passwordChangeCheckbox.checked) {
+    const password = DOM.getValue("password-input");
+    const confirmPassword = DOM.getValue("confirm-password-input");
 
     if (password !== confirmPassword) {
       alert("Passwords do not match!");
@@ -112,59 +205,46 @@ window.saveChanges = function saveChanges() {
 
     body.password = password;
   }
-  // send the PUT request to the server to update the profile
-  fetch("/users/me", {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        // log the response status and text for debugging
-        console.error("Response status:", response.status);
-        return response.text().then((text) => {
-          console.error("Response text:", text);
-          throw new Error("Failed to update profile");
-        });
-      }
-      return response.json();
-    })
-    .then((updatedUser) => {
-      // update the user data and populate the profile
-      populateProfile(updatedUser);
-      document.getElementById("view-mode").style.display = "block";
-      document.getElementById("edit-mode").style.display = "none";
 
-      // if the password was changed, log out the user
-      if (passwordChangeCheckbox.checked) {
-        // remove the access token from local storage
-        localStorage.removeItem("access_token");
-        // redirect to the login page
-        window.location.href = "/";
-      }
-    })
-    .catch((error) => {
-      // log any errors for debugging
-      console.error("Error updating profile:", error);
-      alert("Failed to update profile.");
-    });
-};
-
-// function to toggle password visibility
-function togglePasswordVisibility(inputId, buttonId) {
-  const input = document.getElementById(inputId);
-  const button = document.getElementById(buttonId);
-
-  button.addEventListener("click", () => {
-    if (input.type === "password") {
-      input.type = "text";
-      button.textContent = "Hide";
-    } else {
-      input.type = "password";
-      button.textContent = "Show";
-    }
-  });
+  // create and submit form
+  submitFormData("/profile/update/", body);
 }
+
+/**
+ * Create and submit a form with the given data
+ */
+function submitFormData(action, data) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = action;
+
+  // add CSRF token
+  const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]");
+  if (csrfToken) {
+    const csrfInput = document.createElement("input");
+    csrfInput.type = "hidden";
+    csrfInput.name = "csrfmiddlewaretoken";
+    csrfInput.value = csrfToken.value;
+    form.appendChild(csrfInput);
+  }
+
+  // add form fields
+  for (const key in data) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = data[key];
+    form.appendChild(input);
+  }
+
+  // submit the form
+  document.body.appendChild(form);
+  form.submit();
+}
+
+// initialise on DOM content loaded
+document.addEventListener("DOMContentLoaded", initializeProfile);
+
+// expose functions to window for HTML onclick handlers
+window.enableEdit = enableEdit;
+window.saveChanges = saveChanges;

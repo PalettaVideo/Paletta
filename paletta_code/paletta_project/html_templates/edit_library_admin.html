@@ -1,0 +1,163 @@
+{% load static %}
+{% if user.is_authenticated %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Edit Library</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/edit_library_admin.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sidebar_admin.css' %}">
+    <!-- JS -->
+    <script src="{% static 'js/edit_library_admin.js' %}" defer></script>
+
+</head>
+
+<body>
+    {% include "html_reusables/header_reusable.html" %}
+
+    <div class="container">
+        <aside>
+            <div class="sidebar">
+                <ul>
+                    <li><a href="{% url 'create_library' %}">Create a Library</a></li>
+                    <li><a href="{% url 'manage_libraries' %}" class="active">Manage All Libraries</a></li>
+                    <li><a href="{% url 'manage_administrators' %}">Manage Administrators</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main>
+            {% if library_not_found %}
+            <div class="error-message">
+                <h2>Library Not Found</h2>
+                <p>The requested library "{{ library_name }}" could not be found. <a href="{% url 'manage_libraries' %}">Return to library management</a>.</p>
+            </div>
+            {% elif permission_error %}
+            <div class="error-message">
+                <h2>Permission Denied</h2>
+                <p>You don't have permission to edit library "{{ library_name }}". <a href="{% url 'manage_libraries' %}">Return to library management</a>.</p>
+            </div>
+            {% elif error %}
+            <div class="error-message">
+                <h2>Error</h2>
+                <p>{{ error }}</p>
+                <p><a href="{% url 'manage_libraries' %}">Return to library management</a>.</p>
+            </div>
+            {% else %}
+            <h2>Manage Library - {{ library.name }}</h2>
+            
+            <form method="post" enctype="multipart/form-data" id="editLibraryForm" data-library-id="{{ library.id }}">
+                {% csrf_token %}
+                <input type="hidden" name="library_id" value="{{ library.id }}">
+                <input type="hidden" name="categories" id="categoriesData">
+
+                <div class="form-group">
+            <label for="library-name">Name</label>
+            <div class="input-group">
+                        <input type="text" id="libraryName" name="library_name" value="{{ library.name }}" readonly maxlength="100">
+                        <button type="button" onclick="toggleEdit('libraryName', this)">Edit</button>
+                    </div>
+                    {% if form.library_name.errors %}
+                    <p class="error-text">{{ form.library_name.errors.0 }}</p>
+                    {% endif %}
+            </div>
+
+                <div class="form-group">
+            <label>Logo</label>
+            <div class="logo-container">
+                        <img id="libraryLogo" src="{% if library.logo %}{{ library.logo.url }}{% else %}{% static 'picture/logo.ico' %}{% endif %}" alt="{{ library.name }} Logo">
+                        <input type="file" id="logoUpload" name="logo" accept="image/*" style="display: none;">
+                        <button type="button" class="change-btn">Change</button>
+                    </div>
+                    {% if form.logo.errors %}
+                    <p class="error-text">{{ form.logo.errors.0 }}</p>
+                    {% endif %}
+            </div>
+
+                <div class="form-group">
+            <label for="library-description">Description</label>
+            <div class="input-group">
+                        <input type="text" id="libraryDescription" name="description" value="{{ library.description }}" readonly>
+                        <button type="button" onclick="toggleEdit('libraryDescription', this)">Edit</button>
+                    </div>
+                    {% if form.description.errors %}
+                    <p class="error-text">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+            </div>
+                
+            <div class="form-group">
+                <label for="storage-tier">Storage Tier</label>
+                <select id="storageTier" name="storage_tier">
+                    <option value="basic" {% if library.storage_tier == 'basic' %}selected{% endif %}>Basic (up to 100GB)</option>
+                    <option value="pro" {% if library.storage_tier == 'pro' %}selected{% endif %}>Professional (up to 1TB)</option>
+                    <option value="enterprise" {% if library.storage_tier == 'enterprise' %}selected{% endif %}>Enterprise (up to 10TB)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <div class="category-container">
+                    <label class="category-label">Edit Categories</label>
+                    <button type="button" class="add-category-btn" onclick="openCategoryModal()">➕ Add</button>
+                </div>
+
+                <div id="categoryList" class="category-list">
+                    {% if categories %}
+                        {% for category in categories %}
+                        <div class="category-item" data-id="{{ category.id }}" onclick="editCategoryModal(event, this)">
+                            <img src="{% if category.image %}{{ category.image.url }}{% else %}{% static 'picture/default-category.jpg' %}{% endif %}" alt="{{ category.name }}">
+                            <div class="category-name">{{ category.name }}</div>
+                            <div class="category-desc" style="display: none;">{{ category.description }}</div>
+                            <button type="button" class="delete-btn" onclick="event.stopPropagation(); this.parentElement.remove(); checkCategoriesEmpty();">✖️</button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                    <p id="no-categories-message" class="no-categories" {% if categories %}style="display: none;"{% endif %}>No categories found. Add categories to organize clips in this library.</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Theme Color</label>
+                <input type="color" id="themeColor" name="theme_color" value="{{ library.color_scheme.primary|default:'#86B049' }}">
+            </div>
+            <button href="{% url 'manage_libraries' %}" type="submit" class="finish-btn">Save Changes</button>
+            </form>
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCategoryModal()">&times;</span>
+    <h2 id="categoryModalTitle">Add a Category</h2>
+
+    <label for="categoryName">Name</label>
+            <input type="text" id="categoryName" placeholder="Enter category name">
+
+    <label for="categoryImage">Theme Picture</label>
+            <input type="file" id="categoryImage" accept="image/*">
+            <img id="imagePreview" style="display: none; width: 100px; height: 100px;">
+
+    <label for="categoryDescription">Description</label>
+            <textarea id="categoryDescription" placeholder="Enter description"></textarea>
+
+            <p id="errorText" class="error-text"></p>
+    <button id="saveCategoryBtn" onclick="saveCategory()">Add</button>
+        </div>
+    </div>
+
+{% include "html_reusables/footer_reusable.html" %}
+</body>
+</html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

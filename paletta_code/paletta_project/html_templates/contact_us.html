@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Contact Us - Paletta</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/contact_us.css' %}">
+    <!-- JS -->
+    <script src="{% static 'js/contact_us.js' %}" defer></script>
+
+</head>
+<body>
+  {% include "html_reusables/header_reusable.html" %}
+
+<div class="title-section">
+    <div class="image-container">
+        <img src="{% static 'picture/main_campus.png' %}">
+        <div class="overlay">Contact Us</div>
+    </div>
+    <div class="logo-container">
+        <img src="{% static 'picture/logo.jpg' %}" alt="PALETTA Logo">
+    </div>
+</div>
+
+<div class="contact-container">
+    <div class="contact-details">
+        <h2>Contact Detail</h2>
+        <p><strong>FILMBRIGHT LTD.</strong></p>
+        <p>UK OFFICE, LONDON</p>
+        <p>118 Riverside Close, London E59SS</p>
+        <p>Contact: <a href="mailto:info@filmbright.com">info@filmbright.com</a></p>
+    </div>
+
+    <div class="contact-form">
+        <h2>Contact Now</h2>
+        <form action="#" method="POST">
+            {% csrf_token %}
+            <input type="email" name="email" placeholder="Your Email" required>
+            <textarea name="message" rows="5" placeholder="Your Message" required></textarea>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</div>
+
+{% include "html_reusables/footer_reusable.html" %}
+</body>
+</html>

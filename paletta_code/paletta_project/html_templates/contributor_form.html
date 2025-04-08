@@ -1,0 +1,83 @@
+{% load static %}
+{% if user.is_authenticated %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Paletta - Contributor Application</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Styles -->
+  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <!-- CSS Reusables -->
+  <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+  <!-- CSS -->
+  <link rel="stylesheet" href="{% static 'css/contributor_form.css' %}">
+  <!-- JS -->
+  <script src="{% static 'js/contributor_form.js' %}" defer></script>
+</head>
+<body>
+  {% include "html_reusables/header_reusable.html" %}
+  <main>
+    <a href="{% url 'home' %}">
+      <button class="back-button">Back</button>
+    </a>
+
+  <div class="title-section">
+      <div class="title-text">
+          <h1>Want to be</h1>
+          <h1>a clip contributor</h1>
+          <h1>with Paletta?</h1>
+      </div>
+  </div>
+  <div class="container">
+      <form class="form" id="application-form" method="post" action="{% url 'contributor_apply' %}">
+          {% csrf_token %}
+          <div class="form-group">
+              <label for="name">Contributor's Name</label>
+              <input type="text" id="name" name="name" required>
+          </div>
+          <div class="form-group">
+              <label for="email">Contributor's Email</label>
+              <input type="email" id="email" name="email" required>
+          </div>
+          <div class="form-group">
+              <label for="work-links">Links to previous work</label>
+              <input type="text" id="work-links" name="work_links" required>
+          </div>
+          <div class="form-group">
+              <label for="description">Description on the clips that will be contributed:</label>
+              <textarea id="description" name="description" rows="4" required></textarea>
+          </div>
+          <p class="info-text">We will contact you via email after we receive your application.</p>
+          <div class="form-actions">
+              <button type="submit" class="submit-button">Submit</button>
+          </div>
+      </form>
+      
+  </div>
+  </main>
+  {% include "html_reusables/footer_reusable.html" %}
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('application-form');
+      
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Form validation would go here
+        
+        // Show submission feedback
+        alert('Thank you for your application! We will review it and contact you soon.');
+        form.reset();
+      });
+    });
+  </script>
+</body>
+</html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

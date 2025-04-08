@@ -1,0 +1,343 @@
+/* General Styles */
+body {
+    font-family: 'Montserrat';
+    margin: 0;
+    padding: 0;
+    background-color: #F8F8F8;
+}
+
+.container {
+    display: flex;
+    min-height: 100vh;
+    margin-top: 150px;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 300px;
+    background-color: #fff;
+    height: 100vh;
+    box-sizing: border-box;
+    border-right:1px solid #ddd;
+    padding:20px
+}
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.sidebar ul li {
+    margin: 0;
+}
+.sidebar ul li a {
+    display: block;
+    padding: 15px 20px;
+    text-decoration: none;
+    color: #000;
+    background-color: #fff;
+    transition: background-color 0.3s, color 0.3s;
+}
+.sidebar ul li a:hover,
+.sidebar ul li a:focus {
+    background-color: #80B824;
+    color: #fff;
+}
+.sidebar ul li a.active {
+    background-color: #80B824;
+    color: #fff;
+}
+
+/* Main Content */
+main {
+    
+    flex: 1;
+    padding: 30px;
+}
+
+h2 {
+    color: #86B049;
+    font-size: 22px;
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    margin-top: 10px;
+}
+
+/* Make input selector more specific to target only the form inputs in the main content */
+main input[type="text"], 
+main textarea,
+.modal-content input[type="text"],
+.modal-content textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #CCC;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+.input-group button{
+    background-color: #86B049;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 5px;
+    font-family: "Montserrat";
+}
+
+/* Edit Buttons */
+.edit-btn, .change-btn {
+    background-color: #86B049;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'Montserrat';
+}
+
+/* Upload Box */
+#upload-box {
+    border: 2px dashed #ccc;
+    padding: 10px;
+    cursor: pointer;
+    text-align: center;
+    margin-top: 5px;
+}
+
+.logo-container img {
+    width: 150px;
+    height: auto;
+    max-height: 150px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+#preview-container img {
+    max-width: 100px;
+    height: auto;
+    margin-top: 10px;
+}
+
+/* Category Section */
+.category-container {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.add-category-btn {
+    background-color: #86B049;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 10px;
+    font-family: 'Montserrat';
+}
+
+.category-list {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.category-item {
+    width: 120px;
+    height: 120px;
+    margin-right: 10px;
+    text-align: center;
+    position: relative;
+    background: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.category-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.category-item .category-name {
+    font-weight: bold;
+    background: #86B049;
+    color: white;
+    padding: 5px;
+    width: 100%;
+    text-align: center;
+    border-radius: 0 0 5px 5px;
+}
+
+.category-item .delete-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: white;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: red;
+    font-weight: bold;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Manage Contributors */
+.contributor-container {
+    background: white;
+    padding: 15px;
+    border: 1px solid #CCC;
+    border-radius: 5px;
+    margin-top: 15px;
+}
+
+.contributor-item {
+    background: #F5F5F5;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.invite-btn {
+    background-color: #86B049;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'Montserrat';
+}
+
+/* Modal 样式 */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    background: white;
+    border: 1px solid #86B049;
+    padding: 20px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    z-index: 1000;
+}
+
+/* 关闭按钮 */
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 20px;
+    color: #86B049;
+    cursor: pointer;
+}
+
+/* 输入框 */
+.modal-content input {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 5px;
+    border: 1px solid #86B049;
+}
+
+/* 添加按钮 */
+.add-btn {
+    background-color: #86B049;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    cursor: pointer;
+}
+
+/* Finish Button */
+.finish-btn {
+    background-color: #86B049;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: block;
+    margin: 20px auto;
+    text-align: center;
+}
+
+/* Make sure theme color input has appropriate styling */
+main input[type="color"] {
+    width: 50px;
+    height: 30px;
+    padding: 2px;
+    border: 1px solid #CCC;
+    border-radius: 5px;
+    margin-top: 5px;
+    cursor: pointer;
+}
+
+.confirmation-section {
+    margin: 15px 0;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.confirmation-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+}
+
+.confirmation-buttons button {
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background-color: #86B049;
+    color: white;
+    border: none;
+}
+
+.btn-cancel {
+    background-color: #f1f1f1;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.error-message {
+    color: #d9534f;
+    font-size: 14px;
+    margin-top: 5px;
+    display: block;
+}

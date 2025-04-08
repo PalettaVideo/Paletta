@@ -1,0 +1,101 @@
+{% load static %}
+{% if user.is_authenticated %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Paletta - Order #{{ order.id }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/my_order.css' %}">
+    <!-- JS -->
+    <script src="{% static 'js/order_detail.js' %}" defer></script>
+</head>
+<body>
+    {% include "html_reusables/header_reusable.html" %}
+    
+    <div class="layout">
+        <aside class="sidebar">
+            <ul>
+                <li><a href="{% url 'profile' %}">My profile</a></li>
+                <li><a href="{% url 'collection' %}">My collection</a></li>
+                <li><a href="{% url 'cart' %}">My cart</a></li>
+                <li><a href="{% url 'orders_list' %}" class="active">My orders</a></li>
+            </ul>
+        </aside>
+        
+        <main class="main-content">
+            <div class="container">
+                <div class="order-header">
+                    <a href="{% url 'orders_list' %}" class="back-link">&larr; Back to Orders</a>
+                    <h1>Order #{{ order.id }}</h1>
+                    <div class="order-meta">
+                        <p>Order Date: {{ order.order_date|date:"F j, Y, H:i" }}</p>
+                        <p>Status: <span class="status-{{ order.payment_status }}">{{ order.get_payment_status_display }}</span></p>
+                        <p>Total: £{{ order.total_price }}</p>
+                    </div>
+                </div>
+                
+                <div class="order-items">
+                    <h2>Order Items</h2>
+                    
+                    {% for detail in order_details %}
+                    <div class="order-item">
+                        {% if detail.video.thumbnail %}
+                            <img src="{{ detail.video.thumbnail.url }}" alt="{{ detail.video.title }}">
+                        {% else %}
+                            <img src="{% static 'picture/default-thumbnail.png' %}" alt="{{ detail.video.title }}">
+                        {% endif %}
+                        
+                        <div class="order-details">
+                            <h3>{{ detail.video.title }}</h3>
+                            <p>Resolution: <strong>{{ detail.resolution }}</strong></p>
+                            <p>Price: £{{ detail.price }}</p>
+                            <p>Download Status: <span class="status-{{ detail.download_status }}">{{ detail.get_download_status_display }}</span></p>
+                            {% if detail.download_url_expiry %}
+                                <p>Download Available Until: {{ detail.download_url_expiry|date:"F j, Y, H:i" }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="order-actions">
+                            {% if detail.download_status == 'completed' and detail.download_url %}
+                                <a href="{{ detail.download_url }}" target="_blank" class="download-button">Download</a>
+                            {% elif detail.download_status == 'failed' %}
+                                <button onclick="openRequestModal('{{ detail.id }}')" class="request-button">Request Again</button>
+                            {% else %}
+                                <button class="pending-button" disabled>Processing</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div id="requestModal" class="modal">
+                <div class="modal-content">
+                    <h2>Request your clip again</h2>
+                    <input type="hidden" id="detail-id" value="">
+                    <input type="text" placeholder="Name" value="{{ user.get_full_name }}" readonly>
+                    <input type="email" placeholder="Email" value="{{ user.email }}" readonly>
+                    <textarea placeholder="Reason for request (optional)"></textarea>
+                    <button onclick="confirmRequest()">Confirm</button>
+                    <button onclick="closeRequestModal()">Close</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    {% csrf_token %}
+    {% include "html_reusables/footer_reusable.html" %}
+</body>
+</html>
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %} 

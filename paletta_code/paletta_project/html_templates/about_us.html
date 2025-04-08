@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Paletta - About Us</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/about_us.css' %}">
+    <!-- JS -->
+
+</head>
+<body>
+{% include "html_reusables/header_reusable.html" %}
+
+  <div class="title-section">
+      <div class="image-container">
+          <img src="{% static 'picture/main_campus.png' %}">
+          <div class="overlay">About Us</div>
+      </div>
+      <div class="logo-container">
+          <img src="{% static 'picture/logo.jpg' %}" alt="PALETTA Logo">
+      </div>
+  </div>
+
+  <div class="content">
+      <h1>Welcome to Paletta</h1>
+      <h2>Your Gateway to Authentic Educational Content</h2>
+      <p>At Paletta, we redefine how educational visuals are accessed and utilized. As a premium video footage library, we specialize in delivering authentic, education-driven content sourced directly from the world's leading colleges and universities.Our mission is to empower educators, marketers, and creatives with unparalleled access to subject-specific and location-specific footage, ensuring every project resonates with originality and purpose.Standard stock libraries often fall short when it comes to capturing the essence of academic excellence or providing tailored visuals. That's where Paletta stands apart. We go beyond generic stock to connect you directly to the source of inspiration, offering footage that is as informative as it is visually compelling.Whether you're seeking niche content in a specialised subject or iconic footage from locations across the UK, our carefully curated library has you covered. Every clip in our collection is crafted to meet the highest standards of quality and authenticity, providing the perfect foundation for your next project.</p>
+  </div>
+
+{% include "html_reusables/footer_reusable.html" %}
+</body>
+</html>

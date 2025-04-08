@@ -1,0 +1,116 @@
+{% load static %}
+{% if user.is_authenticated %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Paletta - Profile Page</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Styles -->
+  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <!-- CSS Reusables -->
+  <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+  <!-- CSS -->
+  <link rel="stylesheet" href="{% static 'css/my_profile.css' %}">
+  <link rel="stylesheet" href="{% static 'css/password_message.css' %}">
+
+  <!-- JS -->
+  {{ user_data|json_script:"user-data" }}
+  <script src="{% static 'js/my_profile.js' %}" defer type="module"></script>
+</head>
+
+<body>
+  {% include "html_reusables/header_reusable.html" %}
+    <div class="container">
+        <div class="sidebar">
+            <ul>
+                <li><a href="{% url 'profile' %}" class="active">My profile</a></li>
+                <li><a href="{% url 'collection' %}">My collection</a></li>
+                <li><a href="{% url 'cart' %}">My cart</a></li>
+                <li><a href="{% url 'orders_list' %}">My orders</a></li>
+            </ul>
+        </div>
+        <div class="content">
+          {% if messages %}
+          <div class="messages">
+              {% for message in messages %}
+              <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+                  {{ message }}
+              </div>
+              {% endfor %}
+          </div>
+          {% endif %}
+              <div id="view-mode" class="profile-box">
+                <h2>My Profile</h2>
+                <p><strong>My Email:</strong> <span id="email-display">Loading...</span></p>
+                <p><strong>First Name:</strong> <span id="first-name-display">Loading...</span></p>
+                <p><strong>Last Name:</strong> <span id="last-name-display">Loading...</span></p>
+                <p><strong>My University:</strong> <span id="institution-display">Loading...</span></p>
+                <p><strong>My Company:</strong> <span id="company-display">Loading...</span></p>
+                <button class="btn" onclick="enableEdit()">Edit</button>
+            </div>
+
+            <div id="edit-mode" class="profile-box" style="display: none;">
+                <h2>Edit My Profile</h2>
+                <form onsubmit="saveChanges(); return false;">
+                    {% csrf_token %}
+                    <label for="email-input">Change My Email</label>
+                    <input type="email" id="email-input">
+
+                    <label for="first-name-input">Change First Name</label>
+                    <input type="text" id="first-name-input">
+
+                    <label for="last-name-input">Change Last Name</label>
+                    <input type="text" id="last-name-input">
+
+                    <label for="company-input">Change Company Name</label>
+                    <input type="text" id="company-input">
+
+                    <label for="password-change-checkbox">
+                      <input type="checkbox" id="password-change-checkbox"> Change My Password
+                    </label>
+
+                    <div id="password-fields" style="display: none;">
+                      <!-- password change -->
+                      <div style="position: relative;">
+                        <input type="password" id="password-input">
+                        <button type="button" id="toggle-password" style="position: absolute; right: 0; top: 0; height: 100%; background: none; border: none; cursor: pointer;">
+                          Show
+                        </button>
+                        <small id="password-error" class="password-error"></small>
+                        <small id="password-requirements" class="password-requirements"> Password must be at least 8 characters long. </small>                
+                      </div>
+
+                      <label for="confirm-password-input">Confirm My Password</label>
+                      <div style="position: relative;">
+                        <input type="password" id="confirm-password-input">
+                        <button type="button" id="toggle-confirm-password" style="position: absolute; right: 0; top: 0; height: 100%; background: none; border: none; cursor: pointer;">
+                          Show
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- password requirements message-->
+                    <div id="message">
+                      <h3>A valid password contains:</h3>
+                      <p id="letter" class="invalid">A <b>lowercase</b> letter</p>
+                      <p id="capital" class="invalid">A <b>capital (uppercase)</b> letter</p>
+                      <p id="number" class="invalid">A <b>number</b></p>
+                      <p id="length" class="invalid">Minimum <b>8 characters</b></p>
+                      <p id="specialChar" class="invalid">For a strong password, include a <b>special character</b>, such as <b>[@.#$!%^&*.?]</b></p>
+                    </div>
+
+                    <button type="submit" class="btn">Confirm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% include "html_reusables/footer_reusable.html" %}
+</body>
+</html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

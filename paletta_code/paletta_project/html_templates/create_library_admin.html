@@ -1,0 +1,133 @@
+{% load static %}
+{% if user.is_authenticated %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Create a Library</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/create_library_admin.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sidebar_admin.css' %}">
+    <!-- JS -->
+    <script src="{% static 'js/create_library_admin.js' %}" defer></script>
+</head>
+
+<body>
+    {% include "html_reusables/header_reusable.html" %}
+
+    <div class="container">
+    <aside>
+        <div class="sidebar">
+            <ul>
+                <li><a href="{% url 'create_library' %}" class="active">Create a Library</a></li>
+                <li><a href="{% url 'manage_libraries' %}">Manage All Libraries</a></li>
+                <li><a href="{% url 'manage_administrators' %}">Manage Administrators</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <main>
+        <h2>Create a Library</h2>
+        
+        <form method="post" enctype="multipart/form-data" id="library-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="error-message">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+            
+            <label for="id_name">Name</label>
+            <input type="text" id="id_name" name="name" maxlength="100" placeholder="Enter name" required>
+            {% if form.name.errors %}
+                <div class="error-message">{{ form.name.errors }}</div>
+            {% endif %}
+
+            <label for="id_logo">Logo</label>
+            <div id="upload-box" style="border: 2px dashed #ccc; padding: 10px; cursor: pointer;">
+                select a Logo
+                <input type="file" id="file-input" name="logo" accept="image/*" style="display: none;">
+            </div>
+            
+            <div id="preview-container"></div>
+            {% if form.logo.errors %}
+                <div class="error-message">{{ form.logo.errors }}</div>
+            {% endif %}
+
+            <label for="id_description">Description</label>
+            <textarea id="id_description" name="description" maxlength="100" placeholder="Enter description" required></textarea>
+            {% if form.description.errors %}
+                <div class="error-message">{{ form.description.errors }}</div>
+            {% endif %}
+            
+            <label for="id_storage_tier">Storage Tier</label>
+            <select id="id_storage_tier" name="storage_tier">
+                <option value="basic">Basic (up to 100GB)</option>
+                <option value="pro">Professional (up to 1TB)</option>
+                <option value="enterprise">Enterprise (up to 10TB)</option>
+            </select>
+            {% if form.storage_tier.errors %}
+                <div class="error-message">{{ form.storage_tier.errors }}</div>
+            {% endif %}
+
+            <!-- Category section -->
+            <div class="category-container">
+                <label class="category-label">Add Categories (Optional)</label>
+                <button type="button" class="add-category-btn" onclick="openCategoryModal()">➕ add category</button>
+            </div>
+
+            <!-- Category display area -->
+            <div id="categoryList" class="category-list"></div>
+            <div id="category-status" class="status-message">No categories added yet.</div>
+            <input type="hidden" id="categories-json" name="categories_json" value="[]">
+            
+            <!-- Category modal -->
+            <div id="categoryModal" class="modal">
+                <div class="modal-content">
+                    <span class="close" onclick="closeCategoryModal()">&times;</span>
+                    <h2>Add a Category</h2>
+
+                    <label for="categoryName">Category Name</label>
+                    <input type="text" id="categoryName" placeholder="Enter category name">
+
+                    <label for="categoryImage">Category Image</label>
+                    <input type="file" id="categoryImage" accept="image/*">
+                    <img id="imagePreview" style="display: none; width: 100px; height: 100px;">
+
+                    <label for="categoryDescription">Category Description</label>
+                    <textarea id="categoryDescription" placeholder="Enter description"></textarea>
+
+                    <p id="errorText" class="error-text"></p>
+                    <button type="button" class="add-btn" onclick="addCategory()">Add Category</button>
+                </div>
+            </div>
+
+            <label for="id_theme_color">Theme Colour</label>
+            <div id="colorPickerContainer">
+                <div id="colorPreview" onclick="toggleColorPicker()"></div>
+                <input type="color" id="themeColor" name="primary_color" onchange="updateColor()" value="#86B049">
+            </div>
+            {% if form.theme_color.errors %}
+                <div class="error-message">{{ form.theme_color.errors }}</div>
+            {% endif %}
+
+            <button type="submit" class="create-btn">Create</button>
+        </form>
+    </main>
+</div>
+
+{% include "html_reusables/footer_reusable.html" %}
+
+</body>
+</html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

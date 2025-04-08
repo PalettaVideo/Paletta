@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Video Download Link</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .container {
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .header {
+            background-color: #4285f4;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px 5px 0 0;
+            margin-top: 0;
+        }
+        .content {
+            padding: 20px;
+        }
+        .footer {
+            font-size: 12px;
+            color: #777;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            margin-top: 20px;
+        }
+        .video-info {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .download-button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        .warning {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="header">Video Download Link</h1>
+        <div class="content">
+            <p>Hello,</p>
+            
+            <p>Here is your requested download link for the following video:</p>
+            
+            <div class="video-info">
+                <h3>Video Details:</h3>
+                <p><strong>Title:</strong> {{ video.title }}</p>
+                <p><strong>Description:</strong> {{ video.description }}</p>
+                <p><strong>Category:</strong> {{ video.category.name }}</p>
+                {% if video.duration %}
+                <p><strong>Duration:</strong> {{ video.duration }} seconds</p>
+                {% endif %}
+                {% if video.file_size %}
+                <p><strong>File Size:</strong> {{ video.file_size|filesizeformat }}</p>
+                {% endif %}
+                <p><strong>Upload Date:</strong> {{ video.upload_date|date:"F j, Y" }}</p>
+            </div>
+            
+            <p>Click the button below to download the video:</p>
+            
+            <a href="{{ download_url }}" class="download-button">Download Video</a>
+            
+            <p class="warning">Important: This download link will expire in {{ expiry_hours }} hours.</p>
+            
+            <p>If the button doesn't work, you can copy and paste the following URL into your browser:</p>
+            
+            <p style="word-break: break-all;">{{ download_url }}</p>
+            
+            <p>Thank you for using our service!</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated message. Please do not reply to this email.</p>
+            <p>&copy; {% now "Y" %} University Video Storage System. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html> 

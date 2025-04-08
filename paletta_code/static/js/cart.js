@@ -1,73 +1,193 @@
+document.addEventListener("DOMContentLoaded", function () {
+  // Initialize cart functionality
+  updateCartSummary();
+  setupRemoveButtons();
+  setupCheckoutButton();
 
-    // Load the cart items from localStorage
-    function loadCart() {
-      const cart = JSON.parse(localStorage.getItem('cart')) || [];
-      const cartItemsContainer = document.querySelector('.cart-items');
-      const cartTotalElement = document.getElementById('cart-total');
-      const cartCountElement = document.getElementById('cart-count');
+  /**
+   * Updates the cart summary with correct count and prices
+   */
+  function updateCartSummary() {
+    const cartItems = document.querySelectorAll(".cart-item");
+    const cartCount = document.getElementById("cart-count");
+    const subtotalElement = document.getElementById("subtotal");
+    const vatElement = document.getElementById("vat");
+    const totalElement = document.getElementById("cart-total");
+    const checkoutButton = document.getElementById("checkout-button");
 
-      cartItemsContainer.innerHTML = '';
-      let total = 0;
+    // Get the clip store URL from a data attribute in the document
+    const clipStoreUrl =
+      document.querySelector('meta[name="clip-store-url"]')?.content || "/";
 
-     
+    // Update cart count
+    if (cartCount) {
+      cartCount.textContent = cartItems.length;
+    }
 
-
-      if (cart.length === 0) {
-        cartItemsContainer.innerHTML = '<p>Your cart is empty. <a href="clip store all internal.html">Go to Clip Store</a></p>';
-        cartCountElement.textContent = '0';
-        cartTotalElement.textContent = '0.00';
-        return;
+    // Calculate totals
+    let subtotal = 0;
+    cartItems.forEach((item) => {
+      const priceText = item.querySelector(".cart-item-price").textContent;
+      const price = parseFloat(priceText.replace("£", ""));
+      if (!isNaN(price)) {
+        subtotal += price;
       }
+    });
 
-      cart.forEach((item, index) => {
-        const cartItem = document.createElement('div');
-        cartItem.className = 'cart-item';
+    const vat = subtotal * 0.2;
+    const total = subtotal + vat;
 
-        total += item.price * item.quantity;
+    // Update price displays
+    if (subtotalElement)
+      subtotalElement.textContent = `£${subtotal.toFixed(2)}`;
+    if (vatElement) vatElement.textContent = `£${vat.toFixed(2)}`;
+    if (totalElement) totalElement.textContent = `£${total.toFixed(2)}`;
 
-        cartItem.innerHTML = `
-          <img src="${item.image || 'placeholder.jpg'}" alt="${item.name}">
-          <div class="cart-item-details">
-            <h3>${item.name}</h3>
-            <p>Resolution: 4K</p>
-            <p>£${item.price.toFixed(2)} x ${item.quantity}</p>
-          </div>
-          <div class="cart-item-actions">
-            <button onclick="removeFromCart(${index})">Remove</button>
+    // Enable/disable checkout button
+    if (checkoutButton) {
+      checkoutButton.disabled = cartItems.length === 0;
+    }
+
+    // Show empty cart message if needed
+    const cartItemsContainer = document.getElementById("cart-items");
+    if (cartItemsContainer && cartItems.length === 0) {
+      cartItemsContainer.innerHTML = `
+                <div class="empty-cart">
+                    <p>Your cart is empty. <a href="${clipStoreUrl}">Browse clip store</a> to add items.</p>
+                    <a href="${clipStoreUrl}">
+                        <button>Browse Clip Store</button>
+                    </a>
           </div>
         `;
+    }
+  }
 
-        cartItemsContainer.appendChild(cartItem);
+  /**
+   * Sets up event listeners for remove buttons
+   */
+  function setupRemoveButtons() {
+    const removeButtons = document.querySelectorAll(
+      ".cart-item-actions .remove"
+    );
+
+    removeButtons.forEach((button) => {
+      button.addEventListener("click", function () {
+        const itemId = this.getAttribute("data-id");
+        if (itemId) {
+          removeFromCart(itemId, this);
+        }
       });
+    });
+  }
 
-      cartCountElement.textContent = cart.length;
-      cartTotalElement.textContent = total.toFixed(2);
+  /**
+   * Removes an item from the cart
+   */
+  function removeFromCart(itemId, buttonElement) {
+    // Get the CSRF token
+    const csrftoken = document.querySelector(
+      "[name=csrfmiddlewaretoken]"
+    ).value;
+
+    // Get the clip store URL from a data attribute in the document
+    const clipStoreUrl =
+      document.querySelector('meta[name="clip-store-url"]')?.content || "/";
+
+    // Send AJAX request to remove item
+    fetch("/cart/remove/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-CSRFToken": csrftoken,
+      },
+      body: "order_detail_id=" + itemId,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          // Remove the item from the UI
+          const item = document.querySelector(
+            `.cart-item[data-id="${itemId}"]`
+          );
+          if (item) {
+            item.remove();
+          }
+
+          // Update cart count
+          document.getElementById("cart-count").textContent = data.cart_count;
+
+          // If cart is empty, show empty cart message
+          if (data.cart_count === 0) {
+            const cartItems = document.getElementById("cart-items");
+            cartItems.innerHTML = `
+            <div class="empty-cart">
+              <p>Your cart is empty. <a href="${clipStoreUrl}">Browse clip store</a> to add items.</p>
+              <a href="${clipStoreUrl}">
+                <button>Browse Clip Store</button>
+              </a>
+            </div>
+          `;
+
+            // Disable checkout button
+            document.getElementById("checkout-button").disabled = true;
+          }
+
+          // Reload the page to update the totals
+          window.location.reload();
+        } else {
+          alert("Error removing item: " + data.message);
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("An error occurred while removing the item from cart.");
+      });
+  }
+
+  /**
+   * Sets up the checkout button
+   */
+  function setupCheckoutButton() {
+    const checkoutButton = document.getElementById("checkout-button");
+
+    if (checkoutButton) {
+      checkoutButton.addEventListener("click", function () {
+        if (!this.disabled) {
+          // Use the checkout URL from the existing href if available
+          const checkoutLink = document.querySelector('a[href*="checkout"]');
+          if (checkoutLink) {
+            window.location.href = checkoutLink.href;
+          } else {
+            window.location.href = "/checkout/";
+          }
+        }
+      });
     }
+  }
 
-    function removeFromCart(index) {
-      const cart = JSON.parse(localStorage.getItem('cart')) || [];
-      cart.splice(index, 1);
-      localStorage.setItem('cart', JSON.stringify(cart));
-      loadCart();
-    }
+  /**
+   * Shows a notification message
+   */
+  function showNotification(message, type = "success") {
+    // Create notification element
+    const notification = document.createElement("div");
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
 
-    document.addEventListener('DOMContentLoaded', loadCart);
+    // Add to body
+    document.body.appendChild(notification);
 
+    // Animate in
+    setTimeout(() => {
+      notification.classList.add("show");
+    }, 10);
 
-    const centerButton = document.getElementById('centerButton');
-    const popupMenu = document.getElementById('popupMenu');
-
-    centerButton.addEventListener('click', (event) => {
-      event.stopPropagation();
-      popupMenu.style.display = popupMenu.style.display === 'block' ? 'none' : 'block';
-    });
-
-    document.addEventListener('click', () => {
-      popupMenu.style.display = 'none';
-    });
-
-    popupMenu.addEventListener('click', (event) => {
-      event.stopPropagation();
-    });
-
-  
+    // Remove after 3 seconds
+    setTimeout(() => {
+      notification.classList.remove("show");
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 300);
+    }, 3000);
+  }
+});

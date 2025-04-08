@@ -1,118 +1,129 @@
 import {
-  validatePassword,
   updatePasswordRequirements,
   initialisePasswordValidation,
 } from "./passwordVerification.js";
 
-// initialise password validation for real-time password validation
-document.addEventListener("DOMContentLoaded", initialisePasswordValidation);
+document.addEventListener("DOMContentLoaded", function () {
+  // initialise password validation if the elements exist
+  if (document.getElementById("password")) {
+    initialisePasswordValidation();
+  }
 
-// toggle password visibility
-document.querySelectorAll(".toggle-password").forEach((button) => {
-  button.addEventListener("click", function () {
-    const targetId = this.getAttribute("data-target");
-    const targetInput = document.getElementById(targetId);
-    if (targetInput.type === "password") {
-      targetInput.type = "text";
-      this.textContent = "Hide";
-    } else {
-      targetInput.type = "password";
-      this.textContent = "Show";
-    }
-  });
-});
-
-// enable/disable company name input based on checkbox selection
-document.getElementById("company").addEventListener("change", function () {
-  const companyInput = document.getElementById("company-input");
-  companyInput.disabled = !this.checked;
-  companyInput.required = this.checked;
-});
-
-// form submission logic
-document
-  .querySelector(".signup-form")
-  .addEventListener("submit", async function (e) {
-    e.preventDefault();
-
-    // get the values of the form fields
-    const email = document.getElementById("email").value.trim();
-    const name = document.getElementById("name").value.trim();
-    const password = document.getElementById("password").value.trim();
-    const confirmPassword = document
-      .getElementById("confirm-password")
-      .value.trim();
-    const institution = document.getElementById("institution").value;
-    const companyCheckbox = document.getElementById("company");
-    const company = companyCheckbox.checked
-      ? document.getElementById("company-input").value.trim()
-      : "";
-
-    // check if all required fields are filled
-    if (!email || !name || !password || !confirmPassword) {
-      alert("Please fill in all required fields.");
-      return;
-    }
-
-    // check if the passwords match
-    if (password !== confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
-
-    // check if the password is strong enough
-    const strength = validatePassword(password).strength;
-    if (strength !== "Medium" && strength !== "Strong") {
-      alert(
-        "Your password must be at least Medium strength to create an account."
-      );
-      return;
-    }
-
-    // check if the institution is selected
-    if (!institution) {
-      alert("Please select an institution.");
-      return;
-    }
-
-    // check if the company name is entered if the company checkbox is checked
-    if (companyCheckbox.checked && !company) {
-      alert("Please enter the company name.");
-      return;
-    }
-
-    // send the POST request to the server to create the user
-    try {
-      const response = await fetch("http://127.0.0.1:8000/users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-          role: "customer",
-          username: name,
-          institution: institution,
-          company: company,
-        }),
-      });
-
-      if (response.ok) {
-        alert("User created successfully! Please log in to continue.");
-        window.location.href = "/";
-      } else {
-        const errorData = await response.json();
-        console.error("Error data:", errorData);
-        alert(`Failed to create user: ${JSON.stringify(errorData)}`);
+  // toggle password visibility
+  document.querySelectorAll(".toggle-password").forEach((button) => {
+    button.addEventListener("click", function () {
+      const targetId = this.getAttribute("data-target");
+      const targetInput = document.getElementById(targetId);
+      if (targetInput) {
+        if (targetInput.type === "password") {
+          targetInput.type = "text";
+          this.textContent = "Hide";
+        } else {
+          targetInput.type = "password";
+          this.textContent = "Show";
+        }
       }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("An error occurred while creating the user.");
-    }
+    });
   });
 
-// update password requirements for real-time password validation
-document.getElementById("password").addEventListener("input", function () {
-  updatePasswordRequirements(this.value);
+  // enable/disable company name input based on checkbox selection
+  const companyCheckbox = document.getElementById("company");
+  const companyInput = document.getElementById("company-input");
+
+  if (companyCheckbox && companyInput) {
+    companyCheckbox.addEventListener("change", function () {
+      companyInput.disabled = !this.checked;
+      companyInput.required = this.checked;
+    });
+  }
+
+  // update password requirements for real-time password validation
+  const passwordInput = document.getElementById("password");
+  if (passwordInput) {
+    passwordInput.addEventListener("input", function () {
+      updatePasswordRequirements(this.value);
+    });
+  }
+
+  // add password confirmation validation
+  const confirmPasswordInput = document.getElementById("confirm-password");
+  const passwordMatch = document.getElementById("password-match");
+
+  if (confirmPasswordInput && passwordInput) {
+    confirmPasswordInput.addEventListener("input", function () {
+      const password = passwordInput.value;
+      const confirmPassword = this.value;
+
+      if (passwordMatch) {
+        if (password === confirmPassword) {
+          passwordMatch.textContent = "Passwords match";
+          passwordMatch.style.color = "green";
+        } else {
+          passwordMatch.textContent = "Passwords do not match";
+          passwordMatch.style.color = "red";
+        }
+      }
+    });
+  }
+
+  // form submission validation
+  const signupForm = document.querySelector(".signup-form");
+  if (signupForm) {
+    signupForm.addEventListener("submit", function (event) {
+      // get form elements
+      const email = document.getElementById("email");
+      const firstName = document.getElementById("first_name");
+      const lastName = document.getElementById("last_name");
+      const password = document.getElementById("password");
+      const confirmPassword = document.getElementById("confirm-password");
+      const institution = document.getElementById("institution");
+
+      // check if required elements exist and are filled
+      let isValid = true;
+      let errorMessage = "";
+
+      if (!email || !email.value.trim()) {
+        isValid = false;
+        errorMessage = "Email is required";
+      } else if (!firstName || !firstName.value.trim()) {
+        isValid = false;
+        errorMessage = "First name is required";
+      } else if (!lastName || !lastName.value.trim()) {
+        isValid = false;
+        errorMessage = "Last name is required";
+      } else if (!password || !password.value) {
+        isValid = false;
+        errorMessage = "Password is required";
+      } else if (!confirmPassword || !confirmPassword.value) {
+        isValid = false;
+        errorMessage = "Please confirm your password";
+      } else if (password.value !== confirmPassword.value) {
+        isValid = false;
+        errorMessage = "Passwords do not match";
+      } else if (!institution || institution.value === "") {
+        isValid = false;
+        errorMessage = "Please select an institution";
+      }
+
+      // check if company checkbox is checked and company input is filled
+      if (companyCheckbox && companyCheckbox.checked) {
+        if (!companyInput || !companyInput.value.trim()) {
+          isValid = false;
+          errorMessage = "Company name is required";
+        }
+      }
+
+      // if validation fails, prevent form submission and show error
+      if (!isValid) {
+        event.preventDefault();
+        const errorElement = document.getElementById("password-error");
+        if (errorElement) {
+          errorElement.textContent = errorMessage;
+          errorElement.style.display = "block";
+        } else {
+          alert(errorMessage);
+        }
+      }
+    });
+  }
 });

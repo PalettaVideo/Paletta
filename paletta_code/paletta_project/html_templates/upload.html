@@ -1,0 +1,140 @@
+{% load static %}
+{% if user.is_authenticated %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Upload Video</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/upload.css' %}">
+    <!-- JS -->
+    <script src="{% static 'js/upload.js' %}" defer></script>
+
+</head>
+
+<body>
+    {% include "html_reusables/header_reusable.html" %}
+    <div class="container">
+        <div class="sidebar">
+            <ul>
+                <li><a href="{% url 'upload' %}" class="active">Upload</a></li>
+                <li><a href="{% url 'upload_history' %}">History</a></li>
+            </ul>
+        </div>
+        <div class="main-content">
+          <form id="upload-form" method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            <h1>Upload your clip</h1>
+            
+            {% if current_library %}
+            <div class="library-info" data-library-id="{{ current_library.id }}">
+                <p>Uploading to library: <strong>{{ current_library.name }}</strong></p>
+                <input type="hidden" name="library_id" value="{{ current_library.id }}">
+            </div>
+            {% endif %}
+            
+            <div class="upload-box" id="upload-box">
+                <p>MPEG, MOV, MP4, AVI videos no larger than 5GB and no larger than 1920x1080px</p>
+                <input type="file" id="file-input" name="video_file" accept="video/*" required style="display: none;">
+                <button type="button" class="button" id="select-file">Select Video</button>
+                <div class="preview-container" id="video-preview-container">
+                    <!-- Video preview and upload progress will be inserted here by JavaScript -->
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input type="text" id="title" name="title" maxlength="25" required>
+                <div class="word-count" id="title-word-count">0/25 words</div>
+            </div>
+
+            <div class="form-group">
+              <label for="preview-image">Upload Preview Image (Thumbnail)</label>
+              <input type="file" id="preview-image" name="thumbnail" accept="image/*">
+              <div class="preview-container" id="preview-container"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" maxlength="600"></textarea>
+                <div class="word-count" id="description-word-count">0/25 words</div>
+            </div>
+            <div class="form-group">
+                <label for="category">Category</label>
+                <div class="select-container">
+                    <div class="select-wrapper">
+                        <select id="category" name="category" required>
+                            <option value="">Select a category</option>
+                            <!-- Categories will be loaded from API via JavaScript -->
+                        </select>
+                    </div>
+                    <button type="button" class="button add-btn" id="add-category-btn">+ Add Category</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Video Information</label>
+                <div class="attribute-group">
+                    <span>Duration</span>
+                    <div class="info-display" id="duration-display">--:--:--</div>
+                    <span>Format</span>
+                    <div class="info-display" id="format-display">--</div>
+                    <span>File Size</span>
+                    <div class="info-display" id="filesize-display">--</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="tags">Tags</label>
+                <div class="tags-input-wrapper" id="tags-input-wrapper">
+                    <input type="text" id="tags" class="tags-input" placeholder="Type and press enter">
+                </div>
+                <div class="tag-limit">You can add up to 10 tags.</div>
+            </div>
+            <div class="form-group">
+                <div class="recommended-title">Recommended Tags</div>
+                <div class="tags" id="tags-reference">
+                    <span class="tag">school</span>
+                    <span class="tag">student</span>
+                    <span class="tag">life</span>
+                    <span class="tag">activity</span>
+                </div>
+            </div>
+            <button type="submit" class="button" id="upload-button">Upload</button>
+          </form>
+        </div>
+    </div>
+
+</body>
+
+<!-- Category Modal -->
+<div id="category-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="close-category-modal">&times;</span>
+        <h2>Add a Category</h2>
+
+        <label for="category-name">Category Name</label>
+        <input type="text" id="category-name" placeholder="Enter category name">
+
+        <label for="category-description">Category Description</label>
+        <textarea id="category-description" placeholder="Enter description"></textarea>
+
+        <label for="category-image">Category Image</label>
+        <input type="file" id="category-image" accept="image/*">
+        <div id="category-image-preview" style="display: none; margin-top: 10px;"></div>
+
+        <p id="error-text" class="error-text" style="color: #d9534f; display: none;"></p>
+        <button type="button" class="button" id="save-category-btn">Add Category</button>
+    </div>
+</div>
+
+{% include "html_reusables/footer_reusable.html" %}
+
+</html>
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

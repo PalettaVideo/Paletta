@@ -1,0 +1,122 @@
+{% load static %}
+{% if user.is_authenticated %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>{{ clip.title|default:"Clip Detail" }}</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% if clip %}
+  <meta name="clip-id" content="{{ clip.id }}">
+  {% endif %}
+  <!-- Styles -->
+  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <!-- CSS Reusables -->
+  <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+  <!-- CSS -->
+  <link rel="stylesheet" href="{% static 'css/video_details.css' %}">
+  <!-- JS -->
+  <script src="{% static 'js/video_details.js' %}" defer></script>
+</head>
+<body>
+  {% include "html_reusables/header_reusable.html" %}
+  
+  {% csrf_token %}
+
+  <!-- Main content -->
+  <main>
+    <!-- Video and Details -->
+    <div class="content">
+      <div class="video-container">
+          <div class="navigation-buttons">
+            {% if clip.category %}
+              <a href="{% url 'library_category' library_slug=library.slug category_slug=clip.category|slugify %}">
+                <button class="back-button">Back to all videos in Category - <br/> '{{ clip.category }}'</button>
+              </a>
+            {% endif %}
+            <a href="{% url 'library_clip_store' library_slug=library.slug %}">
+              <button class="back-button">Back to all videos in Library - <br/> '{{ library.name }}'</button>
+            </a>
+          </div>
+        <video src="{{ clip.video_url|default:'' }}" controls{% if not clip.video_url %} poster="{% static 'picture/video_placeholder.jpg' %}"{% endif %}></video>
+      </div>
+      <div class="details">
+        <h1>{{ clip.title|default:"Video Title" }}</h1>
+        <p>Uploaded Time: {{ clip.upload_date|date:"Y-m-d"|default:"2024-01-01" }}</p>
+        <div class="clipaction">
+          <button id="addToCollectionButton">Add to Collection</button>
+          <button id="addToCartButton">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video Description -->
+    <div class="description">
+      <div class="video-info">
+        <h2>Description</h2>
+        <p>{{ clip.description|default:"No description available." }}</p>
+        <div class="category">
+          <strong>Category:</strong>
+          <span>{{ clip.category|default:"Uncategorized" }}</span>
+        </div>
+        <div class="tags">
+          <strong>Tags:</strong>
+          {% for tag in clip.tags.all %}
+            <span>{{ tag.name }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="attributes">
+        <h2>Attributes</h2>
+        <p><strong>Duration:</strong> {{ clip.duration|default:"Unknown" }}</p>
+        <p><strong>Frame Rate:</strong> {{ clip.frame_rate|default:"Unknown" }}</p>
+        <p><strong>Resolution:</strong> {{ clip.resolution|default:"Unknown" }}</p>
+        <p><strong>Format:</strong> {{ clip.format|default:"Unknown" }}</p>
+      </div>
+    </div>
+<!-- Related Clips feature not available yet
+    <div class="related-clips">
+      <h2>Related Clips:</h2>
+      <div class="related-container">
+        {% if related_clips %}
+          {% for related_clip in related_clips %}
+        <div class="clip-card">
+              <a href="{% url 'clip_detail' clip_id=related_clip.id %}">
+                {% if related_clip.thumbnail %}
+                  <img src="{{ related_clip.thumbnail }}" alt="{{ related_clip.title }}">
+                {% else %}
+                  <img src="{% static 'picture/default_thumbnail.png' %}" alt="{{ related_clip.title }}">
+                {% endif %}
+                <p>{{ related_clip.title }}</p>
+              </a>
+        </div>
+          {% endfor %}
+        {% else %}
+          <div class="no-related-clips">
+            <p>No related clips found</p>
+        </div>
+        {% endif %}
+      </div>
+    </div> 
+-->
+  </main>
+
+  <!-- Popup -->
+  <div class="popup-overlay" id="popupOverlay">
+    <div class="resolution">
+      <h2>Choose the resolution you want</h2>
+      <label><input type="radio" name="resolution" value="HD" data-price="5.00"> HD : 1920×1080 - £5.00</label><br>
+      <label><input type="radio" name="resolution" value="4K" data-price="7.00"> 4K : 3840×2160 - £7.00</label><br><br>
+      <button id="confirmAddToCart">Add to Cart</button>
+    </div>
+  </div>
+
+{% include "html_reusables/footer_reusable.html" %}
+</body>
+</html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

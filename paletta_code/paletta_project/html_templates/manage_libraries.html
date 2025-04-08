@@ -1,0 +1,72 @@
+{% load static %}
+{% if user.is_authenticated %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Manage Libraries</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/manage_libraries.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sidebar_admin.css' %}">
+    <!-- JS -->
+    <script src="{% static 'js/manage_libraries.js' %}" defer></script>
+</head>
+
+<body>
+{% include "html_reusables/header_reusable.html" %}
+
+<div class="container">
+    <!-- Sidebar -->
+    <aside>
+        <div class="sidebar">
+            <ul>
+                <li><a href="{% url 'create_library' %}">Create a Library</a></li>
+                <li><a href="{% url 'manage_libraries' %}" class="active">Manage All Libraries</a></li>
+                <li><a href="{% url 'manage_administrators' %}">Manage Administrators</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+        <h2>Manage all Libraries</h2>
+
+        <!-- Library List -->
+        <div class="library-list">
+            {% if libraries %}
+                {% for library in libraries %}
+                <div class="library-item" data-id="{{ library.id }}">
+                    <div class="library-logo">
+                        <img src="{% if library.logo %}{{ library.logo.url }}{% else %}{% static 'images/default-logo.jpg' %}{% endif %}" alt="{{ library.name }}">
+                    </div>
+                    <span>{{ library.name }}</span>
+                    <div class="library-actions">
+                        <a href="{% url 'edit_library' %}?library_id={{ library.id }}"><button class="edit"><i class="fas fa-edit"></i> Edit</button></a>
+                        <button class="stop" data-library-id="{{ library.id }}"><i class="fas fa-pause"></i> {% if library.is_active %}Stop{% else %}Start{% endif %}</button>
+                        <button class="close" data-library-id="{{ library.id }}"><i class="fas fa-times"></i> Close</button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-libraries">
+                    <p>No libraries found. <a href="{% url 'create_library' %}">Create a new library</a>.</p>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+{% include "html_reusables/footer_reusable.html" %}
+</body>
+</html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

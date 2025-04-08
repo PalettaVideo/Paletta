@@ -1,0 +1,89 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Montserrat';
+}
+
+.container {
+    display: flex;
+    min-height: 100vh;
+    margin-top: 150px;
+}
+
+
+
+/* Main Content */
+.content {
+    flex: 1;
+    padding: 20px;
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
+.upload-btn, .user-btn {
+    border: 2px solid #88c057;
+    background: none;
+    padding: 8px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.upload-btn {
+    background: #88c057;
+    color: white;
+}
+
+/* Library List */
+.library-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.library-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* 让内容和按钮分别靠两边 */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 20px;
+}
+
+
+.library-logo img {
+    width: 100px;
+   
+    object-fit: contain;
+}
+
+.library-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;  
+    align-items: flex-start; 
+    justify-content: flex-end; 
+}
+
+.library-actions button {
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.edit { color: #4CAF50; }
+.stop { color: #FF9800; }
+.close { color: #F44336; }
+

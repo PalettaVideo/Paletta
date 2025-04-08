@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- CSS -->
+  <link href="{% static 'css/footer_reusable.css' %}" rel="stylesheet">
+  <link href="{% static 'css/unauthorised_reusable.css' %}" rel="stylesheet">
+  <!-- JS -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <title>Paletta - Login or Register</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+</head>
+<body>
+  <div class="page-container">
+    <main class="unauthorised-container">
+      <div class="title-section">
+        <img src="{% static 'picture/logo.jpg' %}" alt="Paletta Logo">
+        <h1>Welcome to Paletta</h1>
+      </div>
+      <p>Please login or register to access your account</p>
+      <div class="auth-buttons">
+        <a href="{% url 'login' %}" class="auth-btn">
+          <button>Login</button>
+        </a>
+        <a href="{% url 'signup' %}" class="auth-btn">
+          <button>Register</button>
+        </a>
+      </div>
+    </main>
+
+    <footer>
+      {% include "html_reusables/footer_reusable.html" %}
+    </footer>
+  </div>
+</body>
+</html>

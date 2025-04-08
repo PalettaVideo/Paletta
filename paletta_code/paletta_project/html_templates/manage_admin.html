@@ -1,0 +1,98 @@
+{% load static %}
+{% if user.is_authenticated %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Manage Administrators</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/manage_admin.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sidebar_admin.css' %}">
+    <!-- JS -->
+    <script defer src="{% static 'js/manage_admin.js' %}"></script>
+</head>
+
+<body>
+{% include "html_reusables/header_reusable.html" %}
+
+<div class="container">
+    <aside>
+        <div class="sidebar">
+            <ul>
+                <li><a href="{% url 'create_library' %}">Create a Library</a></li>
+                <li><a href="{% url 'manage_libraries' %}">Manage All Libraries</a></li>
+                <li><a href="{% url 'manage_administrators' %}" class="active">Manage Administrators</a></li>
+            </ul>
+        </div>
+    </aside>
+    <main>
+        <section>
+            <h1>Manage Administrators <button id="addAdmin">Add</button></h1>
+            <div id="adminList">
+                {% if admins %}
+                    {% for admin in admins %}
+                    <div class="admin-card" data-id="{{ admin.id }}">
+                        <p><strong>Institution:</strong> {{ admin.institution|default:"Not specified" }}</p>
+                        <p><strong>Email:</strong> {{ admin.email }}</p>
+                        <p><strong>Name:</strong> {{ admin.name }}</p>
+                        <p><strong>Library Name:</strong> 
+                            {% if admin.libraries.all %}
+                                {% for library in admin.libraries.all %}
+                                    {{ library.name }}{% if not forloop.last %}; {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </p>
+                        <button class="revoke" data-admin-id="{{ admin.id }}">Revoke Admin Privileges</button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="no-admins">No administrators found.</p>
+                {% endif %}
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Popup Modal -->
+<div id="adminModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Add an Administrator</h2>
+        <form id="addAdminForm" method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="adminEmail">Email</label>
+                <input type="email" id="adminEmail" name="email" placeholder="Enter registered user's email" required>
+                <span class="error-message" id="emailError"></span>
+            </div>
+            <div id="confirmationSection" style="display: none;" class="confirmation-section">
+                <p id="confirmationMessage"></p>
+                <div class="confirmation-buttons">
+                    <button type="button" id="confirmYes" class="btn-primary">Yes</button>
+                    <button type="button" id="confirmNo" class="btn-cancel">No</button>
+                </div>
+            </div>
+            <div class="form-actions" id="initialActions">
+                <button type="button" id="checkEmail" class="btn-primary">Check Email</button>
+                <button type="button" class="btn-cancel close-btn">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>      
+
+{% include "html_reusables/footer_reusable.html" %}
+</body>
+</html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

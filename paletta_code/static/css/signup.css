@@ -157,3 +157,34 @@ input[type="password"] {
     font-size: 12px;
     color: #666;
   }
+
+  .messages {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+}
+.message {
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+}
+.error {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ef9a9a;
+}
+.success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+}
+.warning {
+    background-color: #fff8e1;
+    color: #f57f17;
+    border: 1px solid #ffe082;
+}
+.info {
+    background-color: #e3f2fd;
+    color: #1565c0;
+    border: 1px solid #90caf9;
+}
