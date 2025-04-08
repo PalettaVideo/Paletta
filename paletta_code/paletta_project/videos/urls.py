@@ -7,6 +7,7 @@ from .views.clip_store_view import ClipStoreView, CategoryClipView
 from .views.api_views import VideoListAPIView, VideoDetailAPIView, CategoryVideosAPIView, PopularTagsAPIView
 from .views.tag_views import assign_tags, TagsAPIView
 from .views.video_management_views import VideoEditView, VideoDeleteView, TagSuggestionsAPIView
+from .views.thumbnail_view import VideoThumbnailAPIView
 
 # Create a router for REST API viewsets
 router = DefaultRouter()
@@ -20,6 +21,9 @@ urlpatterns = [
     path('upload-history/', UploadHistoryView.as_view(), name='upload_history'),
     path('edit/<int:video_id>/', VideoEditView.as_view(), name='edit_video'),
     path('delete/<int:video_id>/', VideoDeleteView.as_view(), name='delete_video'),
+    
+    # Thumbnail endpoint - moved to top level for easier access
+    path('api/clip/<int:clip_id>/thumbnail/', VideoThumbnailAPIView.as_view(), name='api_clip_thumbnail'),
     
     # API endpoint for categories that matches the frontend expectation
     path('categories/', CategoryViewSet.as_view({'get': 'list', 'post': 'create'}), name='api_categories'),

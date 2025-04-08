@@ -134,7 +134,7 @@
               
               <div class="duration-badge">
                 {% if video.duration %}
-                  {{ video.duration|divisibleby:'60'|yesno:video.duration|divide:60|floatformat:'0' }}:{{ video.duration|modulo:60|stringformat:'02d' }}
+                <a class="duration-link"> Video Duration: {{ video.duration|divide:60|floatformat:'0' }}:{{ video.duration|modulo:60|stringformat:'02d' }}</a>
                 {% else %}
                   00:00
                 {% endif %}
