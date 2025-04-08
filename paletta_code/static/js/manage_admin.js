@@ -45,94 +45,83 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Modal handling
-    const modal = document.getElementById("adminModal");
-    const addAdminBtn = document.getElementById("addAdmin");
-    const closeModal = document.querySelector(".close");
+  const modal = document.getElementById("adminModal");
+  const addAdminBtn = document.getElementById("addAdmin");
+  const closeModal = document.querySelector(".close");
   const closeBtn = document.querySelector(".close-btn");
-    const confirmAddBtn = document.getElementById("confirmAdd");
-    
+  const checkEmailBtn = document.getElementById("checkEmail");
+  const confirmYesBtn = document.getElementById("confirmYes");
+  const confirmNoBtn = document.getElementById("confirmNo");
+  const confirmationSection = document.getElementById("confirmationSection");
+  const initialActions = document.getElementById("initialActions");
+
+  // State variables
+  let currentUserData = null;
+
   if (addAdminBtn) {
     addAdminBtn.addEventListener("click", function () {
       // Clear previous errors and form values
-      document.getElementById("nameError").textContent = "";
       document.getElementById("emailError").textContent = "";
-      document.getElementById("adminName").value = "";
       document.getElementById("adminEmail").value = "";
-      document.getElementById("adminInstitution").value = "";
+      confirmationSection.style.display = "none";
+      initialActions.style.display = "flex";
 
-        modal.style.display = "flex";
+      modal.style.display = "flex";
     });
   }
-    
+
   if (closeModal) {
     closeModal.addEventListener("click", function () {
-        modal.style.display = "none";
+      modal.style.display = "none";
+      resetModalState();
     });
   }
 
   if (closeBtn) {
     closeBtn.addEventListener("click", function () {
       modal.style.display = "none";
+      resetModalState();
     });
   }
-    
-    window.addEventListener("click", function (event) {
-        if (event.target === modal) {
-            modal.style.display = "none";
-        }
-    });
-    
-  // Handle adding a new administrator
-  if (confirmAddBtn) {
-    confirmAddBtn.addEventListener("click", function () {
-      const name = document.getElementById("adminName").value.trim();
-      const email = document.getElementById("adminEmail").value.trim();
-      const institution = document
-        .getElementById("adminInstitution")
-        .value.trim();
 
-      // Reset error messages
-      document.getElementById("nameError").textContent = "";
+  window.addEventListener("click", function (event) {
+    if (event.target === modal) {
+      modal.style.display = "none";
+      resetModalState();
+    }
+  });
+
+  // Reset modal state when closing
+  function resetModalState() {
+    document.getElementById("emailError").textContent = "";
+    document.getElementById("adminEmail").value = "";
+    confirmationSection.style.display = "none";
+    initialActions.style.display = "flex";
+    currentUserData = null;
+  }
+
+  // Check if email exists and user's role
+  if (checkEmailBtn) {
+    checkEmailBtn.addEventListener("click", function () {
+      const email = document.getElementById("adminEmail").value.trim();
       document.getElementById("emailError").textContent = "";
 
-      // Validation
-      let hasErrors = false;
-
-      if (name === "") {
-        document.getElementById("nameError").textContent = "Name is required";
-        hasErrors = true;
-      }
-
-      if (email === "") {
-        document.getElementById("emailError").textContent = "Email is required";
-        hasErrors = true;
-      } else if (!isValidEmail(email)) {
+      // Validate email format
+      if (!email || !isValidEmail(email)) {
         document.getElementById("emailError").textContent =
-          "Please enter a valid email";
-        hasErrors = true;
+          "Please enter a valid email address";
+        return;
       }
 
-      if (hasErrors) {
-            return;
-        }
-        
-      // Prepare data for submission
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("email", email);
-      if (institution) {
-        formData.append("institution", institution);
-      }
-      formData.append("csrfmiddlewaretoken", csrftoken);
-
-      // Submit via AJAX
-      fetch("/add-administrator/", {
+      // Check if user exists
+      fetch("/api/accounts/check-user/", {
         method: "POST",
-        body: formData,
         headers: {
+          "Content-Type": "application/json",
           "X-CSRFToken": csrftoken,
           "X-Requested-With": "XMLHttpRequest",
         },
+        body: JSON.stringify({ email: email }),
       })
         .then((response) => {
           if (!response.ok) {
@@ -141,34 +130,92 @@ document.addEventListener("DOMContentLoaded", function () {
           return response.json();
         })
         .then((data) => {
-          if (data.success) {
-            // Create new admin card and add to DOM
-            addAdminToList(data.admin);
-            modal.style.display = "none";
+          if (data.exists) {
+            currentUserData = data.user;
 
-            // Clear form
-            document.getElementById("adminName").value = "";
-            document.getElementById("adminEmail").value = "";
-            document.getElementById("adminInstitution").value = "";
-          } else {
-            // Handle validation errors from server
-            if (data.errors.name) {
-              document.getElementById("nameError").textContent =
-                data.errors.name;
-            }
-            if (data.errors.email) {
+            // Check if user is already an admin
+            if (data.is_admin) {
               document.getElementById("emailError").textContent =
-                data.errors.email;
+                "This user is already an administrator";
+            } else {
+              // Show confirmation dialog
+              document.getElementById(
+                "confirmationMessage"
+              ).textContent = `User ${
+                data.user.name || data.user.email
+              } found. Would you like to promote them to Administrator?`;
+              confirmationSection.style.display = "block";
+              initialActions.style.display = "none";
             }
+          } else {
+            document.getElementById("emailError").textContent =
+              "User with this email address does not exist in the system";
           }
         })
         .catch((error) => {
           console.error("Error:", error);
-          alert(
-            "An error occurred while adding the administrator. Please try again."
-          );
+          document.getElementById("emailError").textContent =
+            "An error occurred while checking this email. Please try again.";
         });
     });
+  }
+
+  // Handle confirmation response
+  if (confirmYesBtn) {
+    confirmYesBtn.addEventListener("click", function () {
+      if (!currentUserData) return;
+
+      // Promote user to admin
+      makeUserAdmin(currentUserData.id);
+    });
+  }
+
+  if (confirmNoBtn) {
+    confirmNoBtn.addEventListener("click", function () {
+      // Reset and return to initial state
+      resetModalState();
+    });
+  }
+
+  // Function to promote user to admin
+  function makeUserAdmin(userId) {
+    fetch("/api/accounts/make-admin/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrftoken,
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: JSON.stringify({ user_id: userId }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Server error");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.success) {
+          // Add new admin to the list
+          addAdminToList(data.admin);
+
+          // Close modal
+          modal.style.display = "none";
+          resetModalState();
+        } else {
+          document.getElementById("emailError").textContent =
+            data.message || "Failed to add administrator";
+          confirmationSection.style.display = "none";
+          initialActions.style.display = "flex";
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        document.getElementById("emailError").textContent =
+          "An error occurred. Please try again.";
+        confirmationSection.style.display = "none";
+        initialActions.style.display = "flex";
+      });
   }
 
   // Add revoke functionality
@@ -179,7 +226,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (confirm("Are you sure you want to revoke admin privileges?")) {
         // Send revoke request
-        fetch(`/revoke-administrator/${adminId}/`, {
+        fetch(`/api/accounts/revoke-administrator/${adminId}/`, {
           method: "POST",
           headers: {
             "X-CSRFToken": csrftoken,
@@ -225,7 +272,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Helper function to add a new admin to the DOM
   function addAdminToList(admin) {
-        const adminList = document.getElementById("adminList");
+    const adminList = document.getElementById("adminList");
 
     // Remove "no administrators" message if present
     const noAdminsMessage = adminList.querySelector(".no-admins");
@@ -233,8 +280,8 @@ document.addEventListener("DOMContentLoaded", function () {
       noAdminsMessage.remove();
     }
 
-        const newAdmin = document.createElement("div");
-        newAdmin.classList.add("admin-card");
+    const newAdmin = document.createElement("div");
+    newAdmin.classList.add("admin-card");
     newAdmin.dataset.id = admin.id;
 
     const libraryNames =
@@ -242,19 +289,19 @@ document.addEventListener("DOMContentLoaded", function () {
         ? admin.libraries.join("; ")
         : "N/A";
 
-        newAdmin.innerHTML = `
-            <p><strong>Institution:</strong> ${
-              admin.institution || "Not specified"
-            }</p>
-            <p><strong>Email:</strong> ${admin.email}</p>
-            <p><strong>Name:</strong> ${admin.name}</p>
-            <p><strong>Library Name:</strong> ${libraryNames}</p>
-            <button class="revoke" data-admin-id="${
-              admin.id
-            }">Revoke Admin Privileges</button>
-        `;
-        
-        adminList.appendChild(newAdmin);
+    newAdmin.innerHTML = `
+        <p><strong>Institution:</strong> ${
+          admin.institution || "Not specified"
+        }</p>
+        <p><strong>Email:</strong> ${admin.email}</p>
+        <p><strong>Name:</strong> ${admin.name || admin.email}</p>
+        <p><strong>Library Name:</strong> ${libraryNames}</p>
+        <button class="revoke" data-admin-id="${
+          admin.id
+        }">Revoke Admin Privileges</button>
+    `;
+
+    adminList.appendChild(newAdmin);
 
     // Add event listener to new revoke button
     newAdmin.querySelector(".revoke").addEventListener("click", function () {
@@ -263,7 +310,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (confirm("Are you sure you want to revoke admin privileges?")) {
         // Send revoke request
-        fetch(`/revoke-administrator/${adminId}/`, {
+        fetch(`/api/accounts/revoke-administrator/${adminId}/`, {
           method: "POST",
           headers: {
             "X-CSRFToken": csrftoken,

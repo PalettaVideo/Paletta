@@ -37,7 +37,6 @@ class User(AbstractUser):
     ('owner', 'Owner'),
     ('admin', 'Administrator'),
     ('contributor', 'Contributor'),
-    ('customer', 'Customer'),
   ]
 
   # define the fields for the user
@@ -46,7 +45,7 @@ class User(AbstractUser):
   last_name = models.CharField(max_length=30, blank=False)   
   institution = models.CharField(max_length=50, blank=True)
   company = models.CharField(max_length=50, blank=True, null=True)
-  role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
+  role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='contributor')
   created_at = models.DateTimeField(default=timezone.now)
 
   USERNAME_FIELD = 'email'

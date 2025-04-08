@@ -1,11 +1,11 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import TemplateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 import json
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from .models import Library, UserLibraryRole
 from .serializers import LibrarySerializer, UserLibraryRoleSerializer
 from videos.serializers import CategorySerializer
@@ -16,6 +16,7 @@ from django.core.files.base import ContentFile
 from django.conf import settings
 from django.urls import reverse
 from django.contrib import messages
+from accounts.models import User
 
 # Create your views here.
 

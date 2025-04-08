@@ -70,21 +70,19 @@
         <form id="addAdminForm" method="post">
             {% csrf_token %}
             <div class="form-group">
-                <label for="adminName">Name</label>
-                <input type="text" id="adminName" name="name" placeholder="Enter name" required>
-                <span class="error-message" id="nameError"></span>
-            </div>
-            <div class="form-group">
                 <label for="adminEmail">Email</label>
-                <input type="email" id="adminEmail" name="email" placeholder="Enter email" required>
+                <input type="email" id="adminEmail" name="email" placeholder="Enter registered user's email" required>
                 <span class="error-message" id="emailError"></span>
             </div>
-            <div class="form-group">
-                <label for="adminInstitution">Institution (Optional)</label>
-                <input type="text" id="adminInstitution" name="institution" placeholder="Enter institution">
+            <div id="confirmationSection" style="display: none;" class="confirmation-section">
+                <p id="confirmationMessage"></p>
+                <div class="confirmation-buttons">
+                    <button type="button" id="confirmYes" class="btn-primary">Yes</button>
+                    <button type="button" id="confirmNo" class="btn-cancel">No</button>
+                </div>
             </div>
-            <div class="form-actions">
-                <button type="button" id="confirmAdd" class="btn-primary">Add</button>
+            <div class="form-actions" id="initialActions">
+                <button type="button" id="checkEmail" class="btn-primary">Check Email</button>
                 <button type="button" class="btn-cancel close-btn">Cancel</button>
             </div>
         </form>

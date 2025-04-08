@@ -287,70 +287,11 @@ document.addEventListener("DOMContentLoaded", function () {
     categoriesInput.value = JSON.stringify(categories);
   }
 
-  // Contributor Modal Functions
-  window.openContributorModal = function () {
-    document.getElementById("contributorModal").style.display = "block";
-    document.getElementById("modalOverlay").style.display = "block";
-  };
-
-  window.closeContributorModal = function () {
-    document.getElementById("contributorModal").style.display = "none";
-    document.getElementById("modalOverlay").style.display = "none";
-  };
-
-  window.addContributor = function () {
-    const name = document.getElementById("contributorName").value.trim();
-    const email = document.getElementById("contributorEmail").value.trim();
-
-    if (!name || !email) {
-      alert("Both name and email are required");
-      return;
-    }
-
-    // Create contributor element
-    const contributorList = document.getElementById("contributorList");
-    const noContributors = contributorList.querySelector(".no-contributors");
-    if (noContributors) {
-      noContributors.remove();
-    }
-
-    const newContributor = document.createElement("div");
-    newContributor.className = "contributor-item";
-
-    // Generate a temporary ID
-    const tempId = "temp_" + Date.now();
-    newContributor.dataset.id = tempId;
-
-    newContributor.innerHTML = `
-        <span>Name: ${name} | Email: ${email}</span>
-        <button type="button" class="delete-btn" onclick="this.parentElement.remove()">Remove</button>
-    `;
-
-    contributorList.appendChild(newContributor);
-
-    // Add to form data
-    const contributorsInput = document.getElementById("contributorsData");
-    let contributors = [];
-
-    if (contributorsInput.value) {
-      contributors = JSON.parse(contributorsInput.value);
-    }
-
-    contributors.push({
-      id: tempId,
-      name: name,
-      email: email,
-      role: "contributor",
-    });
-
-    contributorsInput.value = JSON.stringify(contributors);
-
-    closeContributorModal();
-
-    // Reset form
-    document.getElementById("contributorName").value = "";
-    document.getElementById("contributorEmail").value = "";
-  };
+  // Helper function to validate email
+  function isValidEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  }
 
   // Collect form data for submission
   function updateCategoriesData() {
@@ -377,41 +318,14 @@ document.addEventListener("DOMContentLoaded", function () {
       JSON.stringify(categories);
   }
 
-  function updateContributorsData() {
-    const contributorItems = document.querySelectorAll(
-      "#contributorList .contributor-item"
-    );
-
-    const contributors = Array.from(contributorItems).map((item) => {
-      const id = item.dataset.id;
-      const text = item.querySelector("span").textContent;
-      const name = text.split("|")[0].replace("Name:", "").trim();
-      const email = text.split("|")[1].replace("Email:", "").trim();
-
-      return {
-        id: id,
-        name: name,
-        email: email,
-        role: "contributor",
-      };
-    });
-
-    document.getElementById("contributorsData").value =
-      JSON.stringify(contributors);
-  }
-
   // Initialize data collections
   updateCategoriesData();
-  updateContributorsData();
 
-  // When the form is submitted, collect all category and contributor data
+  // When the form is submitted, collect all category data
   if (editLibraryForm) {
     editLibraryForm.addEventListener("submit", function (e) {
       // Ensure categories data is collected
       updateCategoriesData();
-
-      // Ensure contributors data is collected
-      updateContributorsData();
     });
   }
 
@@ -424,7 +338,6 @@ document.addEventListener("DOMContentLoaded", function () {
       try {
         // Update hidden inputs with current data
         updateCategoriesData();
-        updateContributorsData();
 
         // Submit form data using AJAX
         const formData = new FormData(form);

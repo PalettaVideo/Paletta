@@ -4,9 +4,10 @@ from .signup import SignupView
 from .forgot_password import ForgotPasswordView
 from .home_view import HomeView, LogoutView
 from .update_profile import ProfileView, ProfileUpdateView
+from .admin_view import ManageAdministratorsView
 
 # Import API views from a separate file
-from .api_views import CustomAuthToken, UserViewSet, IsOwnerOrAdmin
+from .api_views import CustomAuthToken, UserViewSet, IsOwnerOrAdmin, check_user, make_admin, revoke_admin
 
 # Export all views to make them available when importing from accounts.views
 __all__ = [
@@ -19,5 +20,9 @@ __all__ = [
     'ProfileUpdateView',
     'CustomAuthToken',
     'UserViewSet',
-    'IsOwnerOrAdmin'
+    'IsOwnerOrAdmin',
+    'ManageAdministratorsView',
+    'check_user',
+    'make_admin',
+    'revoke_admin'
 ] 

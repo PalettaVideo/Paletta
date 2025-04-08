@@ -27,7 +27,6 @@
       </button>
     </div>
     <div class="actions">
-      {% if user.role != 'customer' %}
       {% if library_slug %}
       <a href="{% url 'upload' %}?library_slug={{ library_slug }}" style="text-decoration: none;">
       {% elif current_library %}
@@ -48,7 +47,6 @@
           Upload
         </button>
       </a>
-      {% endif %}
       <button id="centerButton">
         <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
           <g data-name="Layer 2" id="Layer_2">

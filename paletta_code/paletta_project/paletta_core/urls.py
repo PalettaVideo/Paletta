@@ -18,6 +18,7 @@ from accounts.views.signup import SignupView
 from accounts.views.forgot_password import ForgotPasswordView
 from accounts.views.home_view import HomeView, LogoutView
 from accounts.views.update_profile import ProfileView, ProfileUpdateView
+from accounts.views.admin_view import ManageAdministratorsView
 from videos.views.clip_store_view import CategoryClipView
 from videos.views.video_detail_view import VideoDetailView
 
@@ -75,7 +76,7 @@ urlpatterns = [
     path('libraries/<str:library_name>/view/', TemplateView.as_view(template_name='library_view.html'), name='library_view'),
     
     # Admin management routes
-    path('admins/manage/', login_required(TemplateView.as_view(template_name='manage_admin.html')), name='manage_administrators'),
+    path('admins/manage/', login_required(ManageAdministratorsView.as_view()), name='manage_administrators'),
     
     # Contributor application route
     path('contributor/apply/', TemplateView.as_view(template_name='contributor_form.html'), name='contributor_apply'),
