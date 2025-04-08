@@ -21,6 +21,7 @@ from accounts.views.update_profile import ProfileView, ProfileUpdateView
 from accounts.views.admin_view import ManageAdministratorsView
 from videos.views.clip_store_view import CategoryClipView
 from videos.views.video_detail_view import VideoDetailView
+from videos.views.thumbnail_view import VideoThumbnailAPIView
 
 # Create a class for category views
 class CategoryView(TemplateView):
@@ -38,6 +39,9 @@ urlpatterns = [
     # Include videos app URLs at various paths
     path('api/videos/', include('videos.urls')),
     path('videos/', include('videos.urls')),  # Include without the api/ prefix
+    
+    # Direct access to thumbnail API endpoint
+    path('api/clip/<int:clip_id>/thumbnail/', VideoThumbnailAPIView.as_view(), name='api_clip_thumbnail_direct'),
     
     path('api/libraries/', include('libraries.urls')),
     
