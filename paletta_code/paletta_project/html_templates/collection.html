@@ -20,71 +20,34 @@
 </head>
 
 <body>
-  {% include "html_reusables/header_reusable.html" %}
+{% include "html_reusables/header_reusable.html" %}
+
+<div class="layout">
+<!-- sidebar -->
+<aside class="sidebar">
+  <nav>
+    <ul>
+        <li><a href="{% url 'profile' %}">My profile</a></li>
+        <li><a href="{% url 'collection' %}" class="active">My collection</a></li>
+        <li><a href="{% url 'cart' %}">My cart</a></li>
+        <li><a href="{% url 'orders_list' %}">My orders</a></li>
+    </ul>
+  </nav>
+</aside>
+
+
+<main class="content">
+  <h1>My Collection</h1>
   
-  <div class="layout">
-    <!-- sidebar -->
-    <aside class="sidebar">
-      <nav>
-        <ul>
-            <li><a href="{% url 'profile' %}">My profile</a></li>
-            <li><a href="{% url 'collection' %}" class="active">My collection</a></li>
-            <li><a href="{% url 'cart' %}">My cart</a></li>
-            <li><a href="{% url 'orders_list' %}">My orders</a></li>
-        </ul>
-      </nav>
-    </aside>
-
-
-    <!-- area of collection -->
-    <main class="content">
-      <h1>My Collection</h1>
-      
-      <div class="clips-grid">
-        {% if user_clips %}
-          {% for clip in user_clips %}
-            <div class="clip">
-              {% if clip.thumbnail %}
-                <img src="{{ clip.thumbnail }}" alt="{{ clip.title }}">
-              {% else %}
-                <img src="{% static 'picture/default_thumbnail.png' %}" alt="{{ clip.title }}">
-              {% endif %}
-              
-              <div class="clip-details">
-                <h2>{{ clip.title }}</h2>
-                <p>{{ clip.description|truncatechars:100 }}</p>
-                
-                <div class="tags">
-                  {% if clip.tags %}
-                    {% for tag in clip.tags %}
-                      <span class="tag">{{ tag }}</span>
-                    {% endfor %}
-                  {% endif %}
-                </div>
-                
-                <div class="clip-actions">
-                  <a href="{% url 'clip_detail' clip_id=clip.id %}">
-                    <button class="add-to-cart">View Details</button>
-                  </a>
-                  <button class="remove" data-clip-id="{{ clip.id }}">Remove</button>
-                </div>
-              </div>
-            </div>
-          {% endfor %}
-        {% else %}
-          <div class="no-clips">
-            <p>Your collection is empty. Browse the clip store to add items to your collection.</p>
-            <a href="{% url 'library_clip_store' library_slug='all' %}">
-              <button class="add-to-cart">Browse Clip Store</button>
-            </a>
-          </div>
-        {% endif %}
-      </div>
-    </main>
+  <!-- The clips-grid will be populated by JavaScript -->
+  <div class="clips-grid">
+    <!-- Empty initially, content will be dynamically loaded from localStorage -->
   </div>
-  
-  {% csrf_token %}
-  {% include "html_reusables/footer_reusable.html" %}
+</main>
+</div>
+
+{% csrf_token %}
+{% include "html_reusables/footer_reusable.html" %}
 </body>
 </html>
 

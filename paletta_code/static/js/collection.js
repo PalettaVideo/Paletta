@@ -1,78 +1,79 @@
 // get data from collection and cart
 function getFavorites() {
-  return JSON.parse(localStorage.getItem("favorites")) || [];
+  return JSON.parse(localStorage.getItem("userCollection")) || [];
 }
 
 function getCart() {
-  return JSON.parse(localStorage.getItem("cart")) || [];
+  return JSON.parse(localStorage.getItem("userCart")) || [];
 }
 
 // save data from collection and cart
 function saveFavorites(favorites) {
-  localStorage.setItem("favorites", JSON.stringify(favorites));
+  localStorage.setItem("userCollection", JSON.stringify(favorites));
 }
 
 function saveCart(cart) {
-  localStorage.setItem("cart", JSON.stringify(cart));
+  localStorage.setItem("userCart", JSON.stringify(cart));
 }
 
 // collection content
 function renderCollection() {
   const collectionGrid = document.querySelector(".clips-grid");
   const favorites = getFavorites();
-  collectionGrid.innerHTML = "";
 
-  // Get the clip store URL from a data attribute in the document
-  // This avoids hardcoding URLs in JavaScript
-  const clipStoreUrl =
-    document.querySelector('meta[name="clip-store-url"]')?.content || "/";
+  // Clear existing content
+  if (collectionGrid) {
+    collectionGrid.innerHTML = "";
+  } else {
+    console.error("Collection grid not found in the DOM");
+    return;
+  }
 
+  // If there are no localStorage favorites, show empty state
   if (favorites.length === 0) {
+    // Get the clip store URL from a data attribute in the document
+    const clipStoreUrl =
+      document.querySelector('meta[name="clip-store-url"]')?.content || "/";
+
     collectionGrid.innerHTML = `
-      <div class="empty-collection">
-        <p>Your collection is empty. Browse and add clips from the <a href="${clipStoreUrl}">Clip Store</a>.</p>
+      <div class="no-clips">
+        <p>Your collection is empty. Browse the clip store to add items to your collection.</p>
+        <a href="${clipStoreUrl}">
+          <button class="view-details">Browse Clip Store</button>
+        </a>
       </div>
     `;
     return;
   }
 
+  // Render clips from localStorage
   favorites.forEach((clip) => {
-    const tagsHTML = clip.tags
-      .map((tag) => `<span class="tag">${tag}</span>`)
-      .join("");
+    // Skip items without an id
+    if (!clip.id) return;
+
+    // Use thumbnail if available
+    const thumbnailURL =
+      clip.thumbnail || "/static/picture/default_thumbnail.png";
+
+    // Create clip card
     const clipCard = document.createElement("div");
     clipCard.className = "clip";
     clipCard.innerHTML = `
-      <img src="${clip.image}" alt="${clip.title}">
+      <img src="${thumbnailURL}" alt="${clip.title || "Video"}">
       <div class="clip-details">
-        <h2>${clip.title}</h2>
-        <p>Category: ${clip.category || "N/A"}</p>
-        <div class="tags">${tagsHTML || "No Tags"}</div>
-        <button class="add-to-cart" data-id="${clip.id}">Add to cart</button>
-        <button class="remove" data-id="${clip.id}">Remove</button>
+        <h2>${clip.title || "Untitled Video"}</h2>
+        <a href="/clip/${clip.id}/">
+          <button class="view-details">View Details</button>
+        </a>
+        <button class="remove" data-clip-id="${clip.id}">Remove</button>
+
       </div>
     `;
     collectionGrid.appendChild(clipCard);
 
-    // add event listener
-    clipCard.querySelector(".add-to-cart").addEventListener("click", () => {
-      const cart = getCart();
-      // print
-      console.log("Current Cart:", cart);
-      if (!cart.some((item) => item.id === clip.id)) {
-        cart.push(clip);
-        saveCart(cart);
-        alert("Added to cart!");
-        console.log("Updated Cart:", cart);
-      } else {
-        alert("This clip is already in your cart!");
-      }
-    });
-
-    clipCard.querySelector(".remove").addEventListener("click", () => {
-      const updatedFavorites = favorites.filter((item) => item.id !== clip.id);
-      saveFavorites(updatedFavorites);
-      renderCollection();
+    // Add event listener to remove button
+    clipCard.querySelector(".remove").addEventListener("click", function () {
+      removeFromCollection(clip.id, this);
     });
   });
 }
@@ -98,75 +99,43 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function removeFromCollection(clipId, buttonElement) {
-    // Get the CSRF token
-    const csrftoken = document.querySelector(
-      "[name=csrfmiddlewaretoken]"
-    ).value;
+    // Update localStorage
+    const favorites = getFavorites();
+    const updatedFavorites = favorites.filter((item) => item.id != clipId);
+    saveFavorites(updatedFavorites);
 
-    // Create form data for the request
-    const formData = new FormData();
-    formData.append("clip_id", clipId);
-    formData.append("csrfmiddlewaretoken", csrftoken);
+    // Remove from UI
+    const clipElement = buttonElement.closest(".clip");
+    if (clipElement) {
+      clipElement.style.opacity = "0";
+      setTimeout(() => {
+        clipElement.remove();
+        checkEmptyCollection();
+      }, 300);
+    }
 
-    // Send POST request to remove item from collection
-    fetch("/collection/remove/", {
-      method: "POST",
-      body: formData,
-      headers: {
-        "X-CSRFToken": csrftoken,
-      },
-      credentials: "same-origin",
-    })
-      .then((response) => {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error("Network response was not ok");
-      })
-      .then((data) => {
-        if (data.success) {
-          // Find the clip element and remove it
-          const clipElement = buttonElement.closest(".clip");
-          if (clipElement) {
-            clipElement.style.opacity = "0";
-            setTimeout(() => {
-              clipElement.remove();
+    // Show notification
+    showNotification("Clip removed from your collection");
+  }
 
-              // Check if there are any clips left
-              const remainingClips = document.querySelectorAll(".clip");
-              if (remainingClips.length === 0) {
-                // If no clips left, show empty state
-                const clipsGrid = document.querySelector(".clips-grid");
-                const clipStoreUrl =
-                  document.querySelector('meta[name="clip-store-url"]')
-                    ?.content || "/";
+  function checkEmptyCollection() {
+    // Check if there are any clips left
+    const remainingClips = document.querySelectorAll(".clip");
+    if (remainingClips.length === 0) {
+      // If no clips left, show empty state
+      const clipsGrid = document.querySelector(".clips-grid");
+      const clipStoreUrl =
+        document.querySelector('meta[name="clip-store-url"]')?.content || "/";
 
-                clipsGrid.innerHTML = `
-                <div class="no-clips">
-                  <p>Your collection is empty. Browse the clip store to add items to your collection.</p>
-                  <a href="${clipStoreUrl}">
-                    <button class="add-to-cart">Browse Clip Store</button>
-                  </a>
-                </div>
-              `;
-              }
-            }, 300);
-          }
-
-          // Show success message
-          showNotification("Clip removed from your collection");
-        } else {
-          // Show error message
-          showNotification(
-            "Error: " + (data.error || "Failed to remove clip"),
-            "error"
-          );
-        }
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        showNotification("Failed to remove clip from collection", "error");
-      });
+      clipsGrid.innerHTML = `
+      <div class="no-clips">
+        <p>Your collection is empty. Browse the clip store to add items to your collection.</p>
+        <a href="${clipStoreUrl}">
+          <button class="view-details">Browse Clip Store</button>
+        </a>
+      </div>
+    `;
+    }
   }
 
   function showNotification(message, type = "success") {

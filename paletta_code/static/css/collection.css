@@ -115,19 +115,25 @@ body {
 }
 
 /* Button styles */
-.add-to-cart, .remove {
+.view-details {
   background-color: #80B824;
   color: white;
-  font-family: 'Montserrat';
   border: none;
   border-radius: 5px;
   padding: 8px 15px;
   cursor: pointer;
   margin-top: 10px;
+  margin-right: 10px;
 }
 
-.add-to-cart {
-  margin-right: 10px;
+.remove {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 15px;
+  cursor: pointer;
+  margin-top: 10px;
 }
 
 /* For empty collection state */

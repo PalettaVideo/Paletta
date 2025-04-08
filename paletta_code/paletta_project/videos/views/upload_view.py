@@ -104,6 +104,40 @@ def extract_video_metadata(file_path):
     except (OSError, IOError) as e:
         logger.error(f"Error getting basic file metadata: {e}")
     
+    # Check if ffprobe/ffmpeg is installed before attempting to use it
+    ffprobe_available = False
+    try:
+        # Try checking for ffprobe directly
+        import shutil
+        ffprobe_path = shutil.which('ffprobe')
+        if ffprobe_path:
+            logger.info(f"ffprobe found at: {ffprobe_path}")
+            ffprobe_available = True
+        else:
+            # On Windows, try common installation paths
+            if os.name == 'nt':
+                possible_paths = [
+                    r"C:\ffmpeg\bin\ffprobe.exe",
+                    r"C:\Program Files\ffmpeg\bin\ffprobe.exe",
+                    r"C:\Program Files (x86)\ffmpeg\bin\ffprobe.exe",
+                ]
+                for path in possible_paths:
+                    if os.path.exists(path):
+                        logger.info(f"ffprobe found at common location: {path}")
+                        ffprobe_available = True
+                        break
+            
+            if not ffprobe_available:
+                logger.warning("ffprobe not found in PATH or common locations")
+    except Exception as e:
+        logger.error(f"Error checking for ffprobe: {e}")
+    
+    # If ffprobe not available, return basic metadata
+    if not ffprobe_available:
+        logger.warning("ffprobe not available, using basic metadata only")
+        metadata['extraction_method'] = 'basic'
+        return metadata
+    
     # Try to extract advanced metadata using ffprobe if available
     try:
         # Try to import ffmpeg-python
@@ -111,7 +145,9 @@ def extract_video_metadata(file_path):
             import ffmpeg
             
             # Get video info using ffprobe
+            logger.info(f"Attempting to probe file with ffmpeg-python: {file_path}")
             probe = ffmpeg.probe(file_path)
+            logger.info(f"Probe successful, got data: {len(str(probe))} bytes")
             
             # Extract duration from video stream or format
             if 'format' in probe and 'duration' in probe['format']:
@@ -125,6 +161,7 @@ def extract_video_metadata(file_path):
                 else:
                     metadata['duration'] = f"{minutes}:{seconds:02d}"
                 metadata['duration_seconds'] = duration_seconds
+                logger.info(f"Extracted duration: {metadata['duration']} ({duration_seconds} seconds)")
                 
                 # Extract additional metadata if available
                 if 'bit_rate' in probe['format']:
@@ -135,9 +172,13 @@ def extract_video_metadata(file_path):
                 if video_stream:
                     if 'width' in video_stream and 'height' in video_stream:
                         metadata['resolution'] = f"{video_stream['width']}x{video_stream['height']}"
+                        logger.info(f"Extracted resolution: {metadata['resolution']}")
                     if 'codec_name' in video_stream:
                         metadata['codec'] = video_stream['codec_name']
-            
+                        logger.info(f"Extracted codec: {metadata['codec']}")
+            else:
+                logger.warning("No duration found in probe data")
+                
         except ImportError:
             logger.warning("ffmpeg-python package is not installed. Using basic metadata only.")
             metadata['extraction_method'] = 'basic'

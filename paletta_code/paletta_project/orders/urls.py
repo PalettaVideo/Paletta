@@ -8,6 +8,10 @@ urlpatterns = [
     path('cart/remove/', views.RemoveFromCartView.as_view(), name='remove_from_cart'),
     path('checkout/', views.CheckoutView.as_view(), name='checkout'),
     
+    # Collection management
+    path('collection/add/', views.AddToCollectionView.as_view(), name='add_to_collection'),
+    path('collection/remove/', views.RemoveFromCollectionView.as_view(), name='remove_from_collection'),
+    
     # Order management
     path('orders/', views.OrdersListView.as_view(), name='orders_list'),
     path('orders/<int:pk>/', views.OrderDetailView.as_view(), name='order_detail'),

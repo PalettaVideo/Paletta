@@ -271,4 +271,78 @@ class CheckoutView(LoginRequiredMixin, View):
             })
             
         except Order.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'No pending order found'}, status=404) 
+            return JsonResponse({'success': False, 'message': 'No pending order found'}, status=404)
+
+class AddToCollectionView(LoginRequiredMixin, View):
+    """View for adding a video to the user's collection (client-side collection)."""
+    
+    def post(self, request, *args, **kwargs):
+        """Handle the POST request to add a video to the collection."""
+        try:
+            # Get clip_id from POST data
+            clip_id = request.POST.get('clip_id')
+            
+            if not clip_id:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No clip ID provided'
+                }, status=400)
+            
+            # Get the video to validate it exists
+            try:
+                video = Video.objects.get(id=clip_id)
+            except Video.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Video not found'
+                }, status=404)
+            
+            # We don't actually store this in the database
+            # Instead we send a successful response that the client-side JS
+            # will use to store the video in localStorage
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Video added to collection',
+                'video': {
+                    'id': video.id,
+                    'title': video.title,
+                    'description': video.description,
+                    'thumbnail': video.thumbnail.url if video.thumbnail else None
+                }
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+
+class RemoveFromCollectionView(LoginRequiredMixin, View):
+    """View for removing a video from the user's collection (client-side collection)."""
+    
+    def post(self, request, *args, **kwargs):
+        """Handle the POST request to remove a video from the collection."""
+        try:
+            # Get clip_id from POST data
+            clip_id = request.POST.get('clip_id')
+            
+            if not clip_id:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No clip ID provided'
+                }, status=400)
+            
+            # We don't need to check if it's in the collection since 
+            # the collection is stored client-side in localStorage
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Video removed from collection'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500) 

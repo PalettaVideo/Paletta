@@ -234,43 +234,235 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /**
-   * Add video to cart
+   * Get CSRF token from cookies
    */
-  function addToCart(videoId) {
-    fetch(`/api/videos/${videoId}/`, {
-      headers: { "Content-Type": "application/json" },
+  function getCSRFToken() {
+    const name = "csrftoken";
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  /**
+   * Add item to cart
+   * @param {number} videoId - ID of video to add
+   */
+  function addToCart(videoId, resolution = "HD", price = "0") {
+    // Get CSRF token
+    const csrftoken = getCSRFToken();
+    if (!csrftoken) {
+      console.error("CSRF token not found");
+      showNotification("Error: CSRF token not found", "error");
+      return;
+    }
+
+    // Create URL-encoded form data
+    const formData = new URLSearchParams();
+    formData.append("video_id", videoId);
+    formData.append("resolution", resolution);
+    formData.append("price", price);
+
+    // Fetch request to add to cart
+    fetch("/cart/add/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-CSRFToken": csrftoken,
+      },
+      body: formData,
+      credentials: "same-origin",
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error("Network response was not ok");
+      })
       .then((data) => {
-        // Add to cart logic here
-        console.log(`Added video ${videoId} to cart:`, data);
-        // Show success message
-        showNotification("Video added to cart successfully!");
+        if (data.success) {
+          // Update cart cache in localStorage
+          updateCartCache(videoId, resolution, price);
+          showNotification("Video added to cart");
+        } else {
+          showNotification(
+            "Error: " + (data.error || "Failed to add to cart"),
+            "error"
+          );
+        }
       })
       .catch((error) => {
-        console.error("Error adding to cart:", error);
-        showNotification("Failed to add video to cart.", "error");
+        console.error("Error:", error);
+        // Try to update cache anyway
+        updateCartCache(videoId, resolution, price);
+        showNotification("Added to local cart", "info");
       });
   }
 
   /**
    * Add video to favorites/collection
+   * @param {number} videoId - ID of video to add
    */
   function addToFavorites(videoId) {
-    fetch(`/api/videos/${videoId}/`, {
-      headers: { "Content-Type": "application/json" },
+    // Get CSRF token
+    const csrftoken = getCSRFToken();
+    if (!csrftoken) {
+      console.error("CSRF token not found");
+      showNotification("Error: CSRF token not found", "error");
+      return;
+    }
+
+    // Log what we're sending
+    console.log(`Adding video ID ${videoId} to collection`);
+
+    // Create URL-encoded form data
+    const formData = new URLSearchParams();
+    formData.append("clip_id", videoId);
+
+    // Fetch request to add to favorites
+    fetch("/collection/add/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-CSRFToken": csrftoken,
+      },
+      body: formData,
+      credentials: "same-origin",
     })
-      .then((response) => response.json())
+      .then((response) => {
+        console.log(`Response status: ${response.status}`);
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error(`Network response error: ${response.status}`);
+      })
       .then((data) => {
-        // Add to favorites logic here
-        console.log(`Added video ${videoId} to favorites:`, data);
-        // Show success message
-        showNotification("Video added to collection successfully!");
+        console.log("Response data:", data);
+        if (data.success) {
+          // Update collection cache
+          updateCollectionCache(videoId);
+          showNotification("Video added to your collection");
+        } else {
+          showNotification(
+            "Error: " + (data.error || "Failed to add to collection"),
+            "error"
+          );
+        }
       })
       .catch((error) => {
-        console.error("Error adding to favorites:", error);
-        showNotification("Failed to add video to collection.", "error");
+        console.error("Error adding to collection:", error);
+        // Still try to update cache anyway for offline functionality
+        updateCollectionCache(videoId);
+        showNotification("Added to local collection", "info");
       });
+  }
+
+  /**
+   * Update the client-side cart cache
+   * @param {number} videoId - ID of video to add
+   * @param {string} resolution - Resolution of the video
+   * @param {number|string} price - Price of the video
+   */
+  function updateCartCache(videoId, resolution, price) {
+    const videoCard = document.querySelector(`.clip[data-id="${videoId}"]`);
+    if (!videoCard) {
+      console.error(`Video card with ID ${videoId} not found`);
+      return;
+    }
+
+    // Create video object from DOM elements
+    const videoObj = {
+      id: videoId,
+      title: videoCard.querySelector(".clip-title")?.textContent || "Untitled",
+      thumbnail: videoCard.querySelector("img")?.src || "",
+      description:
+        videoCard.querySelector(".clip-description")?.textContent || "",
+      resolution: resolution,
+      price: price,
+    };
+
+    // Get tags if available
+    const tags = [];
+    videoCard.querySelectorAll(".tag").forEach((tag) => {
+      tags.push(tag.textContent);
+    });
+    videoObj.tags = tags;
+
+    // Get existing cart or create new one
+    let cart = JSON.parse(localStorage.getItem("userCart")) || [];
+
+    // Check if item already exists in cart
+    const existingItemIndex = cart.findIndex((item) => item.id == videoId);
+    if (existingItemIndex >= 0) {
+      // Update quantity if it exists
+      if (cart[existingItemIndex].quantity) {
+        cart[existingItemIndex].quantity += 1;
+      } else {
+        cart[existingItemIndex].quantity = 2;
+      }
+    } else {
+      // Add new item with quantity 1
+      videoObj.quantity = 1;
+      cart.push(videoObj);
+    }
+
+    // Save cart to localStorage
+    localStorage.setItem("userCart", JSON.stringify(cart));
+  }
+
+  /**
+   * Update the client-side collection cache
+   * @param {number} videoId - ID of video to add
+   */
+  function updateCollectionCache(videoId) {
+    // Find the correct card containing this video
+    const videoCard = document.querySelector(
+      `.clip-thumbnail[data-video-id="${videoId}"]`
+    );
+    if (!videoCard) {
+      console.error(`Video card with ID ${videoId} not found`);
+      return;
+    }
+
+    const clipElement = videoCard.closest(".clip");
+    if (!clipElement) {
+      console.error(
+        `Could not find parent clip element for video ID ${videoId}`
+      );
+      return;
+    }
+
+    // Create video object from DOM elements
+    const videoObj = {
+      id: videoId,
+      title: clipElement.querySelector("h2")?.textContent || "Untitled",
+      thumbnail: clipElement.querySelector("img")?.src || "",
+      description: "",
+    };
+
+    // Get tags if available
+    const tags = [];
+    clipElement.querySelectorAll(".tag").forEach((tag) => {
+      tags.push(tag.textContent);
+    });
+    videoObj.tags = tags;
+
+    // Get existing collection or create new one
+    let collection = JSON.parse(localStorage.getItem("userCollection")) || [];
+
+    // Only add if item doesn't exist already
+    if (!collection.some((item) => item.id == videoId)) {
+      collection.push(videoObj);
+      localStorage.setItem("userCollection", JSON.stringify(collection));
+    }
   }
 
   /**
@@ -282,27 +474,89 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /**
-   * Show a notification message
+   * Show a toast notification
+   * @param {string} message - Message to display
+   * @param {string} type - Type of notification: 'success', 'error', or 'warning'
    */
   function showNotification(message, type = "success") {
-    // Create notification element if it doesn't exist
-    let notification = document.getElementById("notification");
-    if (!notification) {
-      notification = document.createElement("div");
-      notification.id = "notification";
-      document.body.appendChild(notification);
+    // Ensure notification styles exist
+    if (!document.getElementById("notification-styles")) {
+      const style = document.createElement("style");
+      style.id = "notification-styles";
+      style.textContent = `
+        .notification {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          padding: 15px 25px;
+          border-radius: 5px;
+          color: white;
+          font-weight: bold;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          transform: translateY(20px);
+          opacity: 0;
+          transition: transform 0.3s, opacity 0.3s;
+          z-index: 1000;
+        }
+        .notification.show {
+          transform: translateY(0);
+          opacity: 1;
+        }
+        .notification.success {
+          background-color: #80B824;
+        }
+        .notification.error {
+          background-color: #e74c3c;
+        }
+        .notification.info {
+          background-color: #3498db;
+        }
+        .notification.warning {
+          background-color: #f39c12;
+        }
+      `;
+      document.head.appendChild(style);
     }
 
-    // Set message and type
-    notification.textContent = message;
+    // Create notification element
+    const notification = document.createElement("div");
     notification.className = `notification ${type}`;
+    notification.textContent = message;
 
-    // Show notification
-    notification.style.display = "block";
+    // Add to body
+    document.body.appendChild(notification);
 
-    // Hide after 3 seconds
+    // Animate in
     setTimeout(() => {
-      notification.style.display = "none";
+      notification.classList.add("show");
+    }, 10);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+      notification.classList.remove("show");
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 300);
     }, 3000);
   }
+
+  /**
+   * Initialize the page
+   */
+  function initializePage() {
+    // Setup localStorage if not already present
+    if (!localStorage.getItem("userCart")) {
+      localStorage.setItem("userCart", JSON.stringify([]));
+    }
+
+    if (!localStorage.getItem("userCollection")) {
+      localStorage.setItem("userCollection", JSON.stringify([]));
+    }
+
+    // Attach event handlers to buttons if needed
+    // This would be place to attach buttons if they're added dynamically
+  }
+
+  // Run initialization when DOM is loaded
+  document.addEventListener("DOMContentLoaded", initializePage);
 });
