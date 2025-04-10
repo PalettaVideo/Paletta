@@ -10,8 +10,8 @@ from paletta_core.settings import *
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 SECRET_KEY = os.environ.get('SECRET_KEY', SECRET_KEY)
 
-# Allow all hosts or specify allowed hosts
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+# For production, allow only the IP address of the EC2 instance
+ALLOWED_HOSTS = ['18.175.250.8', '127.0.0.1']
 
 # Security settings for production
 if not DEBUG:
