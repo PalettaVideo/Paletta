@@ -1,0 +1,16 @@
+[Unit]
+Description=Paletta Django Application
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/Paletta/paletta_code
+ExecStart=/home/ubuntu/Paletta/.venv/bin/gunicorn \
+    --access-logfile - \
+    --workers 3 \
+    --bind unix:/home/ubuntu/Paletta/paletta_code.sock \
+    paletta_core.wsgi:application
+
+[Install]
+WantedBy=multi-user.target 

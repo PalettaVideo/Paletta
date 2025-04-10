@@ -1,3 +1,4 @@
+# Production settings file for AWS deployment
 """
 WSGI config for paletta_core project.
 
@@ -11,6 +12,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'paletta_core.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'paletta_project.settings_production')
 
 application = get_wsgi_application()
