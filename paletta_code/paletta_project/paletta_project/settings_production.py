@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 # Production settings file for AWS deployment
 # Import base settings from paletta_core
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from Paletta.paletta_code.paletta_project.paletta_core.settings_development import *
+from paletta_core.settings_development import *
 
 # Load environment variables from .env file
 env_path = Path(__file__).resolve().parents[3] / '.env'
