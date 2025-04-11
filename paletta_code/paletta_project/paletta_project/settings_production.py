@@ -1,17 +1,29 @@
 import os
 from pathlib import Path
 import sys
+from dotenv import load_dotenv
+
+
 # Production settings file for AWS deployment
 # Import base settings from paletta_core
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from Paletta.paletta_code.paletta_project.paletta_core.settings_development import *
 
+# Load environment variables from .env file
+env_path = Path(__file__).resolve().parents[3] / '.env'
+load_dotenv(dotenv_path=env_path)
+
 # Override settings for production
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 SECRET_KEY = os.environ.get('SECRET_KEY', SECRET_KEY)
 
-# For production, allow only the IP address of the EC2 instance
-ALLOWED_HOSTS = ['18.175.250.8', '127.0.0.1']
+# For production, allow the load balancer and private IP
+ALLOWED_HOSTS = [
+    '10.0.21.154',  # EC2 private IP
+    '127.0.0.1',
+    'localhost',
+    'paletta-alb-1234567890.eu-west-2.elb.amazonaws.com',  # The Load Balancer DNS name
+]
 
 # Security settings for production
 if not DEBUG:
@@ -25,6 +37,9 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     X_FRAME_OPTIONS = 'DENY'
+    
+    # Trust the load balancer
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Database settings - use environment variables for production
 if os.environ.get('DATABASE_URL'):

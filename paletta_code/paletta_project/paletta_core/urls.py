@@ -10,7 +10,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 from libraries.views import CreateLibraryView, ManageLibrariesView, EditLibraryView
+
+# Health check view
+def health_check(request):
+    return HttpResponse("OK", content_type="text/plain")
 
 # Import views directly from their modules to avoid circular imports
 from accounts.views.login import CustomLoginView
@@ -84,6 +89,9 @@ urlpatterns = [
     
     # Contributor application route
     path('contributor/apply/', TemplateView.as_view(template_name='contributor_form.html'), name='contributor_apply'),
+    
+    # Health check endpoint
+    path('health/', health_check, name='health_check'),
 ]
 
 # Serve static files during development
