@@ -22,10 +22,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-suco%#xei-=f(9(4jq)jj)hl&(311t_rk!a_#6e&(j4e4kin%3'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = []
+
+CSRF_TRUSTED_ORIGINS = []
+
+# Temporarily disable HTTPS redirect until we set up SSL
+SECURE_SSL_REDIRECT = False
 
 
 # Application definition

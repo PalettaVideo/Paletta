@@ -3,7 +3,6 @@ from pathlib import Path
 import sys
 from dotenv import load_dotenv
 
-
 # Production settings file for AWS deployment
 # Import base settings from paletta_core
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -14,23 +13,24 @@ env_path = Path(__file__).resolve().parents[3] / '.env'
 load_dotenv(dotenv_path=env_path)
 
 # Override settings for production
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = False
 SECRET_KEY = os.environ.get('SECRET_KEY', SECRET_KEY)
 
-# For production, allow the load balancer and private IP
+# Allow EC2 instance public IP and domain
 ALLOWED_HOSTS = [
-    '10.0.21.154',  # EC2 private IP
-    '127.0.0.1',
+    'paletta-alb-62461270.eu-west-2.elb.amazonaws.com',
+    'paletta.io',
+    'www.paletta.io',
     'localhost',
-    'paletta-alb-1234567890.eu-west-2.elb.amazonaws.com',  # The Load Balancer DNS name
+    '127.0.0.1',
 ]
 
 # Security settings for production
 if not DEBUG:
-    # HTTPS settings
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    # HTTPS settings - comment out for now since ALB doesn't have SSL yet
+    # SECURE_SSL_REDIRECT = True
+    # SESSION_COOKIE_SECURE = True
+    # CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_HSTS_SECONDS = 31536000  # 1 year
@@ -50,9 +50,10 @@ if os.environ.get('DATABASE_URL'):
 AWS_STORAGE_ENABLED = os.environ.get('AWS_STORAGE_ENABLED', 'False') == 'True'
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
-AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
-AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
-AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com')
+AWS_REGION = os.environ.get('AWS_REGION', 'eu-west-2')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'paletta-videos')
+AWS_STATIC_BUCKET_NAME = os.environ.get('AWS_STATIC_BUCKET_NAME', 'paletta-static')
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STATIC_BUCKET_NAME}.s3.amazonaws.com'
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
@@ -62,13 +63,13 @@ AWS_S3_SIGNATURE_VERSION = 's3v4'
 AWS_S3_REGION_NAME = AWS_REGION
 
 # Use S3 for static files in production
-if not DEBUG and AWS_STORAGE_ENABLED:
+if AWS_STORAGE_ENABLED:
     STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
     
     # For media files
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+    MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/media/'
 
 # Download link configuration
 DOWNLOAD_LINK_EXPIRY_HOURS = int(os.environ.get('DOWNLOAD_LINK_EXPIRY_HOURS', '24'))
@@ -153,4 +154,11 @@ if not os.path.exists(logs_dir):
 
 # File upload settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880000  # 5GB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880000  # 5GB 
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880000  # 5GB
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://paletta-alb-62461270.eu-west-2.elb.amazonaws.com',
+    'https://paletta-alb-62461270.eu-west-2.elb.amazonaws.com',
+    'https://paletta.io',
+    'https://www.paletta.io',
+]
