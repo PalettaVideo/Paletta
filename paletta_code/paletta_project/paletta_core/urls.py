@@ -91,7 +91,7 @@ urlpatterns = [
     path('contributor/apply/', TemplateView.as_view(template_name='contributor_form.html'), name='contributor_apply'),
     
     # Health check endpoint
-    path('health/', health_check, name='health_check'),
+    path('healthcheck/', health_check, name='health_check'),
 ]
 
 # Serve static files during development

@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from paletta_core.settings_development import *
 
 # Load environment variables from .env file
-env_path = Path(__file__).resolve().parents[3] / '.env'
+env_path = '/home/ssm-user/Paletta/.env'
 load_dotenv(dotenv_path=env_path)
 
 # Override settings for production
@@ -27,19 +27,17 @@ ALLOWED_HOSTS = [
 
 # Security settings for production
 if not DEBUG:
-    # HTTPS settings - comment out for now since ALB doesn't have SSL yet
-    # SECURE_SSL_REDIRECT = True
-    # SESSION_COOKIE_SECURE = True
-    # CSRF_COOKIE_SECURE = True
+    # Check if the request is already HTTPS
+    SECURE_SSL_REDIRECT = False
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     X_FRAME_OPTIONS = 'DENY'
-    
-    # Trust the load balancer
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Database settings - use environment variables for production
 if os.environ.get('DATABASE_URL'):
@@ -47,7 +45,7 @@ if os.environ.get('DATABASE_URL'):
     DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
 
 # AWS S3 Storage Configuration
-AWS_STORAGE_ENABLED = os.environ.get('AWS_STORAGE_ENABLED', 'False') == 'True'
+AWS_STORAGE_ENABLED = True
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
 AWS_REGION = os.environ.get('AWS_REGION', 'eu-west-2')
@@ -57,18 +55,17 @@ AWS_S3_CUSTOM_DOMAIN = f'{AWS_STATIC_BUCKET_NAME}.s3.amazonaws.com'
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
-AWS_LOCATION = 'static'
-AWS_DEFAULT_ACL = 'private'
 AWS_S3_SIGNATURE_VERSION = 's3v4'
 AWS_S3_REGION_NAME = AWS_REGION
 
 # Use S3 for static files in production
 if AWS_STORAGE_ENABLED:
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
-    
-    # For media files
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    # Static files configuration
+    STATICFILES_STORAGE = 'paletta_core.storage.StaticStorage'
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+
+    # Media files configuration
+    DEFAULT_FILE_STORAGE = 'paletta_core.storage.MediaStorage'
     MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/media/'
 
 # Download link configuration
@@ -127,16 +124,15 @@ LOGGING = {
             'formatter': 'verbose',
         },
         'file': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs/paletta.log'),
-            'formatter': 'verbose',
+            'filename': '/home/ssm-user/Paletta/django-debug.log',
         },
     },
     'loggers': {
         'django': {
             'handlers': ['console', 'file'],
-            'level': 'INFO',
+            'level': 'DEBUG',
             'propagate': True,
         },
         'videos': {
