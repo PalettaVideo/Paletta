@@ -198,8 +198,8 @@ main {
 .popup {
   display: none;
   position: absolute;
-  top: 60px;
-  right: 20px;
+  top: 50px;
+  right: 1px;
   background-color: #fff;
   border: 2px solid #80B824;
   border-radius: 10px;

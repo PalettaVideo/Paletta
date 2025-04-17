@@ -107,23 +107,20 @@ header {
   .popup {
     display: none;
     position: absolute;
+    top: 50px;
+    right: 1px;
     background-color: #fff;
     border: 2px solid #80B824;
     border-radius: 10px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
     width: 200px;
-    z-index: 2000; 
-    
-    }
+    z-index: 10;
+  }
 
-
-    #popupMenu{
-      top:100%
-    }
 
     .popup a {
       display: block;
-      padding: 10px;
+      padding: 12px;
       color: #80B824;
       text-decoration: none;
       font-weight: bold;
