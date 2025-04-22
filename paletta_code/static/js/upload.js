@@ -9,9 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const titleInput = document.getElementById("title");
   const titleWordCount = document.getElementById("title-word-count");
   const descriptionInput = document.getElementById("description");
-  const descriptionWordCount = document.getElementById(
-    "description-word-count"
-  );
+  const descriptionWordCount = document.getElementById("description-word-count");
   const tagsInput = document.getElementById("tags");
   const tagsWrapper = document.getElementById("tags-input-wrapper");
   const tagsReference = document.getElementById("tags-reference");
@@ -51,13 +49,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (titleInput) {
     titleInput.addEventListener("input", function () {
-      updateWordCount(this, titleWordCount, 5);
+      updateWordCount(this, titleWordCount, 20);
+      
     });
   }
 
   if (descriptionInput) {
     descriptionInput.addEventListener("input", function () {
-      updateWordCount(this, descriptionWordCount, 25);
+      updateWordCount(this, descriptionWordCount, 100);
+      
     });
   }
 
@@ -325,8 +325,13 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function updateWordCount(input, countElement, limit) {
+   
     const words = input.value.trim().split(/\s+/).filter(Boolean);
     const count = words.length;
+
+
+  
+
     countElement.textContent = `${count}/${limit} words`;
 
     if (count > limit) {
