@@ -148,32 +148,8 @@ main {
   font-size: 22px;
 }
 
-.contributor-section {
-  text-align: center;
-  margin-top: 60px;
-}
 
-.contributor-section p {
-  font-size: 18px;
-  color: #80B824;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
 
-.contributor-section button {
-  background-color: #80B824;
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  font-size: 20px;
-  font-weight: bold;
-  border-radius: 20px;
-  cursor: pointer;
-}
-
-.contributor-section button:hover {
-  background-color: #6a9a1d;
-}
 
 @media (max-width: 600px) {
   header {

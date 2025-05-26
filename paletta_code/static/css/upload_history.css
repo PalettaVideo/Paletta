@@ -10,41 +10,6 @@ body {
     height: calc(100vh - 10vh);
 }
 
-.sidebar {
-    width: 200px;
-    background-color: #fff;
-    height: 100vh;
-    box-sizing: border-box;
-    border-right:1px solid #ddd;
-    padding-top: 5vh;
-    padding-left: 2vh;
-    padding-right: 2vh;
-}
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.sidebar ul li {
-    margin: 0;
-}
-.sidebar ul li a {
-    display: block;
-    padding: 15px 20px;
-    text-decoration: none;
-    color: #000;
-    background-color: #fff;
-    transition: background-color 0.3s, color 0.3s;
-}
-.sidebar ul li a:hover,
-.sidebar ul li a:focus {
-    background-color: #80B824;
-    color: #fff;
-}
-.sidebar ul li a.active {
-    background-color: #80B824;
-    color: #fff;
-}
 .main-content {
     flex: 1;
     padding: 5vh;
@@ -133,6 +98,7 @@ h1 {
     bottom: 25px;
     background-color: #80B824;
     padding: 8px 20px;
+    text-decoration: none;
 }
 
 .delete-btn:hover {
@@ -213,6 +179,8 @@ h1 {
     bottom: 25px;
     background-color: #80B824;
     padding: 8px 20px;
+    text-decoration: none;
+    color: white;
 }
 .button.delete {
     position: absolute;
@@ -220,6 +188,8 @@ h1 {
     bottom: 25px;
     background-color: #80B824;
     padding: 8px 20px;
+    text-decoration: none;
+    color:white;
 }
 
 .button.delete:hover {

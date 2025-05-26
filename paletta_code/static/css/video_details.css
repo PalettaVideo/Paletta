@@ -3,6 +3,7 @@ body {
   font-family: 'Montserrat';
   margin-top: 120px;
   padding: 0;
+  background-color: white;
 }
 
 /* Main content */
@@ -15,14 +16,14 @@ main {
 .content {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 30px;
+  margin-bottom: 10px;
   margin-top: 30px;
 }
 
 .video-container {
   position: relative;
   width: 90vh;
-  margin-top: 10vh;
+  margin-top: 3vh;
 }
 
 .video-container video {
@@ -36,9 +37,10 @@ main {
   color:white ;
   padding: 8px 15px;
   border-radius: 10px;
-  font-size: 16px;
+  font-size: 12px;
   cursor: pointer;
-  font-weight: bold;
+  font-family: Montserrat;
+  
 
 }
 
@@ -47,15 +49,18 @@ main {
 }
 
 .navigation-buttons {
-  display: flex;
   margin-bottom: 10px;
-  justify-content: space-between;
+  display:flex;
+  gap: 10px;
+  
+  
 }
 
 .details {
   max-width: 350px;
   margin-top: 16vh;
-  padding-right: 32vh;
+
+  
 }
 
 .details h1 {
@@ -67,7 +72,7 @@ main {
   margin: 5px 0;
 }
 
-.details .actions button {
+.details .clipaction button {
   width: 100%;
   padding: 10px;
   margin-bottom: 10px;
@@ -77,9 +82,10 @@ main {
   background-color: #80B824;
   color: white;
   font-size: 16px;
+  font-family: Montserrat;
 }
 
-.details .actions button:hover {
+.details .clipaction button:hover {
   background-color: #6aa839;
 }
 
@@ -87,7 +93,7 @@ main {
 .description {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 30px;
+  
 }
 
 .video-info {
@@ -119,7 +125,8 @@ main {
 
 .attributes {
   width: 35%;
-  background-color: #f4f4f4;
+  height: 200px;
+  background-color: #7fb8243a;
   padding: 15px;
   border-radius: 5px;
 }
