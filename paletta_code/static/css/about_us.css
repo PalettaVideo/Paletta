@@ -5,50 +5,6 @@ body {
     line-height: 1.6;
 }
 
-.title-section {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    background-color: white;
-    margin-top: 100px;
-    
-}
-
-.title-section .image-container {
-    position: relative;
-    width: 60%;
-    margin-left: 10%;
-}
-
-.title-section .image-container img {
-    width: 87%;
-    height: 350px
-}
-
-.title-section .image-container .overlay {
-    position: absolute;
-    top: 0%;
-    left: 34%;
-    background-color: #80B824;
-    padding: 20px 40px;
-    font-size: 35px;
-    font-weight: normal;
-    color: white;
-    text-align: center;
-}
-
-.title-section .logo-container {
-    width: 25%;
-    text-align: center;
-    margin-right: 50px;
-}
-
-.title-section .logo-container img {
-    width: 80%;
-    height: auto;
-}
-
 .content {
     padding: 150px;
     text-align: center;

@@ -3,15 +3,18 @@
     padding: 0;
     box-sizing: border-box;
     font-family: 'Montserrat';
+    background-color: white;
 }
 
 .container {
     display: flex;
     min-height: 100vh;
-    margin-top: 150px;
+    margin-top: 100px;
 }
 
-
+.main {
+    background-color: white;
+}
 
 /* Main Content */
 .content {
@@ -54,7 +57,7 @@
 .library-item {
     display: flex;
     align-items: center;
-    justify-content: space-between; /* 让内容和按钮分别靠两边 */
+    justify-content: space-between; 
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 8px;
