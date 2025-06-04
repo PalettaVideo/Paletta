@@ -9,7 +9,7 @@ body {
 .container {
     display: flex;
     width: 100%;
-    margin-top: 150px;
+    margin-top: 100px;
 }
 
 nav button {
@@ -30,6 +30,7 @@ nav .active {
 main {
     flex: 1;
     padding: 20px;
+    background-color: white;
 }
 
 header {

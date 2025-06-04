@@ -57,20 +57,20 @@ main {
 }
 
 .title-section {
-  display: flex;
+      
   align-items: center;
   justify-content: center;
-  gap: 15px;
+  margin-top:50px;
   margin-bottom: 20px;
 }
 
 .title-section img {
-  max-height: 150px;
+  max-width: 400px;
 }
 
 .title-section h1 {
-  text-align: left;
-  font-size: 40px;
+  text-align: center;
+  font-size: 25px;
   line-height: 1.4;
   font-weight: normal;
 }
@@ -148,32 +148,8 @@ main {
   font-size: 22px;
 }
 
-.contributor-section {
-  text-align: center;
-  margin-top: 60px;
-}
 
-.contributor-section p {
-  font-size: 18px;
-  color: #80B824;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
 
-.contributor-section button {
-  background-color: #80B824;
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  font-size: 20px;
-  font-weight: bold;
-  border-radius: 20px;
-  cursor: pointer;
-}
-
-.contributor-section button:hover {
-  background-color: #6a9a1d;
-}
 
 @media (max-width: 600px) {
   header {
@@ -198,8 +174,8 @@ main {
 .popup {
   display: none;
   position: absolute;
-  top: 60px;
-  right: 20px;
+  top: 50px;
+  right: 1px;
   background-color: #fff;
   border: 2px solid #80B824;
   border-radius: 10px;

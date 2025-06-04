@@ -1,0 +1,9 @@
+ button{
+    background-color: #80B824;
+    color: white;
+    border: none;
+    font-family: 'Montserrat';
+    border-radius: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+  }

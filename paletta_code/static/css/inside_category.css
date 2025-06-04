@@ -23,6 +23,7 @@ z-index: 2000;
 }
 
 
+
 #popupMenu{
   top:100%
 }
@@ -214,6 +215,69 @@ main {
 .filters button:hover {
   background-color: #6aa839;
 }
+
+
+.sortbypopup {
+  display: none;
+  position: absolute;
+  background-color: #fff;
+  border: 2px solid #80B824;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  width: 200px;
+  z-index: 2000; 
+  
+  }
+
+  .sortbypopup a {
+    display: block;
+    padding: 10px;
+    color: #80B824;
+    text-decoration: none;
+    font-weight: bold;
+    border-bottom: 1px solid #80B824;
+  }
+  
+  .sortbypopup a:last-child {
+    border-bottom: none;
+  }
+  
+  .sortbypopup a:hover {
+    background-color: #f9f9f9;
+  }
+
+
+
+  .filterpopup {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    border: 2px solid #80B824;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    width: 200px;
+    z-index: 2000; 
+    
+    }
+
+
+    .filterpopup a {
+      display: block;
+      padding: 10px;
+      color: #80B824;
+      text-decoration: none;
+      font-weight: bold;
+      border-bottom: 1px solid #80B824;
+    }
+    
+    .filterpopup a:last-child {
+      border-bottom: none;
+    }
+    
+    .filterpopup a:hover {
+      background-color: #f9f9f9;
+    }
+
 
 .banner {
   position: relative;

@@ -25,7 +25,7 @@ body {
     width: 80%;
     max-width: 900px;
     background-color: white;
-    gap: 20px; /* Add space between the image and the login box */
+    gap: 30px; /* Add space between the image and the login box */
     animation: slideIn 1s ease-out; /* Apply slide-in effect */
 }
 
@@ -46,14 +46,15 @@ body {
 .login-image img {
     width: 100%; /* Make sure the image takes up full width of its container */
     height: auto; /* Maintain aspect ratio */
-    opacity: 0; /* Make image invisible initially */
+    opacity: 0; 
+    margin-top: 100px;
     animation: fadeIn 2s ease-in-out forwards; /* Fade-in animation for the image */
-    transition: transform 0.3s ease; /* 放大效果平滑过渡 */
+    transition: transform 0.3s ease; 
 }
 
 
 .login-image img:hover {
-    transform: scale(1.1); /* 鼠标悬停时放大 10% */
+    transform: scale(1.1); 
 }
 
 .login-box {

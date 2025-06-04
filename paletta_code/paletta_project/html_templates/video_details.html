@@ -33,11 +33,11 @@
           <div class="navigation-buttons">
             {% if clip.category %}
               <a href="{% url 'library_category' library_slug=library.slug category_slug=clip.category|slugify %}">
-                <button class="back-button">Back to all videos in Category - <br/> '{{ clip.category }}'</button>
+                <button class="back-button">Back to all videos in Category -  '{{ clip.category }}'</button>
               </a>
             {% endif %}
             <a href="{% url 'library_clip_store' library_slug=library.slug %}">
-              <button class="back-button">Back to all videos in Library - <br/> '{{ library.name }}'</button>
+              <button class="back-button">Back to all videos in Library -  '{{ library.name }}'</button>
             </a>
           </div>
         <video src="{{ clip.video_url|default:'' }}" controls{% if not clip.video_url %} poster="{% static 'picture/video_placeholder.jpg' %}"{% endif %}></video>

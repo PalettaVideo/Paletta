@@ -1,0 +1,34 @@
+
+.title-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: white;
+    margin-top: 100px;
+    
+}
+
+.title-section .image-container {
+    position: relative;
+    width: 100%;
+    margin-left: 10%;
+    margin-right: 10%;
+}
+
+.title-section .image-container img {
+    width: 100%;
+    height: 350px
+}
+
+.title-section .image-container .overlay {
+    position: absolute;
+    top: 0%;
+    left:38%;
+    background-color: #80B824;
+    padding: 20px 40px;
+    font-size: 35px;
+    font-weight: normal;
+    color: white;
+    text-align: center;
+}

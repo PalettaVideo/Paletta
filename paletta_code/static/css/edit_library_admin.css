@@ -3,7 +3,7 @@ body {
     font-family: 'Montserrat';
     margin: 0;
     padding: 0;
-    background-color: #F8F8F8;
+    background-color: white;
 }
 
 .container {
@@ -12,44 +12,10 @@ body {
     margin-top: 150px;
 }
 
-/* Sidebar */
-.sidebar {
-    width: 300px;
-    background-color: #fff;
-    height: 100vh;
-    box-sizing: border-box;
-    border-right:1px solid #ddd;
-    padding:20px
-}
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.sidebar ul li {
-    margin: 0;
-}
-.sidebar ul li a {
-    display: block;
-    padding: 15px 20px;
-    text-decoration: none;
-    color: #000;
-    background-color: #fff;
-    transition: background-color 0.3s, color 0.3s;
-}
-.sidebar ul li a:hover,
-.sidebar ul li a:focus {
-    background-color: #80B824;
-    color: #fff;
-}
-.sidebar ul li a.active {
-    background-color: #80B824;
-    color: #fff;
-}
 
 /* Main Content */
 main {
-    
+    background: white;
     flex: 1;
     padding: 30px;
 }

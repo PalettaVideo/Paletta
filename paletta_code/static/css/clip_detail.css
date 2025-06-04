@@ -3,27 +3,24 @@ body {
   font-family: 'Montserrat';
   margin-top: 120px;
   padding: 0;
-  background-color: white;
 }
 
 /* Main content */
 main {
-  padding-left: 15vh;
-  padding-right: 15vh;
+  padding: 20px;
   background-color: white;
 }
 
 .content {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 10px;
-  margin-top: 30px;
+  margin-bottom: 30px;
+  margin-top: 100px;
 }
 
 .video-container {
   position: relative;
-  width: 90vh;
-  margin-top: 3vh;
+  width: 800px;
 }
 
 .video-container video {
@@ -32,35 +29,53 @@ main {
 }
 
 .video-container .back-button {
-  background-color: #80B824 ;
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background-color: #ffffff;
   border: 2px solid #80B824;
-  color:white ;
+  color:#80B824 ;
   padding: 8px 15px;
   border-radius: 10px;
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
-  font-family: Montserrat;
   
-
 }
 
 .video-container .back-button:hover {
   background-color: #eaeaea;
 }
 
-.navigation-buttons {
-  margin-bottom: 10px;
-  display:flex;
-  gap: 10px;
-  
-  
+/*button*/
+.clipaction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 50px;
 }
 
+.clipaction button {
+  background-color: #86B43D;
+  color: black;
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  padding: 15px 20px;
+  width: 300px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  margin-bottom: 15px;
+}
+
+.clipaction button:last-child {
+  margin-bottom: 0;
+}
+/*button*/
 .details {
   max-width: 350px;
-  margin-top: 16vh;
-
-  
 }
 
 .details h1 {
@@ -72,7 +87,7 @@ main {
   margin: 5px 0;
 }
 
-.details .clipaction button {
+.details .actions button {
   width: 100%;
   padding: 10px;
   margin-bottom: 10px;
@@ -82,10 +97,9 @@ main {
   background-color: #80B824;
   color: white;
   font-size: 16px;
-  font-family: Montserrat;
 }
 
-.details .clipaction button:hover {
+.details .actions button:hover {
   background-color: #6aa839;
 }
 
@@ -93,7 +107,7 @@ main {
 .description {
   display: flex;
   justify-content: space-between;
-  
+  margin-bottom: 30px;
 }
 
 .video-info {
@@ -125,8 +139,7 @@ main {
 
 .attributes {
   width: 35%;
-  height: 200px;
-  background-color: #7fb8243a;
+  background-color: #f4f4f4;
   padding: 15px;
   border-radius: 5px;
 }
@@ -224,32 +237,36 @@ main {
 }
 
 input[type="radio"] {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2px solid #ccc;
-  background-color: white;
-  position: relative;
-  cursor: pointer;
-}
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #ccc;
+        background-color: white;
+        position: relative;
+        cursor: pointer;
+    }
+
+   
+    input[type="radio"]:checked {
+        background-color: green; 
+        border-color: green; 
+    }
+
+    
+    input[type="radio"]:checked::before {
+        content: '';
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        width: 8px;
+        height: 8px;
+        background-color: white; 
+        border-radius: 50%;
+    }
 
 
-input[type="radio"]:checked {
-  background-color: green; 
-  border-color: green; 
-}
 
 
-input[type="radio"]:checked::before {
-  content: '';
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 8px;
-  height: 8px;
-  background-color: white; 
-  border-radius: 50%;
-}
