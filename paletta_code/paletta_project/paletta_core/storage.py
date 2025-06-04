@@ -9,4 +9,4 @@ class StaticStorage(S3Boto3Storage):
 class MediaStorage(S3Boto3Storage):
     location = 'media'
     file_overwrite = False
-    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+    bucket_name = settings.AWS_STORAGE_BUCKET_NAME # intended to use 'paletta-videos' s3 bucket
