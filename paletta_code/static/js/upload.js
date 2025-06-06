@@ -301,9 +301,6 @@ document.addEventListener("DOMContentLoaded", function () {
     videoPreviewContainer.appendChild(loadingIndicator);
 
     console.log("Video preview created, extracting metadata");
-
-    // extract video metadata from server
-    extractVideoMetadataFromServer(file);
   }
 
   function handleThumbnailSelect(e) {
