@@ -11,39 +11,25 @@ logger.setLevel(logging.INFO)
 # Initialize Boto3 S3 client
 s3 = boto3.client('s3')
 
-# Get environment variables
+# Get environment variables from Lambda configuration
 UPLOAD_BUCKET = os.environ.get('UPLOAD_BUCKET')
-# Now a comma-separated list, e.g., "https://paletta.io,https://www.paletta.io"
-ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', '').split(',')
 URL_EXPIRATION_SECONDS = 300  # 5 minutes
 
 def lambda_handler(event, context):
     """
-    Handles API Gateway request to generate a presigned S3 URL for uploading a video.
+    This function generates a presigned S3 URL for file uploads.
+    It is triggered by an API Gateway request.
+    CORS is configured and handled by API Gateway, not in this function.
     """
     logger.info(f"Received event: {json.dumps(event)}")
     
-    # Determine the correct CORS header to return based on the request's origin
-    origin = event.get('headers', {}).get('origin')
-    if origin in ALLOWED_ORIGINS:
-        access_control_allow_origin = origin
-    else:
-        # Default to the first allowed origin or deny if none match
-        access_control_allow_origin = ALLOWED_ORIGINS[0] if ALLOWED_ORIGINS and ALLOWED_ORIGINS[0] else None
-
-    # If no valid origin, return a CORS error immediately
-    if not access_control_allow_origin:
-        logger.warning(f"Request from unapproved origin: {origin}")
-        return {'statusCode': 403, 'body': json.dumps({'error': 'CORS error: Origin not allowed.'})}
-
     try:
-        # Get file metadata from the query string parameters
-        # Example: ?fileName=my-video.mp4&contentType=video/mp4
+        # Extract fileName and contentType from the query string
         query_params = event.get('queryStringParameters')
         if not query_params:
             return {
-                'statusCode': 400,
-                'body': json.dumps({'error': 'Missing query string parameters fileName and contentType.'})
+                'statusCode': 400, 
+                'body': json.dumps({'error': 'Missing query string parameters: fileName and contentType are required.'})
             }
         
         file_name = query_params.get('fileName')
@@ -51,16 +37,16 @@ def lambda_handler(event, context):
 
         if not file_name or not content_type:
             return {
-                'statusCode': 400,
-                'body': json.dumps({'error': 'Both fileName and contentType are required.'})
+                'statusCode': 400, 
+                'body': json.dumps({'error': 'Query string must include fileName and contentType.'})
             }
         
-        # Generate a unique key for the S3 object to prevent overwrites
+        # Create a unique S3 key to prevent file overwrites
         unique_id = uuid.uuid4()
         file_extension = os.path.splitext(file_name)[1]
         s3_key = f"videos/{unique_id}{file_extension}"
 
-        # Create the presigned URL
+        # Generate the presigned URL for a PUT request
         presigned_url = s3.generate_presigned_url(
             'put_object',
             Params={
@@ -71,9 +57,9 @@ def lambda_handler(event, context):
             ExpiresIn=URL_EXPIRATION_SECONDS
         )
 
-        logger.info(f"Generated presigned URL for key: {s3_key}")
+        logger.info(f"Successfully generated presigned URL for key: {s3_key}")
         
-        # Prepare the successful response
+        # Return the presigned URL and the key to the client
         response_body = {
             'uploadURL': presigned_url,
             'key': s3_key
@@ -81,11 +67,6 @@ def lambda_handler(event, context):
         
         return {
             'statusCode': 200,
-            'headers': {
-                'Access-Control-Allow-Origin': access_control_allow_origin,
-                'Access-Control-Allow-Methods': 'GET, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type'
-            },
             'body': json.dumps(response_body)
         }
 
@@ -93,8 +74,5 @@ def lambda_handler(event, context):
         logger.error(f"Error generating presigned URL: {str(e)}")
         return {
             'statusCode': 500,
-            'headers': {
-                'Access-Control-Allow-Origin': access_control_allow_origin,
-            },
-            'body': json.dumps({'error': 'Failed to generate presigned URL.'})
+            'body': json.dumps({'error': 'Internal server error. Could not generate presigned URL.'})
         } 

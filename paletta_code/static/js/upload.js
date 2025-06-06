@@ -301,6 +301,9 @@ document.addEventListener("DOMContentLoaded", function () {
     videoPreviewContainer.appendChild(loadingIndicator);
 
     console.log("Video preview created, extracting metadata");
+
+    // Use fast, client-side extraction. Server-side is no longer needed.
+    extractVideoMetadata(file);
   }
 
   function handleThumbnailSelect(e) {
@@ -354,99 +357,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     tagElement.appendChild(removeBtn);
     tagsWrapper.insertBefore(tagElement, tagsInput);
-  }
-
-  function updateMetadataFields(metadata) {
-    // update duration display
-    const durationDisplay = document.getElementById("duration-display");
-    if (durationDisplay && metadata.duration) {
-      durationDisplay.textContent = metadata.duration;
-    }
-
-    // update format display
-    const formatDisplay = document.getElementById("format-display");
-    if (formatDisplay && metadata.format) {
-      formatDisplay.textContent = metadata.format;
-    }
-
-    // update file size display
-    const fileSizeDisplay = document.getElementById("filesize-display");
-    if (fileSizeDisplay && metadata.file_size_display) {
-      fileSizeDisplay.textContent = metadata.file_size_display;
-    }
-
-    // remove loading indicator if it exists
-    const loadingIndicator = document.querySelector(".loading-indicator");
-    if (loadingIndicator) {
-      loadingIndicator.remove();
-    }
-  }
-
-  function extractVideoMetadataFromServer(file) {
-    console.log("Sending file to server for metadata extraction");
-
-    // create a FormData object to send the file
-    const formData = new FormData();
-    formData.append("video_file", file);
-
-    // get CSRF token
-    const csrfToken = getCookie("csrftoken");
-
-    // send the file to the server for metadata extraction
-    fetch("/videos/api/extract-metadata/", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": csrfToken,
-      },
-      body: formData,
-    })
-      .then((response) => {
-        console.log("Metadata extraction response:", response.status);
-
-        // First check if response is ok (status in 200-299 range)
-        if (!response.ok) {
-          console.error("API error:", response.status, response.statusText);
-          // Don't try to parse JSON for non-OK responses
-          return response.text().then((text) => {
-            throw new Error(
-              `API error: ${response.status} ${response.statusText}${
-                text ? ` - ${text}` : ""
-              }`
-            );
-          });
-        }
-
-        // For successful responses, try to parse as JSON
-        return response.text().then((text) => {
-          if (!text) {
-            throw new Error("Empty response received from server");
-          }
-
-          try {
-            return JSON.parse(text);
-          } catch (e) {
-            console.error("Failed to parse JSON:", e, "Response text:", text);
-            throw new Error("Invalid JSON response from server");
-          }
-        });
-      })
-      .then((data) => {
-        console.log("Metadata extraction data:", data);
-        if (data.success && data.metadata) {
-          // update the UI with the extracted metadata
-          updateMetadataFields(data.metadata);
-          console.log("Metadata extracted successfully:", data.metadata);
-        } else {
-          console.error("Failed to extract metadata:", data.message);
-          // fall back to client-side extraction
-          extractVideoMetadata(file);
-        }
-      })
-      .catch((error) => {
-        console.error("Error extracting metadata from server:", error);
-        // fall back to client-side extraction
-        extractVideoMetadata(file);
-      });
   }
 
   function extractVideoMetadata(file) {
