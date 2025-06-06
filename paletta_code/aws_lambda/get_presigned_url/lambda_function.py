@@ -13,7 +13,8 @@ s3 = boto3.client('s3')
 
 # Get environment variables
 UPLOAD_BUCKET = os.environ.get('UPLOAD_BUCKET')
-ALLOWED_ORIGIN = os.environ.get('ALLOWED_ORIGIN', '*') # The domain of your frontend
+# Now a comma-separated list, e.g., "https://paletta.io,https://www.paletta.io"
+ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', '').split(',')
 URL_EXPIRATION_SECONDS = 300  # 5 minutes
 
 def lambda_handler(event, context):
@@ -21,6 +22,19 @@ def lambda_handler(event, context):
     Handles API Gateway request to generate a presigned S3 URL for uploading a video.
     """
     logger.info(f"Received event: {json.dumps(event)}")
+    
+    # Determine the correct CORS header to return based on the request's origin
+    origin = event.get('headers', {}).get('origin')
+    if origin in ALLOWED_ORIGINS:
+        access_control_allow_origin = origin
+    else:
+        # Default to the first allowed origin or deny if none match
+        access_control_allow_origin = ALLOWED_ORIGINS[0] if ALLOWED_ORIGINS and ALLOWED_ORIGINS[0] else None
+
+    # If no valid origin, return a CORS error immediately
+    if not access_control_allow_origin:
+        logger.warning(f"Request from unapproved origin: {origin}")
+        return {'statusCode': 403, 'body': json.dumps({'error': 'CORS error: Origin not allowed.'})}
 
     try:
         # Get file metadata from the query string parameters
@@ -68,7 +82,7 @@ def lambda_handler(event, context):
         return {
             'statusCode': 200,
             'headers': {
-                'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+                'Access-Control-Allow-Origin': access_control_allow_origin,
                 'Access-Control-Allow-Methods': 'GET, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type'
             },
@@ -80,7 +94,7 @@ def lambda_handler(event, context):
         return {
             'statusCode': 500,
             'headers': {
-                'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
+                'Access-Control-Allow-Origin': access_control_allow_origin,
             },
             'body': json.dumps({'error': 'Failed to generate presigned URL.'})
         } 
