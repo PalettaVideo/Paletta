@@ -2,11 +2,18 @@ from django.conf import settings
 from storages.backends.s3boto3 import S3Boto3Storage
 
 class StaticStorage(S3Boto3Storage):
+    """Handles static files collected by collectstatic."""
     location = 'static'
     file_overwrite = True
     bucket_name = settings.AWS_STATIC_BUCKET_NAME
+    default_acl = 'public-read'
 
 class MediaStorage(S3Boto3Storage):
-    location = 'media'
+    """Handles user-uploaded media files like thumbnails and logos."""
+    location = 'uploaded-media'  # Store files in the /uploaded-media/ folder
     file_overwrite = False
-    bucket_name = settings.AWS_STORAGE_BUCKET_NAME # intended to use 'paletta-videos' s3 bucket
+    bucket_name = settings.AWS_STATIC_BUCKET_NAME  # Use the static bucket
+    # Set the domain to the static bucket for correct URL generation
+    custom_domain = f'{settings.AWS_STATIC_BUCKET_NAME}.s3.amazonaws.com'
+    # Make media files public by default
+    default_acl = 'public-read'
