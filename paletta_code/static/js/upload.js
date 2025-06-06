@@ -9,15 +9,17 @@ document.addEventListener("DOMContentLoaded", function () {
   const titleInput = document.getElementById("title");
   const titleWordCount = document.getElementById("title-word-count");
   const descriptionInput = document.getElementById("description");
-  const descriptionWordCount = document.getElementById("description-word-count");
+  const descriptionWordCount = document.getElementById(
+    "description-word-count"
+  );
   const tagsInput = document.getElementById("tags");
   const tagsWrapper = document.getElementById("tags-input-wrapper");
   const tagsReference = document.getElementById("tags-reference");
   const uploadForm = document.getElementById("upload-form");
 
   const MAX_TAGS = 10;
-  // Define max file size (5GB in bytes)
-  const MAX_FILE_SIZE = 5000 * 1024 * 1024;
+  // Define max file size (256GB in bytes)
+  const MAX_FILE_SIZE = 256 * 1024 * 1024 * 1024;
 
   let selectedTags = [];
 
@@ -50,14 +52,12 @@ document.addEventListener("DOMContentLoaded", function () {
   if (titleInput) {
     titleInput.addEventListener("input", function () {
       updateWordCount(this, titleWordCount, 20);
-      
     });
   }
 
   if (descriptionInput) {
     descriptionInput.addEventListener("input", function () {
       updateWordCount(this, descriptionWordCount, 100);
-      
     });
   }
 
@@ -257,7 +257,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // check file size
     if (file.size > MAX_FILE_SIZE) {
-      alert("File is too large. Maximum size is 5GB.");
+      showUploadLimitModal();
       fileInput.value = "";
       return;
     }
@@ -325,12 +325,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function updateWordCount(input, countElement, limit) {
-   
     const words = input.value.trim().split(/\s+/).filter(Boolean);
     const count = words.length;
-
-
-  
 
     countElement.textContent = `${count}/${limit} words`;
 
@@ -623,13 +619,149 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function handleFormSubmit(e) {
-    // Rest of the function body remains unchanged
-    // ...
+    e.preventDefault();
+    const uploadButton = uploadForm.querySelector("button[type='submit']");
+
+    // Validate form fields before proceeding
+    if (!validateForm()) {
+      alert("Please fill out all required fields: Title and Category.");
+      return;
+    }
+
+    const file = fileInput.files[0];
+    if (!file) {
+      alert("Please select a video file to upload.");
+      return;
+    }
+
+    uploadButton.textContent = "Preparing Upload...";
+    uploadButton.disabled = true;
+
+    try {
+      // 1. Get presigned URL from our new Lambda function via API Gateway
+      // IMPORTANT: Replace with your actual API Gateway endpoint URL
+      const apiGatewayUrl =
+        "https://yimnev4yqc.execute-api.eu-west-2.amazonaws.com/default/getPresignedVideoUploadURL";
+      const response = await fetch(
+        `${apiGatewayUrl}?fileName=${file.name}&contentType=${file.type}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Could not get a presigned URL. Please try again.");
+      }
+
+      const { uploadURL, key } = await response.json();
+      console.log("Received presigned URL and key:", uploadURL, key);
+
+      // 2. Upload the file directly to S3 using the presigned URL
+      uploadButton.textContent = "Uploading... (0%)";
+      const s3UploadResponse = await uploadFileToS3(
+        uploadURL,
+        file,
+        (progress) => {
+          uploadButton.textContent = `Uploading... (${progress.toFixed(0)}%)`;
+        }
+      );
+
+      if (s3UploadResponse.status !== 200) {
+        throw new Error("S3 upload failed. Please try again.");
+      }
+      console.log("File successfully uploaded to S3.");
+
+      // 3. Notify the backend that the upload is complete
+      uploadButton.textContent = "Finalizing...";
+      await notifyBackend(key);
+
+      alert("Upload complete! Your video has been successfully submitted.");
+      window.location.href = "{% url 'upload_history' %}"; // Redirect to history page
+    } catch (error) {
+      console.error("Upload process failed:", error);
+      alert(`An error occurred: ${error.message}`);
+      uploadButton.textContent = "Upload Clip";
+      uploadButton.disabled = false;
+    }
+  }
+
+  function uploadFileToS3(uploadURL, file, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", uploadURL);
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = (event.loaded / event.total) * 100;
+          onProgress(progress);
+        }
+      };
+
+      xhr.onload = () => {
+        resolve(xhr);
+      };
+
+      xhr.onerror = () => {
+        reject(new Error("Network error during S3 upload."));
+      };
+
+      xhr.send(file);
+    });
+  }
+
+  async function notifyBackend(s3Key) {
+    const libraryInfo = document.querySelector(".library-info");
+    const libraryId = libraryInfo
+      ? libraryInfo.getAttribute("data-library-id")
+      : null;
+
+    const data = {
+      title: titleInput.value.trim(),
+      description: descriptionInput.value.trim(),
+      category: document.getElementById("category").value,
+      tags: selectedTags.join(","),
+      is_published: document.getElementById("is_published").checked,
+      s3_key: s3Key,
+      library_id: libraryId,
+    };
+
+    const response = await fetch("/videos/api/upload/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Backend notification failed.");
+    }
+    return await response.json();
   }
 
   function validateForm() {
-    // Rest of the function body remains unchanged
-    // ...
+    const title = titleInput.value.trim();
+    const category = document.getElementById("category").value;
+    return title !== "" && category !== "";
+  }
+
+  function showUploadLimitModal() {
+    const modal = document.getElementById("upload-limit-modal");
+    const message = document.getElementById("modal-message");
+    const closeBtn = modal.querySelector(".close-button");
+
+    message.textContent =
+      "The video is above the upload limit of 256GB and won't be processed. Please contact the owner of the website to upload.";
+    modal.style.display = "block";
+
+    closeBtn.onclick = function () {
+      modal.style.display = "none";
+    };
+
+    window.onclick = function (event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    };
   }
 
   // helper function to get CSRF cookie

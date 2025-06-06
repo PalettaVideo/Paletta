@@ -43,7 +43,7 @@
             {% endif %}
             
             <div class="upload-box" id="upload-box">
-                <p>MPEG, MOV, MP4, AVI videos no larger than 5GB and no larger than 1920x1080px</p>
+                <p>MPEG, MOV, MP4, AVI videos no larger than 256GB and no larger than 1920x1080px</p>
                 <input type="file" id="file-input" name="video_file" accept="video/*" required style="display: none;">
                 <button type="button" class="button" id="select-file">Select Video</button>
                 <div class="preview-container" id="video-preview-container">
@@ -133,7 +133,15 @@
 
                 </div>
             </div>
-            <button type="submit" class="button" id="upload-button">Upload</button>
+            <div class="form-group">
+                <label for="is_published">Publish</label>
+                <input type="checkbox" id="is_published" name="is_published" checked>
+                <span class="publish-info">Make this video public</span>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="button">Upload Clip</button>
+            </div>
           </form>
         </div>
     </div>
@@ -158,6 +166,15 @@
 
         <p id="error-text" class="error-text" style="color: #d9534f; display: none;"></p>
         <button type="button" class="button" id="save-category-btn">Add Category</button>
+    </div>
+</div>
+
+<!-- Modal for upload limit warning -->
+<div id="upload-limit-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Upload Limit Exceeded</h2>
+        <p id="modal-message"></p>
     </div>
 </div>
 

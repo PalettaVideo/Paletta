@@ -149,8 +149,10 @@ if not os.path.exists(logs_dir):
     os.makedirs(logs_dir)
 
 # File upload settings
-FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880000  # 5GB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880000  # 5GB
+# NOTE: Increasing this to a large value without implementing direct-to-S3 uploads
+# can cause server instability, as the entire file will be temporarily stored on the server's disk.
+FILE_UPLOAD_MAX_MEMORY_SIZE = 274877906944  # 256GB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 274877906944  # 256GB
 
 CSRF_TRUSTED_ORIGINS = [
     'http://paletta-alb-62461270.eu-west-2.elb.amazonaws.com',

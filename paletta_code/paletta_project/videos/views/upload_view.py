@@ -45,10 +45,12 @@ class VideoUploadForm(forms.ModelForm):
         """Validate the video file size."""
         video_file = self.cleaned_data.get('video_file')
         if video_file:
-            # Check file size (limit to 5GB)
-            max_size = 5 * 1024 * 1024 * 1024  # 5GB in bytes
+            # NOTE: For very large files (e.g., > 5GB), a direct-to-S3 upload architecture
+            # is strongly recommended to avoid overwhelming the server's disk and memory.
+            # This validation should be paired with a corresponding frontend check.
+            max_size = 256 * 1024 * 1024 * 1024  # 256GB in bytes
             if video_file.size > max_size:
-                raise forms.ValidationError(f"File size exceeds 5GB. Current size: {video_file.size / (1024 * 1024 * 1024):.2f}GB")
+                raise forms.ValidationError(f"File size exceeds 256GB. Current size: {video_file.size / (1024 * 1024 * 1024):.2f}GB")
         return video_file
 
 def extract_video_metadata(file_path):
@@ -507,80 +509,67 @@ class UploadHistoryView(TemplateView):
         return self.render_to_response(context)
 
 class VideoAPIUploadView(View):
-    """API view for handling video uploads via AJAX."""
+    """
+    API view for creating a video record after a direct-to-S3 upload.
+    This view is called by the frontend after the video file has been successfully
+    uploaded to S3 using a presigned URL. It creates the video record in the database.
+    """
     
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        """Handle the video upload via API."""
+        """
+        Create a video record from metadata and an S3 key.
+        """
         logger = logging.getLogger(__name__)
-        logger.info("VideoAPIUploadView.post called")
-        
+        logger.info("VideoAPIUploadView.post called for direct-to-S3 upload")
+
         try:
+            data = json.loads(request.body)
+            
             # Extract data from request
-            title = request.POST.get('title')
-            description = request.POST.get('description')
-            category_id = request.POST.get('category')
-            tags_text = request.POST.get('tags', '')
-            is_published = request.POST.get('is_published', 'true').lower() == 'true'
-            
+            title = data.get('title')
+            description = data.get('description')
+            category_id = data.get('category')
+            tags_text = data.get('tags', '')
+            is_published = data.get('is_published', True)
+            s3_key = data.get('s3_key') # The key returned by the presigned URL lambda
+
             # Log the received data
-            logger.info(f"Upload request data: title={title}, category_id={category_id}, tags={tags_text}")
-            
-            # Check for files
-            if 'video_file' not in request.FILES:
-                logger.warning("Missing video file in upload request")
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Missing video file'
-                }, status=400)
-                
-            video_file = request.FILES.get('video_file')
-            thumbnail = request.FILES.get('thumbnail')
-            
-            # Log file info
-            logger.info(f"Received video file: {video_file.name}, size: {video_file.size}, "
-                         f"content type: {video_file.content_type}")
-            if thumbnail:
-                logger.info(f"Received thumbnail: {thumbnail.name}, size: {thumbnail.size}")
+            logger.info(f"Upload record request data: title={title}, category_id={category_id}, s3_key={s3_key}")
             
             # Validate required fields
-            if not all([title, category_id, video_file]):
-                missing = []
-                if not title: missing.append('title')
-                if not category_id: missing.append('category')
-                if not video_file: missing.append('video_file')
-                
+            if not all([title, category_id, s3_key]):
+                missing = [field for field, value in {'title': title, 'category': category_id, 's3_key': s3_key}.items() if not value]
                 logger.warning(f"Missing required fields: {', '.join(missing)}")
                 return JsonResponse({
                     'success': False,
                     'message': f"Missing required fields: {', '.join(missing)}"
                 }, status=400)
             
-            # Validate file size (limit to 5GB)
-            max_size = 5 * 1024 * 1024 * 1024  # 5GB in bytes
-            if video_file.size > max_size:
-                logger.warning(f"File size exceeds limit: {video_file.size} > {max_size}")
-                return JsonResponse({
-                    'success': False,
-                    'message': f"File size exceeds 5GB. Current size: {video_file.size / (1024 * 1024 * 1024):.2f}GB"
-                }, status=400)
+            # Construct the S3 URL
+            # This requires AWS_STORAGE_BUCKET_NAME to be configured in settings
+            from django.conf import settings
+            bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None)
+            if not bucket_name:
+                raise ValueError("AWS_STORAGE_BUCKET_NAME is not configured in settings.")
             
+            storage_url = f"s3://{bucket_name}/{s3_key}"
+
             # Create video object
             video = Video(
                 title=title,
                 description=description,
                 category_id=category_id,
                 uploader=request.user,
-                video_file=video_file,
-                thumbnail=thumbnail,
                 is_published=is_published,
-                storage_status='pending'  # Set initial storage status
+                storage_status='stored',  # The file is already in S3
+                storage_url=storage_url,
+                storage_reference_id=s3_key,
             )
             
             # Get library from request data, session, or default to Paletta
-            library_id = request.POST.get('library_id')
+            library_id = data.get('library_id')
             
-            # If library_id is provided in POST data, use it
             if library_id:
                 from libraries.models import Library
                 try:
@@ -588,110 +577,52 @@ class VideoAPIUploadView(View):
                     video.library = library
                     logger.info(f"Using library from POST data: {library.name} (ID: {library.id})")
                 except Library.DoesNotExist:
-                    logger.warning(f"Library with ID {library_id} from POST data not found")
-                    # Fall back to session or default
+                    logger.warning(f"Library with ID {library_id} not found, using default.")
                     library_id = None
             
-            # If no library_id from POST data or it was invalid, try session
             if not library_id:
-                library_id = request.session.get('current_library_id')
-                if library_id:
-                    from libraries.models import Library
-                    try:
-                        library = Library.objects.get(id=library_id)
-                        video.library = library
-                        logger.info(f"Using library from session: {library.name} (ID: {library.id})")
-                    except Library.DoesNotExist:
-                        # Default to Paletta library if not found
-                        try:
-                            library = Library.objects.get(name='Paletta')
-                            video.library = library
-                            logger.info(f"Session library not found, using Paletta: {library.id}")
-                        except Library.DoesNotExist:
-                            logger.error("No library found for video upload")
-                            return JsonResponse({
-                                'success': False,
-                                'message': 'No library found for video upload'
-                            }, status=500)
-                else:
-                    # Default to Paletta library
-                    from libraries.models import Library
-                    try:
-                        library = Library.objects.get(name='Paletta')
-                        video.library = library
-                        logger.info(f"No library in session, using Paletta: {library.id}")
-                    except Library.DoesNotExist:
-                        logger.error("Paletta library not found")
-                        return JsonResponse({
-                            'success': False,
-                            'message': 'Paletta library not found'
-                        }, status=500)
-            
+                # Default to Paletta library
+                from libraries.models import Library
+                try:
+                    library = Library.objects.get(name='Paletta')
+                    video.library = library
+                    logger.info("Using default Paletta library.")
+                except Library.DoesNotExist:
+                    logger.error("Paletta library not found.")
+                    return JsonResponse({'success': False, 'message': 'Default library not found.'}, status=500)
+
             # Save to get an ID
             video.save()
-            logger.info(f"Created video record with ID: {video.id}")
+            logger.info(f"Created video record with ID: {video.id} for S3 key: {s3_key}")
             
             # Process tags
             if tags_text:
                 tag_names = [tag.strip() for tag in tags_text.split(',') if tag.strip()]
-                logger.info(f"Processing tags: {tag_names}")
                 for tag_name in tag_names:
-                    # Pass the library when creating tags to satisfy the NOT NULL constraint
                     tag, created = Tag.objects.get_or_create(
                         name=tag_name,
-                        library=video.library  # Use the video's library for the tag
+                        library=video.library
                     )
                     video.tags.add(tag)
-                    
-                    # Log when new tags are created
-                    if created:
-                        logger.info(f"Created new tag '{tag_name}' in library '{video.library.name}'")
-            
-            # Extract metadata - with improved error handling
-            metadata = {}
-            try:
-                if hasattr(video.video_file, 'path') and video.video_file.path and os.path.exists(video.video_file.path):
-                    logger.info(f"Extracting metadata from: {video.video_file.path}")
-                    metadata = extract_video_metadata(video.video_file.path)
-                    
-                    # Update video model with metadata
-                    if metadata.get('file_size'):
-                        video.file_size = metadata['file_size']
-                    
-                    if metadata.get('duration_seconds'):
-                        video.duration = int(metadata['duration_seconds'])
-                    
-                    if metadata.get('format'):
-                        video.format = metadata['format']
-                    
-                    if metadata.get('mime_type'):
-                        video.mime_type = metadata['mime_type']
-                else:
-                    logger.warning(f"Cannot extract metadata: File path missing or file doesn't exist")
-            except Exception as e:
-                logger.error(f"Metadata extraction error: {str(e)}")
-                # Continue with the upload even if metadata extraction fails
-            
-            # Save again with metadata
-            video.save()
-            logger.info(f"Updated video with metadata: {metadata}")
             
             # Log the upload
             VideoLogService.log_upload(video, request.user, request)
             
-            # Queue the video for upload to AWS S3 storage
-            upload_video_to_storage.delay(video.id)
-            logger.info(f"Queued video {video.id} for storage upload")
+            # Note: We do not call a Celery task anymore.
+            # Metadata extraction could be triggered here via another async task
+            # or by an S3 event that triggers another Lambda function.
             
             return JsonResponse({
                 'success': True,
                 'video_id': video.id,
-                'message': 'Video uploaded successfully and queued for AWS S3 storage'
+                'message': 'Video record created successfully.'
             })
             
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON in request body.'}, status=400)
         except Exception as e:
             logger.error(f"Error in VideoAPIUploadView.post: {e}", exc_info=True)
             return JsonResponse({
                 'success': False,
-                'message': f'Error uploading video: {str(e)}'
+                'message': f'Error creating video record: {str(e)}'
             }, status=500) 

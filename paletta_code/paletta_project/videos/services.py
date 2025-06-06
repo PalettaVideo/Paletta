@@ -226,6 +226,47 @@ class AWSCloudStorageService:
             logger.error(f"Error generating download link for video ID {video.id}: {str(e)}")
             return None
     
+    def generate_streaming_url(self, video):
+        """
+        Generate a temporary streaming URL for a video stored in S3.
+        
+        Args:
+            video: The Video model instance
+            
+        Returns:
+            str: The streaming URL or None if failed
+        """
+        if not self.storage_enabled:
+            logger.warning("Deep storage is not enabled")
+            return None
+            
+        if not video.storage_reference_id or video.storage_status != 'stored':
+            logger.error(f"Video ID {video.id} is not properly stored in deep storage")
+            return None
+            
+        try:
+            # presigned URL that expires after a shorter time for streaming
+            expiry = 3600  # 1 hour in seconds
+            
+            url = self.s3_client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': self.bucket_name,
+                    'Key': video.storage_reference_id
+                },
+                ExpiresIn=expiry
+            )
+            
+            return url
+            
+        except ClientError as e:
+            error_code = e.response.get('Error', {}).get('Code', 'Unknown')
+            logger.error(f"AWS S3 error ({error_code}) generating streaming URL for video ID {video.id}: {str(e)}")
+            return None
+        except Exception as e:
+            logger.error(f"Error generating streaming URL for video ID {video.id}: {str(e)}")
+            return None
+    
     def delete_from_storage(self, video):
         """
         Delete a video from S3 storage.

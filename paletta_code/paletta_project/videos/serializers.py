@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Video, Category, Tag, VideoTag, Upload
+from .services import AWSCloudStorageService
 
 class CategorySerializer(serializers.ModelSerializer):
     """
@@ -77,7 +78,15 @@ class VideoSerializer(serializers.ModelSerializer):
         ).data
     
     def get_video_file_url(self, obj):
-        """Get the absolute URL for the video file."""
+        """
+        Get the absolute URL for the video file.
+        If the video is stored in S3, a temporary streaming URL is generated.
+        Otherwise, the local file URL is returned.
+        """
+        if obj.storage_status == 'stored' and obj.storage_reference_id:
+            storage_service = AWSCloudStorageService()
+            return storage_service.generate_streaming_url(obj)
+            
         if obj.video_file:
             request = self.context.get('request')
             if request:
