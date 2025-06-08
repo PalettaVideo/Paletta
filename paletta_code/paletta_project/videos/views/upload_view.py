@@ -10,7 +10,6 @@ from django import forms
 import os
 import subprocess
 import json
-from ..tasks import upload_video_to_storage
 from ..services import VideoLogService
 import tempfile
 import mimetypes
@@ -286,129 +285,20 @@ class UploadView(FormView):
             return self.form_invalid(form)
     
     def form_valid(self, form):
-        """Process the valid form data and create a video record."""
+        """Handle the valid form data."""
+        video = form.save(commit=False)
+        video.uploader = self.request.user
+        video.save()
+        form.save_m2m()  # For saving ManyToMany relations like tags
+        messages.success(self.request, f"Video '{video.title}' has been successfully processed.")
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        """Handle the invalid form data."""
         logger = logging.getLogger(__name__)
-        try:
-            # Create video object but don't save to DB yet
-            video = form.save(commit=False)
-            video.uploader = self.request.user
-            video.storage_status = 'pending'  # Set initial storage status
-            
-            # Check for library in form data or parameters
-            library_id = self.request.POST.get('library_id')
-            
-            # Priority 1: If library_id is explicitly provided in the form
-            if library_id:
-                from libraries.models import Library
-                try:
-                    library = Library.objects.get(id=library_id)
-                    video.library = library
-                    logger.info(f"Using library from form POST data: {library.name} (ID: {library.id})")
-                except Library.DoesNotExist:
-                    logger.warning(f"Library with ID {library_id} from form data not found")
-                    # Fall back to other methods
-                    library_id = None
-            
-            # Priority 2: If library is in the form object (from get_form_kwargs)
-            if not library_id and form.library:
-                video.library = form.library
-                logger.info(f"Using library from form object: {form.library.name} (ID: {form.library.id})")
-            # Priority 3: Try to get from session or default to Paletta
-            elif not library_id:
-                # Try to get from session
-                library_id = self.request.session.get('current_library_id')
-                if library_id:
-                    from libraries.models import Library
-                    try:
-                        library = Library.objects.get(id=library_id)
-                        video.library = library
-                        logger.info(f"Using library from session: {library.name} (ID: {library.id})")
-                    except Library.DoesNotExist:
-                        # Default to Paletta library if not found
-                        try:
-                            library = Library.objects.get(name='Paletta')
-                            video.library = library
-                            logger.info(f"Session library not found, using Paletta: {library.id}")
-                        except Library.DoesNotExist:
-                            raise ValueError("Paletta library not found")
-                else:
-                    # Default to Paletta library
-                    from libraries.models import Library
-                    try:
-                        library = Library.objects.get(name='Paletta')
-                        video.library = library
-                        logger.info(f"No library in session, using Paletta: {library.id}")
-                    except Library.DoesNotExist:
-                        raise ValueError("Paletta library not found")
-            
-            # Save to get an ID for the video
-            video.save()
-            
-            # Process tags (if any)
-            tags_text = form.cleaned_data.get('tags', '')
-            if tags_text:
-                tag_names = [tag.strip() for tag in tags_text.split(',') if tag.strip()]
-                for tag_name in tag_names:
-                    # Pass the library when creating tags to satisfy the NOT NULL constraint
-                    tag, created = Tag.objects.get_or_create(
-                        name=tag_name,
-                        library=video.library  # Use the video's library for the tag
-                    )
-                    video.tags.add(tag)
-                    
-                    # Log when new tags are created
-                    if created:
-                        logger.info(f"Created new tag '{tag_name}' in library '{video.library.name}'")
-            
-            # Extract video metadata
-            if video.video_file:
-                logger.info(f"Extracting metadata from: {video.video_file.path}")
-                try:
-                    if hasattr(video.video_file, 'path') and video.video_file.path:
-                        # Check that file exists
-                        if os.path.exists(video.video_file.path):
-                            metadata = extract_video_metadata(video.video_file.path)
-                            
-                            # Update video model with metadata
-                            if metadata['file_size']:
-                                video.file_size = metadata['file_size']
-                            
-                            if metadata.get('duration_seconds'):
-                                video.duration = int(metadata['duration_seconds'])
-                            
-                            if metadata.get('format'):
-                                video.format = metadata['format']
-                            
-                            if metadata.get('mime_type'):
-                                video.mime_type = metadata['mime_type']
-                        else:
-                            logger.error(f"File does not exist for metadata extraction: {video.video_file.path}")
-                    else:
-                        logger.error("Video file has no path attribute")
-                except FileNotFoundError as e:
-                    logger.error(f"File not found error during metadata extraction: {str(e)}")
-                except Exception as e:
-                    logger.error(f"Error extracting video metadata: {str(e)}")
-                
-            # Save again with the updated metadata
-            video.save()
-            
-            # Log the upload
-            VideoLogService.log_upload(video, self.request.user, self.request)
-            
-            # Queue the video for upload to AWS S3 storage
-            upload_video_to_storage.delay(video.id)
-            
-            # Add success message
-            messages.success(self.request, f"Video '{video.title}' uploaded successfully and queued for AWS S3 storage.")
-            
-            return super().form_valid(form)
-            
-        except Exception as e:
-            # Log the error and show error message
-            logger.error(f"Error in form_valid: {e}")
-            messages.error(self.request, f"Error uploading video: {str(e)}")
-            return self.form_invalid(form)
+        logger.error(f"Error in form_invalid: {form.errors}")
+        messages.error(self.request, f"Error uploading video: {str(form.errors)}")
+        return super().form_invalid(form)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class VideoMetadataAPIView(View):
@@ -522,7 +412,7 @@ class VideoAPIUploadView(View):
         """
         logger = logging.getLogger(__name__)
         logger.info("VideoAPIUploadView.post called for direct-to-S3 upload")
-
+        
         try:
             data = json.loads(request.body)
             
@@ -533,7 +423,7 @@ class VideoAPIUploadView(View):
             tags_text = data.get('tags', '')
             is_published = data.get('is_published', True)
             s3_key = data.get('s3_key') # The key returned by the presigned URL lambda
-
+            
             # Log the received data
             logger.info(f"Upload record request data: title={title}, category_id={category_id}, s3_key={s3_key}")
             
@@ -554,7 +444,7 @@ class VideoAPIUploadView(View):
                 raise ValueError("AWS_STORAGE_BUCKET_NAME is not configured in settings.")
             
             storage_url = f"s3://{bucket_name}/{s3_key}"
-
+            
             # Create video object
             video = Video(
                 title=title,
@@ -590,7 +480,7 @@ class VideoAPIUploadView(View):
                 except Library.DoesNotExist:
                     logger.error("Paletta library not found.")
                     return JsonResponse({'success': False, 'message': 'Default library not found.'}, status=500)
-
+            
             # Save to get an ID
             video.save()
             logger.info(f"Created video record with ID: {video.id} for S3 key: {s3_key}")
