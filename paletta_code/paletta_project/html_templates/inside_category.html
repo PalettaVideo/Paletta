@@ -126,7 +126,7 @@
         {% for video in videos %}
           <div class="clip">
             <div class="clip-thumbnail" data-video-id="{{ video.id }}">
-              {% if video.thumbnail %}
+              {% if video.thumbnail and video.thumbnail.url %}
                 <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}">
               {% else %}
                 <img src="{% static 'picture/default-thumbnail.png' %}" alt="{{ video.title }}">

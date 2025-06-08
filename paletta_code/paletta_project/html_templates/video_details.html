@@ -40,7 +40,19 @@
               <button class="back-button">Back to all videos in Library -  '{{ library.name }}'</button>
             </a>
           </div>
-        <video src="{{ clip.video_url|default:'' }}" controls{% if not clip.video_url %} poster="{% static 'picture/video_placeholder.jpg' %}"{% endif %}></video>
+          {% if clip.storage_status == 'stored' %}
+            <video src="{{ clip.get_streaming_url }}" controls></video>
+          {% elif clip.storage_status == 'processing' %}
+            <div class="processing-placeholder">
+              <p>This video is currently being processed. Please check back in a few minutes.</p>
+              <div class="spinner"></div>
+            </div>
+          {% else %}
+            <div class="processing-placeholder">
+                <p>No video with supported format and MIME type found.</p>
+                <p><small>(Status: {{ clip.get_storage_status_display }})</small></p>
+            </div>
+          {% endif %}
       </div>
       <div class="details">
         <h1>{{ clip.title|default:"Video Title" }}</h1>
@@ -65,15 +77,17 @@
           <strong>Tags:</strong>
           {% for tag in clip.tags.all %}
             <span>{{ tag.name }}</span>
+          {% empty %}
+            <span>No tags</span>
           {% endfor %}
         </div>
       </div>
       <div class="attributes">
         <h2>Attributes</h2>
-        <p><strong>Duration:</strong> {{ clip.duration|default:"Unknown" }}</p>
-        <p><strong>Frame Rate:</strong> {{ clip.frame_rate|default:"Unknown" }}</p>
+        <p><strong>Duration:</strong> {{ clip.duration|default:"Unknown" }}s</p>
+        <p><strong>Frame Rate:</strong> {{ clip.frame_rate|default:"Unknown" }} fps</p>
         <p><strong>Resolution:</strong> {{ clip.resolution|default:"Unknown" }}</p>
-        <p><strong>Format:</strong> {{ clip.format|default:"Unknown" }}</p>
+        <p><strong>Format:</strong> {{ clip.get_file_extension|upper|default:"Unknown" }}</p>
       </div>
     </div>
 <!-- Related Clips feature not available yet

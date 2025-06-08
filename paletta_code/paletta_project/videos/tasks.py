@@ -1,121 +1,137 @@
 # TODO: on deployment to AWS cloud, the email functionality will be handled some AWS service.
 
 import logging
+import os
+import subprocess
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+import boto3
+from botocore.exceptions import ClientError
 from celery import shared_task
+from django.core.files.base import ContentFile
 from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
+
 from .models import Video
 from .services import AWSCloudStorageService, VideoLogService
 
 logger = logging.getLogger(__name__)
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=300)  # 5 minutes retry delay
-def upload_video_to_storage(self, video_id):
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60 * 5)
+def process_video_from_s3(self, video_id):
     """
-    Task to upload a video to AWS S3 storage.
-    
-    Args:
-        video_id: The ID of the Video model instance
+    Celery task to process a video after it has been uploaded to S3.
+    - Fetches video metadata using ffprobe.
+    - Generates a thumbnail using ffmpeg.
+    - Updates the Video model with the new data.
     """
     try:
         video = Video.objects.get(id=video_id)
-        storage_service = AWSCloudStorageService()
-        
-        # Log the processing start
-        VideoLogService.log_processing(
-            video=video,
-            user=video.uploader,
-            message=f"Started uploading video '{video.title}' to AWS S3 storage"
-        )
-        
-        success = storage_service.upload_to_storage(video)
-        
-        if success:
-            logger.info(f"Successfully uploaded video ID {video_id} to AWS S3 storage")
-            
-            # Log the successful storage
-            VideoLogService.log_storage(
-                video=video,
-                user=video.uploader,
-                message=f"Successfully stored video '{video.title}' in AWS S3 storage"
-            )
-            
-            # Notify the uploader
-            # TODO: change this to a simple log system accessible by the contributor, admin and owner roles --- no need to send emails. Keep the email functionality for now.
-            # TODO: add a log system for the admin to view the upload history and status of the video.
-            # TODO: notify the contributor via a popup on the upload page.
-            if getattr(settings, 'SEND_UPLOAD_CONFIRMATION_EMAIL', True) and video.uploader.email:
-                try:
-                    # Create HTML email
-                    html_message = render_to_string('emails/upload_success.html', {
-                        'video': video,
-                        'user': video.uploader,
-                    })
-                    plain_message = strip_tags(html_message)
-                    
-                    send_mail(
-                        subject=f"Your video '{video.title}' has been stored successfully",
-                        message=plain_message,
-                        html_message=html_message,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[video.uploader.email],
-                        fail_silently=True,
-                    )
-                    logger.info(f"Sent upload confirmation email for video ID {video_id}")
-                except Exception as e:
-                    logger.error(f"Failed to send upload confirmation email for video ID {video_id}: {str(e)}")
-        else:
-            logger.error(f"Failed to upload video ID {video_id} to AWS S3 storage")
-            
-            # Log the error
-            VideoLogService.log_error(
-                video=video,
-                user=video.uploader,
-                error_message=f"Failed to upload video to AWS S3 storage"
-            )
-            
-            # Retry the task if it failed
-            raise self.retry(exc=Exception(f"Upload failed for video ID {video_id}"))
-            
     except Video.DoesNotExist:
-        logger.error(f"Video with ID {video_id} does not exist")
-    except self.MaxRetriesExceededError:
-        logger.error(f"Max retries exceeded for uploading video ID {video_id}")
-        # Update video status to failed after max retries
+        logger.error(f"Video with ID {video_id} not found for processing.")
+        return
+
+    video.storage_status = 'processing'
+    video.save(update_fields=['storage_status'])
+
+    storage_service = AWSCloudStorageService()
+    s3_client = storage_service.s3_client
+    video_bucket_name = storage_service.bucket_name
+    # Thumbnails should go to the public media/static bucket
+    thumbnail_bucket_name = settings.AWS_STATIC_BUCKET_NAME
+
+    s3_key = video.storage_reference_id
+
+    with TemporaryDirectory() as tmpdir:
+        temp_path = Path(tmpdir)
+        local_video_path = temp_path / Path(s3_key).name
+        local_thumbnail_path = temp_path / f"thumb_{Path(s3_key).stem}.jpg"
+
         try:
-            video = Video.objects.get(id=video_id)
-            old_status = video.storage_status
-            video.storage_status = 'failed'
-            video.save(update_fields=['storage_status'])
+            # 1. Download video from S3
+            logger.info(f"Downloading s3://{video_bucket_name}/{s3_key} to {local_video_path}")
+            s3_client.download_file(video_bucket_name, s3_key, str(local_video_path))
+
+            # 2. Extract metadata with ffprobe
+            logger.info(f"Extracting metadata from {local_video_path}")
+            cmd = [
+                'ffprobe',
+                '-v', 'quiet',
+                '-print_format', 'json',
+                '-show_format',
+                '-show_streams',
+                str(local_video_path)
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            metadata = json.loads(result.stdout)
+
+            video_stream = next((s for s in metadata['streams'] if s['codec_type'] == 'video'), None)
+            if not video_stream:
+                raise ValueError("No video stream found in the file.")
+
+            video.duration = int(float(metadata['format']['duration']))
+            video.file_size = int(metadata['format']['size'])
+            video.resolution = f"{video_stream['width']}x{video_stream['height']}"
             
-            # Log the status change
-            VideoLogService.log_status_change(
-                video=video,
-                user=video.uploader,
-                old_status=old_status,
-                new_status='failed'
+            if 'avg_frame_rate' in video_stream and '/' in video_stream['avg_frame_rate']:
+                num, den = video_stream['avg_frame_rate'].split('/')
+                video.frame_rate = round(int(num) / int(den), 2) if den != '0' else 0.0
+            else:
+                 video.frame_rate = 0.0
+
+
+            # 3. Generate thumbnail with ffmpeg (from the middle of the video)
+            thumbnail_time = video.duration / 2
+            logger.info(f"Generating thumbnail at {thumbnail_time}s for {local_video_path}")
+            cmd_thumb = [
+                'ffmpeg',
+                '-i', str(local_video_path),
+                '-ss', str(thumbnail_time),
+                '-vframes', '1',
+                '-q:v', '2',  # High quality
+                str(local_thumbnail_path)
+            ]
+            subprocess.run(cmd_thumb, check=True, capture_output=True)
+
+            # 4. Upload thumbnail to media S3 bucket
+            thumbnail_s3_key = f"thumbnails/video_{video.id}/{local_thumbnail_path.name}"
+            logger.info(f"Uploading thumbnail to s3://{thumbnail_bucket_name}/{thumbnail_s3_key}")
+            s3_client.upload_file(
+                str(local_thumbnail_path),
+                thumbnail_bucket_name,
+                thumbnail_s3_key,
+                ExtraArgs={'ContentType': 'image/jpeg', 'ACL': 'public-read'}
             )
-        except Exception:
-            pass
-    except Exception as e:
-        logger.error(f"Error in upload_video_to_storage task for video ID {video_id}: {str(e)}")
-        
-        try:
-            video = Video.objects.get(id=video_id)
-            # Log the error
+            
+            # Use the FileField's name attribute to store the S3 key
+            video.thumbnail.name = thumbnail_s3_key
+
+            video.storage_status = 'stored'
+            logger.info(f"Successfully processed video {video.id}. Metadata and thumbnail updated.")
+
+        except (subprocess.CalledProcessError, ClientError, ValueError) as e:
+            logger.error(f"Error processing video {video_id}: {e}")
+            video.storage_status = 'processing_failed'
+            # Log the error to the video log
             VideoLogService.log_error(
                 video=video,
                 user=video.uploader,
-                error_message=f"Error uploading to AWS S3: {str(e)}"
+                error_message=f"Processing failed: {str(e)}"
             )
-        except Exception:
-            pass
-            
-        # Retry the task
-        raise self.retry(exc=e)
+            try:
+                self.retry(exc=e)
+            except self.MaxRetriesExceededError:
+                logger.error(f"Max retries exceeded for video {video_id}.")
+        finally:
+            # Save all changes to the video object
+            video.save()
+
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)  # 1 minute retry delay
 def generate_and_send_download_link(self, video_id, recipient_email):
@@ -209,7 +225,7 @@ def retry_failed_uploads():
         count = 0
         for video in failed_videos:
             # Queue the video for upload again
-            upload_video_to_storage.delay(video.id)
+            process_video_from_s3.delay(video.id)
             count += 1
         
         if count > 0:

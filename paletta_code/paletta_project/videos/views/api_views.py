@@ -3,10 +3,13 @@ from rest_framework.response import Response
 from rest_framework import status, permissions, generics
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Count, Q
-from ..models import Video, Category, Tag
+from ..models import Video, Category, Tag, VideoTag
 from ..serializers import VideoSerializer, CategorySerializer, TagSerializer
+from ..tasks import process_video_from_s3
+from libraries.models import Library
 import logging
 import urllib.parse
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -289,59 +292,55 @@ class VideoAPIUploadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def post(self, request, format=None):
+        s3_key = request.data.get('s3_key')
+        if not s3_key:
+            return Response({'message': 's3_key is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            
         try:
-            # Get the video file from the request
-            video_file = request.FILES.get('video_file')
+            # Get data from request
+            title = request.data.get('title', 'Untitled Video')
+            description = request.data.get('description', '')
+            category_id = request.data.get('category')
+            library_id = request.data.get('library_id')
+            tags_str = request.data.get('tags', '')
             
-            if not video_file:
-                return Response(
-                    {"error": "No video file provided"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-                
-            # Create a new Video object with the provided data
-            data = request.data.copy()
-            data['video_file'] = video_file
+            # Find the library
+            try:
+                library = Library.objects.get(id=library_id)
+            except Library.DoesNotExist:
+                return Response({'message': 'Library not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Find the category
+            try:
+                category = Category.objects.get(id=category_id, library=library)
+            except Category.DoesNotExist:
+                return Response({'message': f"Category with id {category_id} not found in this library"}, status=status.HTTP_404_NOT_FOUND)
             
-            # Handle tags (convert from comma-separated string to list if needed)
-            tags_data = data.get('tags', [])
-            if isinstance(tags_data, str):
-                tags_data = [tag.strip() for tag in tags_data.split(',') if tag.strip()]
-                data.pop('tags', None)  # Remove tags from data as we'll handle them separately
+            # Create the video object
+            video = Video.objects.create(
+                title=title,
+                description=description,
+                category=category,
+                library=library,
+                uploader=request.user,
+                storage_reference_id=s3_key,
+                storage_url=f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{s3_key}",
+                storage_status='processing'  # Set status to processing
+            )
             
-            # Create and validate the serializer
-            serializer = VideoSerializer(data=data, context={'request': request})
-            
-            if serializer.is_valid():
-                # Save the video with the current user as uploader
-                video = serializer.save(uploader=request.user)
-                
-                # Handle tags
-                for tag_name in tags_data:
-                    tag, created = Tag.objects.get_or_create(
-                        name=tag_name,
-                        library=video.library  # Use the video's library for the tag
-                    )
-                    video.tags.add(tag)
-                    
-                    # Log when new tags are created
-                    if created:
-                        logger.info(f"API: Created new tag '{tag_name}' in library '{video.library.name}'")
-                
-                # Return the serialized video data
-                return Response(
-                    VideoSerializer(video, context={'request': request}).data,
-                    status=status.HTTP_201_CREATED
-                )
-            else:
-                return Response(
-                    serializer.errors,
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-                
+            # Handle tags
+            if tags_str:
+                tag_names = [name.strip() for name in tags_str.split(',') if name.strip()]
+                for tag_name in tag_names:
+                    tag, _ = Tag.objects.get_or_create(name=tag_name, library=library)
+                    VideoTag.objects.create(video=video, tag=tag)
+
+            # --- Trigger Celery task for post-processing ---
+            process_video_from_s3.delay(video.id)
+
+            serializer = VideoSerializer(video, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         except Exception as e:
-            logger.error(f"Error in API video upload: {str(e)}")
-            return Response(
-                {"error": "Failed to upload video", "detail": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            ) 
+            logger.error(f"Error in VideoAPIUploadView: {e}")
+            return Response({'message': 'An unexpected error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 

@@ -59,6 +59,7 @@ class Video(models.Model):
     ('stored', 'Stored in Deep Storage'),
     ('failed', 'Upload Failed'),
     ('processing', 'Processing'),
+    ('processing_failed', 'Processing Failed'),
   ]
 
   title = models.CharField(max_length=25)
@@ -116,6 +117,8 @@ class Video(models.Model):
   # Additional metadata
   duration = models.PositiveIntegerField(null=True, blank=True, help_text="Duration in seconds")
   file_size = models.PositiveIntegerField(null=True, blank=True, help_text="Size in bytes")
+  resolution = models.CharField(max_length=20, null=True, blank=True, help_text="Video resolution, e.g., 1920x1080")
+  frame_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Frame rate, e.g., 29.97")
   views_count = models.PositiveIntegerField(default=0)
   is_published = models.BooleanField(default=True)
 
@@ -126,7 +129,21 @@ class Video(models.Model):
     if self.video_file:
         name, extension = os.path.splitext(self.video_file.name)
         return extension[1:].lower()  # Remove the dot and convert to lowercase
+    if self.storage_reference_id:
+        name, extension = os.path.splitext(self.storage_reference_id)
+        return extension[1:].lower()
     return None
+    
+  def get_streaming_url(self):
+      """
+      Generates a temporary streaming URL for a video stored in S3.
+      This is intended for use in Django templates.
+      """
+      if self.storage_status == 'stored' and self.storage_reference_id:
+          from .services import AWSCloudStorageService
+          storage_service = AWSCloudStorageService()
+          return storage_service.generate_streaming_url(self)
+      return None
     
   def delete(self, *args, **kwargs):
     """
