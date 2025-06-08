@@ -31,7 +31,7 @@
             </ul>
         </div>
         <div class="main-content">
-          <form id="upload-form" method="post" enctype="multipart/form-data" novalidate>
+          <form id="upload-form" method="post" enctype="multipart/form-data" data-success-url="{% url 'upload_history' %}" novalidate>
             {% csrf_token %}
             <h1>Upload your clip</h1>
             

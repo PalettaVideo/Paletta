@@ -580,7 +580,17 @@ document.addEventListener("DOMContentLoaded", function () {
       await notifyBackend(key);
 
       alert("Upload complete! Your video has been successfully submitted.");
-      window.location.href = "{% url 'upload_history' %}"; // Redirect to history page
+      // Redirect to the success URL provided by the form's data attribute
+      const successUrl = uploadForm.dataset.successUrl;
+      if (successUrl) {
+        window.location.href = successUrl;
+      } else {
+        console.error(
+          "Success URL not found on form data-success-url attribute. Cannot redirect."
+        );
+        // Fallback or display a message
+        window.location.href = "/"; // Redirect to home page as a fallback
+      }
     } catch (error) {
       console.error("Upload process failed:", error);
       alert(`An error occurred: ${error.message}`);
