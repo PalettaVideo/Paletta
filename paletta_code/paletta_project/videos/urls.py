@@ -1,10 +1,10 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import VideoViewSet, CategoryViewSet
-from .views.upload_view import UploadView, UploadHistoryView, VideoAPIUploadView, VideoMetadataAPIView
+from .views.upload_view import UploadView, UploadHistoryView, VideoMetadataAPIView
 from .views.download_view import DownloadRequestView
 from .views.clip_store_view import ClipStoreView, CategoryClipView
-from .views.api_views import VideoListAPIView, VideoDetailAPIView, CategoryVideosAPIView, PopularTagsAPIView
+from .views.api_views import VideoListAPIView, VideoDetailAPIView, CategoryVideosAPIView, PopularTagsAPIView, VideoAPIUploadView
 from .views.tag_views import assign_tags, TagsAPIView
 from .views.video_management_views import VideoEditView, VideoDeleteView, TagSuggestionsAPIView
 from .views.thumbnail_view import VideoThumbnailAPIView

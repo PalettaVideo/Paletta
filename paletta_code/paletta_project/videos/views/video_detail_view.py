@@ -31,9 +31,10 @@ class VideoDetailView(TemplateView):
         
         try:
             # Get the video object
-            clip = get_object_or_404(Video, id=video_id)
+            context['clip'] = get_object_or_404(Video, id=video_id)
             
             # Increment view count
+            clip = context['clip']
             clip.views_count += 1
             clip.save(update_fields=['views_count'])
             
@@ -56,20 +57,10 @@ class VideoDetailView(TemplateView):
                 duration_formatted = f"{minutes}:{seconds:02d}"
             
             # Get related clips (same category, excluding current)
-            related_clips = Video.objects.filter(
+            context['related_clips'] = Video.objects.filter(
                 category=clip.category,
                 is_published=True
             ).exclude(id=clip.id).order_by('-upload_date')[:4]
-            
-            # Prepare related clips data for the template
-            related_clips_data = []
-            for related in related_clips:
-                related_data = {
-                    'id': related.id,
-                    'title': related.title,
-                    'thumbnail': related.thumbnail.url if related.thumbnail else None
-                }
-                related_clips_data.append(related_data)
             
             # Add library information to context if available
             if clip.library:
@@ -105,9 +96,6 @@ class VideoDetailView(TemplateView):
             
             # Add clip data to context
             context['clip'] = clip_dict
-            
-            # Add related clips to context
-            context['related_clips'] = related_clips_data
             
         except Exception as e:
             logger.error(f"Error retrieving video details: {str(e)}")
