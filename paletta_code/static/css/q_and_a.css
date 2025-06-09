@@ -74,3 +74,14 @@ body {
     font-family: 'Montserrat';
     margin-top: 10px;
 }
+.title-section .image-container .overlay {
+    position: absolute;
+    top: 0%;
+    left:38%;
+    background-color: #80B824;
+    padding: 20px 40px;
+    font-size: 35px;
+    font-weight: normal;
+    color: white;
+    text-align: center;
+}

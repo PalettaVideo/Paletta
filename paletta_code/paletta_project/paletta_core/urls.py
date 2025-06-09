@@ -69,6 +69,8 @@ urlpatterns = [
     path('about/', TemplateView.as_view(template_name='about_us.html'), name='about_us'),
     path('contact/', TemplateView.as_view(template_name='contact_us.html'), name='contact_us'),
     path('help/', TemplateView.as_view(template_name='q_and_a.html'), name='q_and_a'),
+    path('terms/', TemplateView.as_view(template_name='terms_conditions.html'), name='terms_conditions'),
+    path('privacy/', TemplateView.as_view(template_name='privacy.html'), name='privacy'),
     
     # Video detail route
     path('clip/<int:video_id>/', VideoDetailView.as_view(), name='clip_detail'),

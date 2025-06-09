@@ -4,14 +4,24 @@ body {
     padding: 0;
     line-height: 1.6;
 }
-
+.roles{
+    text-align: left;
+}
 .content {
-    padding: 150px;
+    padding-left: 150px;
+    padding-right: 150px;
+    padding-top: 50px;
+    padding-bottom: 50px;
+    
     text-align: center;
 }
 .content h1 {
     color: #77a646;
-    font-size: 32px;
+    font-weight: normal;
+    font-size: 25px;
+    margin: 40px 0;
+    
+    
 }
 .content h2 {
     font-size: 20px;
@@ -24,6 +34,13 @@ body {
     text-align:left;
 }
 
+a{
+    color: #77a646;
+}
+
+ul{
+    text-align: left;
+}
 .title-section .image-container .overlay {
     position: absolute;
     top: 0%;
