@@ -286,12 +286,12 @@ class UploadView(FormView):
     
     def form_valid(self, form):
         """Handle the valid form data."""
-            video = form.save(commit=False)
-            video.uploader = self.request.user
-            video.save()
+        video = form.save(commit=False)
+        video.uploader = self.request.user
+        video.save()
         form.save_m2m()  # For saving ManyToMany relations like tags
         messages.success(self.request, f"Video '{video.title}' has been successfully processed.")
-            return super().form_valid(form)
+        return super().form_valid(form)
             
     def form_invalid(self, form):
         """Handle the invalid form data."""
