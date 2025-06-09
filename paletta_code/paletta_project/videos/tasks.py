@@ -4,7 +4,7 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.utils import timezone
 
-from .models import Video, DownloadLink
+from .models import Video
 from .services import AWSCloudStorageService, VideoLogService
 
 import logging
