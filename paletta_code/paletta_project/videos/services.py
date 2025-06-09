@@ -24,7 +24,7 @@ class AWSCloudStorageService:
             self.aws_access_key = getattr(settings, 'AWS_ACCESS_KEY_ID', None)
             self.aws_secret_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None)
             self.aws_region = getattr(settings, 'AWS_REGION', 'us-east-1')
-            self.bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None)
+            self.bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None) # the video bucket
             self.download_link_expiry = getattr(settings, 'DOWNLOAD_LINK_EXPIRY_HOURS', 24)
             
             # Initialize S3 client if credentials are available

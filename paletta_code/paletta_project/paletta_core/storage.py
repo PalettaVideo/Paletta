@@ -9,8 +9,7 @@ class StaticStorage(S3Boto3Storage):
 
 class MediaStorage(S3Boto3Storage):
     """Handles user-uploaded media files like thumbnails and logos."""
-    location = 'uploaded-media'  # Store files in the /uploaded-media/ folder
+    location = 'thumbnails'  # Store files in a /thumbnails/ folder
     file_overwrite = False
-    bucket_name = settings.AWS_STATIC_BUCKET_NAME  # Use the static bucket
-    # Set the domain to the static bucket for correct URL generation
-    custom_domain = f'{settings.AWS_STATIC_BUCKET_NAME}.s3.amazonaws.com'
+    bucket_name = settings.AWS_MEDIA_BUCKET_NAME  # Use the new media bucket
+    custom_domain = f'{settings.AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com'

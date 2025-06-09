@@ -49,8 +49,9 @@ AWS_STORAGE_ENABLED = True
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
 AWS_REGION = os.environ.get('AWS_REGION', 'eu-west-2')
-AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'paletta-videos') # intended to use 'paletta-videos' s3 bucket
-AWS_STATIC_BUCKET_NAME = os.environ.get('AWS_STATIC_BUCKET_NAME', 'paletta-static') # intended to use 'paletta-static' s3 bucket
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'paletta-videos') # For direct video uploads
+AWS_MEDIA_BUCKET_NAME = os.environ.get('AWS_MEDIA_BUCKET_NAME', 'paletta-media') # For thumbnails and other uploaded images
+AWS_STATIC_BUCKET_NAME = os.environ.get('AWS_STATIC_BUCKET_NAME', 'paletta-static') # For static CSS/JS
 AWS_S3_CUSTOM_DOMAIN = f'{AWS_STATIC_BUCKET_NAME}.s3.amazonaws.com'
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
@@ -66,7 +67,7 @@ if AWS_STORAGE_ENABLED:
 
     # Media files configuration
     DEFAULT_FILE_STORAGE = 'paletta_core.storage.MediaStorage'
-    MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/media/'
+    MEDIA_URL = f'https://{settings.AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com/{MediaStorage.location}/'
 
 # Download link configuration
 DOWNLOAD_LINK_EXPIRY_HOURS = int(os.environ.get('DOWNLOAD_LINK_EXPIRY_HOURS', '24'))
