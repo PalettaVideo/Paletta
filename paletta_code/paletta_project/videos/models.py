@@ -123,10 +123,10 @@ class Video(models.Model):
     
   def get_file_extension(self):
     if self.video_file:
-        name, extension = os.path.splitext(self.video_file.name)
+        _, extension = os.path.splitext(self.video_file.name)
         return extension[1:].lower()  # Remove the dot and convert to lowercase
     if self.storage_reference_id:
-        name, extension = os.path.splitext(self.storage_reference_id)
+        _, extension = os.path.splitext(self.storage_reference_id)
         return extension[1:].lower()
     return None
     
