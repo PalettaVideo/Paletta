@@ -39,7 +39,7 @@ class VideoListAPIView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     
     def get_queryset(self):
-        queryset = Video.objects.filter(is_published=True)
+        queryset = Video.objects.all()
         
         # Apply search filter
         search_query = self.request.query_params.get('search', None)
@@ -159,7 +159,6 @@ class CategoryVideosAPIView(generics.ListAPIView):
         
         # Continue with queryset filtering using the found category
         queryset = Video.objects.filter(
-            is_published=True, 
             category=category
         )
         
@@ -303,6 +302,8 @@ class VideoAPIUploadView(APIView):
             category_id = request.data.get('category')
             library_id = request.data.get('library_id')
             tags_str = request.data.get('tags', '')
+            duration = request.data.get('duration')
+            file_size = request.data.get('file_size')
             
             # Find the library
             try:
@@ -325,7 +326,9 @@ class VideoAPIUploadView(APIView):
                 uploader=request.user,
                 storage_reference_id=s3_key,
                 storage_url=f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{s3_key}",
-                storage_status='processing'  # Set status to processing
+                storage_status='stored',  # Set status to stored, no more processing needed
+                duration=duration,
+                file_size=file_size
             )
                 
                 # Handle tags
@@ -335,8 +338,8 @@ class VideoAPIUploadView(APIView):
                     tag, _ = Tag.objects.get_or_create(name=tag_name, library=library)
                     VideoTag.objects.create(video=video, tag=tag)
                     
-            # --- Trigger Celery task for post-processing ---
-            process_video_from_s3.delay(video.id)
+            # --- The Celery task for post-processing is no longer needed ---
+            # process_video_from_s3.delay(video.id)
 
             serializer = VideoSerializer(video, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)

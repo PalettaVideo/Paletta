@@ -81,12 +81,7 @@ class Video(models.Model):
   )
   
   # Deep storage fields
-  storage_url = models.URLField(
-    max_length=500, 
-    null=True, 
-    blank=True, 
-    help_text="URL to the video in AWS S3 storage"
-  )
+  storage_url = models.URLField(max_length=1024, blank=True, null=True)
   download_link = models.URLField(
     max_length=500, 
     null=True, 
@@ -120,7 +115,6 @@ class Video(models.Model):
   resolution = models.CharField(max_length=20, null=True, blank=True, help_text="Video resolution, e.g., 1920x1080")
   frame_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Frame rate, e.g., 29.97")
   views_count = models.PositiveIntegerField(default=0)
-  is_published = models.BooleanField(default=True)
 
   def __str__(self):
     return self.title

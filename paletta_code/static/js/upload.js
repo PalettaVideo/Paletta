@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const MAX_FILE_SIZE = 256 * 1024 * 1024 * 1024;
 
   let selectedTags = [];
+  let videoMetadata = {}; // Variable to store extracted metadata
 
   // fetch categories from API
   fetchCategories();
@@ -364,10 +365,15 @@ document.addEventListener("DOMContentLoaded", function () {
     const video = document.createElement("video");
     video.preload = "metadata";
     video.onloadedmetadata = function () {
+      // Store metadata in our variable
+      videoMetadata.duration = Math.round(video.duration);
+      videoMetadata.fileSize = file.size;
+      videoMetadata.format = file.name.split(".").pop().toUpperCase();
+
       // update duration display
       const durationDisplay = document.getElementById("duration-display");
       if (durationDisplay) {
-        const duration = Math.round(video.duration);
+        const duration = videoMetadata.duration;
         const hours = Math.floor(duration / 3600);
         const minutes = Math.floor((duration % 3600) / 60);
         const seconds = duration % 60;
@@ -379,14 +385,13 @@ document.addEventListener("DOMContentLoaded", function () {
       // update format display
       const formatDisplay = document.getElementById("format-display");
       if (formatDisplay) {
-        const format = file.name.split(".").pop().toUpperCase();
-        formatDisplay.textContent = format;
+        formatDisplay.textContent = videoMetadata.format;
       }
 
       // update file size display
       const fileSizeDisplay = document.getElementById("filesize-display");
       if (fileSizeDisplay) {
-        const fileSizeMB = file.size / (1024 * 1024);
+        const fileSizeMB = videoMetadata.fileSize / (1024 * 1024);
         if (fileSizeMB < 1024) {
           fileSizeDisplay.textContent = `${fileSizeMB.toFixed(1)} MB`;
         } else {
@@ -634,9 +639,10 @@ document.addEventListener("DOMContentLoaded", function () {
       description: descriptionInput.value.trim(),
       category: document.getElementById("category").value,
       tags: selectedTags.join(","),
-      is_published: document.getElementById("is_published").checked,
       s3_key: s3Key,
       library_id: libraryId,
+      duration: videoMetadata.duration,
+      file_size: videoMetadata.fileSize,
     };
 
     const response = await fetch("/videos/api/upload/", {

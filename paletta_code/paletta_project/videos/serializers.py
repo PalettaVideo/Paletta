@@ -62,7 +62,7 @@ class VideoSerializer(serializers.ModelSerializer):
                   'library', 'library_name', 'uploader', 'uploaded_by_username', 
                   'upload_date', 'updated_at', 'tags', 'video_file', 
                   'video_file_url', 'thumbnail', 'thumbnail_url',
-                  'duration', 'file_size', 'views_count', 'is_published',
+                  'duration', 'file_size', 'views_count',
                   'storage_status', 'storage_status_display', 'storage_url')
         read_only_fields = ('uploader', 'upload_date', 'updated_at', 'views_count', 
                            'storage_status', 'storage_url', 'download_link', 'download_link_expiry',

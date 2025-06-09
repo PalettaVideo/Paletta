@@ -24,9 +24,10 @@ class VideoUploadForm(forms.ModelForm):
     
     class Meta:
         model = Video
-        fields = ['title', 'description', 'category', 'video_file', 'thumbnail', 'is_published']
+        fields = ['title', 'description', 'category', 'video_file', 'thumbnail']
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 4}),
+            'title': forms.TextInput(attrs={'placeholder': 'Enter video title'}),
+            'description': forms.Textarea(attrs={'placeholder': 'Enter video description'}),
         }
     
     def __init__(self, *args, **kwargs):

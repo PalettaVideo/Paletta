@@ -181,14 +181,13 @@ class VideoViewSet(viewsets.ModelViewSet):
         if search:
             queryset = queryset.filter(title__icontains=search)
             
-        # Only show published videos to non-owners
-        if not self.request.user.is_authenticated:
-            queryset = queryset.filter(is_published=True)
-        else:
-            # If authenticated but not filtering for own videos, show published + own
-            user_filter = self.request.query_params.get('user', None)
-            if not user_filter or int(user_filter) != self.request.user.id:
-                queryset = queryset.filter(is_published=True) | queryset.filter(uploader=self.request.user)
+        # For non-authenticated users, only show published videos
+        if self.action in ['list', 'retrieve']:
+            queryset = queryset
+        
+        # For authenticated users, show published videos and their own unpublished videos
+        elif self.request.user.is_authenticated:
+            queryset = queryset.filter(uploader=self.request.user)
         
         return queryset
     
@@ -293,4 +292,15 @@ class VideoViewSet(viewsets.ModelViewSet):
             return Response(
                 {"error": "Failed to retrieve storage status."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            ) 
+            )
+
+    def check_object_permissions(self, request, obj):
+        # Allow access if the user is the uploader or a staff member
+        if obj.uploader == request.user or request.user.is_staff:
+            return
+        
+        # Deny access for all other cases
+        self.permission_denied(
+            request, 
+            message="You do not have permission to access this category."
+        ) 
