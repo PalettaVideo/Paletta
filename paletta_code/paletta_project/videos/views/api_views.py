@@ -339,7 +339,7 @@ class VideoAPIUploadView(APIView):
                 video.thumbnail = thumbnail
                 video.save(update_fields=['thumbnail'])
                 
-            # Handle tags
+                # Handle tags
             if tags_str:
                 tag_names = [name.strip() for name in tags_str.split(',') if name.strip()]
                 for tag_name in tag_names:

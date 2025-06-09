@@ -178,10 +178,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // Get library ID from the page if available
       const libraryInfo = document.querySelector(".library-info");
       if (libraryInfo && libraryInfo.getAttribute("data-library-id")) {
-        formData.append(
-          "library_id",
-          libraryInfo.getAttribute("data-library-id")
-        );
+        formData.append("library", libraryInfo.getAttribute("data-library-id"));
       }
 
       // Get CSRF token

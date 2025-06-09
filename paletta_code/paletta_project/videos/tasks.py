@@ -33,10 +33,10 @@ def generate_and_send_download_link(video_id, user_email):
                 'expiry_hours': storage_service.download_link_expiry
             }
             html_message = render_to_string('emails/download_link_email.html', context)
-            plain_message = strip_tags(html_message)
-            
+                    plain_message = strip_tags(html_message)
+                    
             # Send the email
-            send_mail(
+                    send_mail(
                 subject,
                 plain_message,
                 'noreply@paletta.com',
@@ -51,7 +51,7 @@ def generate_and_send_download_link(video_id, user_email):
             
         else:
             logger.error(f"Failed to generate download link for video ID {video_id}")
-
+            
     except Video.DoesNotExist:
         logger.error(f"Video with ID {video_id} not found")
     except Exception as e:
@@ -81,11 +81,11 @@ def cleanup_expired_download_links():
             logger.info(f"Cleaned up {count} expired download links")
         else:
             logger.info("No expired download links to clean up")
-            
+        
     except Exception as e:
         logger.error(f"Error cleaning up expired download links: {str(e)}")
 
-
+        
 @shared_task
 def retry_failed_uploads():
     """
@@ -114,6 +114,6 @@ def retry_failed_uploads():
                     logger.error(f"Failed to re-upload video ID {video.id}")
         else:
             logger.info("No failed uploads to retry")
-            
+        
     except Exception as e:
         logger.error(f"Error retrying failed uploads: {str(e)}")

@@ -33,7 +33,7 @@ class VideoDetailView(TemplateView):
             # Get the video object and pass it to the context
             clip = get_object_or_404(Video, id=video_id)
             context['clip'] = clip
-
+            
             # Increment view count
             clip.views_count += 1
             clip.save(update_fields=['views_count'])

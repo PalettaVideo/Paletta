@@ -89,63 +89,6 @@ class CategoryViewSet(viewsets.ModelViewSet):
                 {'error': 'Failed to retrieve category image'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-    
-    def create(self, request, *args, **kwargs):
-        """
-        Create a new category.
-        If library_id is provided in the form data, use it.
-        Otherwise, use the current library from session.
-        """
-        try:
-            # Get library ID from request data
-            library_id = request.data.get('library_id')
-            
-            # If no library ID is provided in the request, try to get from session
-            if not library_id:
-                library_id = request.session.get('current_library_id')
-            
-            # If still no library ID, return error
-            if not library_id:
-                return Response(
-                    {"detail": "No library specified for category. Please select a library first."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Get library
-            from libraries.models import Library
-            try:
-                library = Library.objects.get(id=library_id)
-            except Library.DoesNotExist:
-                return Response(
-                    {"detail": f"Library with ID {library_id} not found."},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
-            # Add library to request data for serializer
-            data = request.data.copy()
-            data['library'] = library.id
-            
-            # Create serializer with updated data
-            serializer = self.get_serializer(data=data)
-            serializer.is_valid(raise_exception=True)
-            self.perform_create(serializer)
-            
-            # Log the creation
-            logger.info(f"Category '{serializer.instance.name}' created for library '{library.name}' (ID: {library.id})")
-            
-            headers = self.get_success_headers(serializer.data)
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED,
-                headers=headers
-            )
-            
-        except Exception as e:
-            logger.error(f"Error creating category: {str(e)}")
-            return Response(
-                {"detail": f"Failed to create category: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
 
 class VideoViewSet(viewsets.ModelViewSet):
     """
