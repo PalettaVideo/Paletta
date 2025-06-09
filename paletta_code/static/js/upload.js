@@ -175,10 +175,23 @@ document.addEventListener("DOMContentLoaded", function () {
         formData.append("image", categoryImageInput.files[0]);
       }
 
-      // Get library ID from the page if available
-      const libraryInfo = document.querySelector(".library-info");
-      if (libraryInfo && libraryInfo.getAttribute("data-library-id")) {
-        formData.append("library", libraryInfo.getAttribute("data-library-id"));
+      // Get library ID from the form's data attribute
+      const libraryId = uploadForm.dataset.libraryId;
+
+      if (libraryId) {
+        formData.append("library", libraryId);
+      } else {
+        console.error(
+          "Library ID not found on upload form data-library-id attribute."
+        );
+        // Optionally, show an error to the user
+        errorText.textContent =
+          "Could not determine the library. Please refresh and try again.";
+        errorText.style.display = "block";
+        // Stop the process if library ID is essential
+        saveCategoryBtn.textContent = "Add Category";
+        saveCategoryBtn.disabled = false;
+        return;
       }
 
       // Get CSRF token
