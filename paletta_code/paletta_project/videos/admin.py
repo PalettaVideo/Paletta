@@ -55,22 +55,20 @@ class VideoTagInline(admin.TabularInline):
     autocomplete_fields = ['tag']
 
 class VideoAdmin(admin.ModelAdmin):
-    list_display = ('title', 'uploader', 'category', 'library', 'upload_date', 'storage_status_display', 'file_size_display', 'duration_display', 'views_count', 'is_published')
-    list_filter = ('category', 'library', 'upload_date', 'is_published', 'storage_status')
     search_fields = ('title', 'description', 'uploader__username')
+    ordering = ('-upload_date',)
+    list_display = ('title', 'uploader', 'category', 'library', 'upload_date', 'file_size_display', 'duration_display', 'views_count', 'storage_status_display')
+    list_filter = ('category', 'library', 'upload_date', 'storage_status')
     readonly_fields = ('upload_date', 'updated_at', 'views_count', 'file_size', 'duration', 'storage_status', 'storage_url', 'storage_reference_id')
     date_hierarchy = 'upload_date'
     inlines = [VideoLogInline, VideoTagInline]
     
     fieldsets = (
-        ('Basic Information', {
-            'fields': ('title', 'description', 'category', 'library', 'is_published')
-        }),
-        ('Upload Information', {
-            'fields': ('uploader', 'upload_date', 'updated_at', 'views_count')
+        (None, {
+            'fields': ('title', 'description', 'category', 'library')
         }),
         ('File Information', {
-            'fields': ('video_file', 'thumbnail', 'file_size', 'duration')
+            'fields': ('video_file', 'thumbnail', 'file_size', 'duration', 'views_count')
         }),
         ('Storage Information', {
             'fields': ('storage_status', 'storage_url', 'storage_reference_id', 'download_link', 'download_link_expiry')
