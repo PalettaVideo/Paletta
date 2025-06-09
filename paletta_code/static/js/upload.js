@@ -659,6 +659,7 @@ document.addEventListener("DOMContentLoaded", function () {
         "X-CSRFToken": getCookie("csrftoken"),
       },
       body: formData,
+      credentials: "include", // Include cookies for cross-origin authentication
     });
 
     if (!response.ok) {
