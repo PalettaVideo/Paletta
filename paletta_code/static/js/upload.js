@@ -175,14 +175,25 @@ document.addEventListener("DOMContentLoaded", function () {
         formData.append("image", categoryImageInput.files[0]);
       }
 
-      // Get library ID from the form's data attribute
-      const libraryId = uploadForm.dataset.libraryId;
+      // Get library ID from the page if available
+      let libraryId;
+      if (uploadForm) {
+        libraryId = uploadForm.dataset.libraryId;
+      }
+
+      // Fallback to library-info element
+      if (!libraryId) {
+        const libraryInfo = document.querySelector(".library-info");
+        if (libraryInfo) {
+          libraryId = libraryInfo.dataset.libraryId;
+        }
+      }
 
       if (libraryId) {
         formData.append("library", libraryId);
       } else {
         console.error(
-          "Library ID not found on upload form data-library-id attribute."
+          "Library ID not found on upload form data-library-id attribute or in .library-info element."
         );
         // Optionally, show an error to the user
         errorText.textContent =
