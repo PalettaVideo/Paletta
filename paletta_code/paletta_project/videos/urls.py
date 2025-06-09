@@ -33,8 +33,6 @@ urlpatterns = [
     path('', include(router.urls)),
     
     # API endpoints for video functionality
-    path('api/extract-metadata/', VideoMetadataAPIView.as_view(), name='extract_metadata'),
-    path('extract-metadata/', VideoMetadataAPIView.as_view(), name='extract_metadata_alt'),
     path('api/upload/', VideoAPIUploadView.as_view(), name='api_upload'),
     path('download/request/<int:video_id>/', DownloadRequestView.as_view(), name='request_download'),
     
