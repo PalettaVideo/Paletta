@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 # Import base settings from paletta_core
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from paletta_core.settings_development import *
+from paletta_core.storage import MediaStorage
 
 # Load environment variables from .env file
 env_path = '/home/ssm-user/Paletta/.env'
@@ -67,7 +68,7 @@ if AWS_STORAGE_ENABLED:
 
     # Media files configuration
     DEFAULT_FILE_STORAGE = 'paletta_core.storage.MediaStorage'
-    MEDIA_URL = f'https://{settings.AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com/{MediaStorage.location}/'
+    MEDIA_URL = f'https://{AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com/{MediaStorage.location}/'
 
 # Download link configuration
 DOWNLOAD_LINK_EXPIRY_HOURS = int(os.environ.get('DOWNLOAD_LINK_EXPIRY_HOURS', '24'))
