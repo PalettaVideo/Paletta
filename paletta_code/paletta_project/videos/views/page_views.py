@@ -2,6 +2,7 @@ from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.conf import settings
+from libraries.models import Library
 
 @method_decorator(login_required, name='dispatch')
 class UploadPageView(TemplateView):
@@ -14,6 +15,23 @@ class UploadPageView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
+        # Get all libraries for the current user
+        user_libraries = Library.objects.filter(owner=self.request.user)
+        context['user_libraries'] = user_libraries
+        
+        # Determine the current library from the session
+        current_library_id = self.request.session.get('current_library_id')
+        current_library = None
+        if current_library_id:
+            current_library = user_libraries.filter(id=current_library_id).first()
+        
+        # Fallback to the first library if none is in the session
+        if not current_library and user_libraries.exists():
+            current_library = user_libraries.first()
+            
+        context['current_library'] = current_library
+        
         # Inject the API Gateway URL from settings into the template
         context['API_GATEWAY_URL'] = settings.API_GATEWAY_URL
         return context 
