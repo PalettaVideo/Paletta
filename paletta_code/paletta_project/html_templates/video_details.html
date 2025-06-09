@@ -71,7 +71,7 @@
         <p>{{ clip.description|default:"No description available." }}</p>
         <div class="category">
           <strong>Category:</strong>
-          <span>{{ clip.category|default:"Uncategorized" }}</span>
+          <span>{{ clip.category.name|default:"Uncategorized" }}</span>
         </div>
         <div class="tags">
           <strong>Tags:</strong>
@@ -84,10 +84,9 @@
       </div>
       <div class="attributes">
         <h2>Attributes</h2>
-        <p><strong>Duration:</strong> {{ clip.duration|default:"Unknown" }}s</p>
-        <p><strong>Frame Rate:</strong> {{ clip.frame_rate|default:"Unknown" }} fps</p>
-        <p><strong>Resolution:</strong> {{ clip.resolution|default:"Unknown" }}</p>
-        <p><strong>Format:</strong> {{ clip.get_file_extension|upper|default:"Unknown" }}</p>
+        <p><strong>Duration:</strong> {{ clip.duration_display }}</p>
+        <p><strong>Format:</strong> {{ clip.format|upper|default:"Unknown" }}</p>
+        <p><strong>File Size:</strong> {{ clip.file_size|filesizeformat }}</p>
       </div>
     </div>
 <!-- Related Clips feature not available yet

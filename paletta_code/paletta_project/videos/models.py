@@ -100,7 +100,7 @@ class Video(models.Model):
     help_text="Current status of the video in AWS S3 storage"
   )
   storage_reference_id = models.CharField(
-    max_length=255, 
+    max_length=1024, 
     null=True, 
     blank=True, 
     help_text="Reference ID in the AWS S3 storage system"
@@ -115,6 +115,7 @@ class Video(models.Model):
   resolution = models.CharField(max_length=20, null=True, blank=True, help_text="Video resolution, e.g., 1920x1080")
   frame_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Frame rate, e.g., 29.97")
   views_count = models.PositiveIntegerField(default=0)
+  format = models.CharField(max_length=10, blank=True, null=True)
 
   def __str__(self):
     return self.title

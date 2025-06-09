@@ -634,24 +634,31 @@ document.addEventListener("DOMContentLoaded", function () {
       ? libraryInfo.getAttribute("data-library-id")
       : null;
 
-    const data = {
-      title: titleInput.value.trim(),
-      description: descriptionInput.value.trim(),
-      category: document.getElementById("category").value,
-      tags: selectedTags.join(","),
-      s3_key: s3Key,
-      library_id: libraryId,
-      duration: videoMetadata.duration,
-      file_size: videoMetadata.fileSize,
-    };
+    // Use FormData to send both file and text data
+    const formData = new FormData();
+    formData.append("title", titleInput.value.trim());
+    formData.append("description", descriptionInput.value.trim());
+    formData.append("category", document.getElementById("category").value);
+    formData.append("tags", selectedTags.join(","));
+    formData.append("s3_key", s3Key);
+    formData.append("library_id", libraryId);
+    formData.append("duration", videoMetadata.duration);
+    formData.append("file_size", videoMetadata.fileSize);
+    formData.append("format", videoMetadata.format);
+
+    // Append the thumbnail file if it exists
+    const thumbnailFile = previewImageInput.files[0];
+    if (thumbnailFile) {
+      formData.append("thumbnail", thumbnailFile);
+    }
 
     const response = await fetch("/videos/api/upload/", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        // 'Content-Type' is set automatically by the browser for FormData
         "X-CSRFToken": getCookie("csrftoken"),
       },
-      body: JSON.stringify(data),
+      body: formData,
     });
 
     if (!response.ok) {

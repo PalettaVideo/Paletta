@@ -30,11 +30,11 @@ class VideoDetailView(TemplateView):
             raise Http404("Video ID is required")
         
         try:
-            # Get the video object
-            context['clip'] = get_object_or_404(Video, id=video_id)
-            
+            # Get the video object and pass it to the context
+            clip = get_object_or_404(Video, id=video_id)
+            context['clip'] = clip
+
             # Increment view count
-            clip = context['clip']
             clip.views_count += 1
             clip.save(update_fields=['views_count'])
             
@@ -58,8 +58,7 @@ class VideoDetailView(TemplateView):
             
             # Get related clips (same category, excluding current)
             context['related_clips'] = Video.objects.filter(
-                category=clip.category,
-                is_published=True
+                category=clip.category
             ).exclude(id=clip.id).order_by('-upload_date')[:4]
             
             # Add library information to context if available
@@ -68,34 +67,6 @@ class VideoDetailView(TemplateView):
                     'name': clip.library.name,
                     'slug': get_library_slug(clip.library.name)
                 }
-            
-            # Create a clip dictionary with all needed properties
-            clip_dict = {
-                'id': clip.id,
-                'title': clip.title,
-                'description': clip.description,
-                'upload_date': clip.upload_date,
-                'category': clip.category.name,
-                'tags': tags,
-                'duration': duration_formatted,
-                'frame_rate': getattr(clip, 'frame_rate', 'Unknown'),
-                'resolution': getattr(clip, 'resolution', 'Unknown'),
-                'format': getattr(clip, 'format', 'Unknown'),
-                'video_url': clip.video_file.url if clip.video_file else clip.storage_url
-            }
-            
-            # Add a tags.all property to match the template expectations
-            class TagList:
-                def __init__(self, tags):
-                    self.tags = tags
-                
-                def all(self):
-                    return self.tags
-            
-            clip_dict['tags'] = TagList(tags)
-            
-            # Add clip data to context
-            context['clip'] = clip_dict
             
         except Exception as e:
             logger.error(f"Error retrieving video details: {str(e)}")

@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, permissions, generics
+from rest_framework import status, permissions, generics, parsers
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Count, Q
 from ..models import Video, Category, Tag, VideoTag
@@ -288,6 +288,7 @@ class VideoAPIUploadView(APIView):
     the standard form-based upload process.
     """
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
     
     def post(self, request, format=None):
         s3_key = request.data.get('s3_key')
@@ -303,6 +304,8 @@ class VideoAPIUploadView(APIView):
             tags_str = request.data.get('tags', '')
             duration = request.data.get('duration')
             file_size = request.data.get('file_size')
+            format_type = request.data.get('format')
+            thumbnail = request.FILES.get('thumbnail')
             
             # Find the library
             try:
@@ -327,10 +330,16 @@ class VideoAPIUploadView(APIView):
                 storage_url=f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{s3_key}",
                 storage_status='stored',  # Set status to stored, no more processing needed
                 duration=duration,
-                file_size=file_size
+                file_size=file_size,
+                format=format_type
             )
+            
+            # Save the thumbnail if it was provided
+            if thumbnail:
+                video.thumbnail = thumbnail
+                video.save(update_fields=['thumbnail'])
                 
-                # Handle tags
+            # Handle tags
             if tags_str:
                 tag_names = [name.strip() for name in tags_str.split(',') if name.strip()]
                 for tag_name in tag_names:
