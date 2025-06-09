@@ -33,10 +33,10 @@ def generate_and_send_download_link(video_id, user_email):
                 'expiry_hours': storage_service.download_link_expiry
             }
             html_message = render_to_string('emails/download_link_email.html', context)
-                    plain_message = strip_tags(html_message)
+            plain_message = strip_tags(html_message)
                     
             # Send the email
-                    send_mail(
+            send_mail(
                 subject,
                 plain_message,
                 'noreply@paletta.com',
