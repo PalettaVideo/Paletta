@@ -5,7 +5,6 @@ from rest_framework.pagination import PageNumberPagination
 from django.db.models import Count, Q
 from ..models import Video, Category, Tag, VideoTag
 from ..serializers import VideoSerializer, CategorySerializer, TagSerializer
-from ..tasks import process_video_from_s3
 from libraries.models import Library
 import logging
 import urllib.parse
