@@ -44,15 +44,29 @@ if not DEBUG:
 if os.environ.get('DATABASE_URL'):
     import dj_database_url
     DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
+else:
+    # In production, we require the DATABASE_URL to be set.
+    raise ValueError("DATABASE_URL environment variable not set.")
+
+# API Gateway Configuration
+API_GATEWAY_URL = os.environ.get('API_GATEWAY_URL')
+if not API_GATEWAY_URL:
+    # In production, we require the API Gateway URL to be set.
+    raise ValueError("API_GATEWAY_URL environment variable not set.")
 
 # AWS S3 Storage Configuration
 AWS_STORAGE_ENABLED = True
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
-AWS_REGION = os.environ.get('AWS_REGION', 'eu-west-2')
-AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'paletta-videos') # For direct video uploads
-AWS_MEDIA_BUCKET_NAME = os.environ.get('AWS_MEDIA_BUCKET_NAME', 'paletta-media') # For thumbnails and other uploaded images
-AWS_STATIC_BUCKET_NAME = os.environ.get('AWS_STATIC_BUCKET_NAME', 'paletta-static') # For static CSS/JS
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_REGION = os.environ.get('AWS_REGION')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME') # For direct video uploads
+AWS_MEDIA_BUCKET_NAME = os.environ.get('AWS_MEDIA_BUCKET_NAME') # For thumbnails and other uploaded images
+AWS_STATIC_BUCKET_NAME = os.environ.get('AWS_STATIC_BUCKET_NAME') # For static CSS/JS
+
+# Check for essential AWS settings
+if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_STORAGE_BUCKET_NAME, AWS_MEDIA_BUCKET_NAME, AWS_STATIC_BUCKET_NAME]):
+    raise ValueError("One or more required AWS environment variables are not set.")
+
 AWS_S3_CUSTOM_DOMAIN = f'{AWS_STATIC_BUCKET_NAME}.s3.amazonaws.com'
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',

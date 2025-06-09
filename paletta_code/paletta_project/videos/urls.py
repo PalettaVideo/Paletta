@@ -1,13 +1,14 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import VideoViewSet, CategoryViewSet
-from .views.upload_view import UploadView, UploadHistoryView, VideoMetadataAPIView
+from .views.upload_view import UploadHistoryView
 from .views.download_view import DownloadRequestView
 from .views.clip_store_view import ClipStoreView, CategoryClipView
 from .views.api_views import VideoListAPIView, VideoDetailAPIView, CategoryVideosAPIView, PopularTagsAPIView, VideoAPIUploadView
 from .views.tag_views import assign_tags, TagsAPIView
 from .views.video_management_views import VideoEditView, VideoDeleteView, TagSuggestionsAPIView
 from .views.thumbnail_view import VideoThumbnailAPIView
+from .views.page_views import UploadPageView
 
 # Create a router for REST API viewsets
 router = DefaultRouter()
@@ -17,7 +18,7 @@ router.register('categories', CategoryViewSet, basename='category')
 # URL patterns for the videos app
 urlpatterns = [
     # Frontend views
-    path('upload/', UploadView.as_view(), name='upload'),
+    path('upload/', UploadPageView.as_view(), name='upload'),
     path('upload-history/', UploadHistoryView.as_view(), name='upload_history'),
     path('edit/<int:video_id>/', VideoEditView.as_view(), name='edit_video'),
     path('delete/<int:video_id>/', VideoDeleteView.as_view(), name='delete_video'),

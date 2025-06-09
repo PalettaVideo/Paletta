@@ -550,10 +550,13 @@ document.addEventListener("DOMContentLoaded", function () {
     uploadButton.disabled = true;
 
     try {
-      // 1. Get presigned URL from our new Lambda function via API Gateway
-      // IMPORTANT: Replace with your actual API Gateway endpoint URL
-      const apiGatewayUrl =
-        "https://yimnev4yqc.execute-api.eu-west-2.amazonaws.com/default/getPresignedVideoUploadURL";
+      // 1. Get presigned URL from our Lambda function via API Gateway
+      const apiGatewayUrl = uploadForm.dataset.apiGatewayUrl;
+      if (!apiGatewayUrl) {
+        throw new Error(
+          "API Gateway URL is not configured. Please contact support."
+        );
+      }
       const response = await fetch(
         `${apiGatewayUrl}?fileName=${file.name}&contentType=${file.type}`
       );
