@@ -327,20 +327,20 @@ class VideoAPIUploadView(APIView):
                 storage_url=f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{s3_key}",
                 storage_status='processing'  # Set status to processing
             )
-            
-            # Handle tags
+                
+                # Handle tags
             if tags_str:
                 tag_names = [name.strip() for name in tags_str.split(',') if name.strip()]
                 for tag_name in tag_names:
                     tag, _ = Tag.objects.get_or_create(name=tag_name, library=library)
                     VideoTag.objects.create(video=video, tag=tag)
-
+                    
             # --- Trigger Celery task for post-processing ---
             process_video_from_s3.delay(video.id)
 
             serializer = VideoSerializer(video, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
+                
         except Exception as e:
             logger.error(f"Error in VideoAPIUploadView: {e}")
             return Response({'message': 'An unexpected error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 

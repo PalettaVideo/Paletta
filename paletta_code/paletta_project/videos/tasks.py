@@ -57,7 +57,7 @@ def process_video_from_s3(self, video_id):
             # 1. Download video from S3
             logger.info(f"Downloading s3://{video_bucket_name}/{s3_key} to {local_video_path}")
             s3_client.download_file(video_bucket_name, s3_key, str(local_video_path))
-
+            
             # 2. Extract metadata with ffprobe
             logger.info(f"Extracting metadata from {local_video_path}")
             cmd = [
