@@ -1,13 +1,13 @@
 {% load static %}
 <div id="sidebar-component">
   <!--- Floating label -->
-  <div id="floating-label" class="floating-label" onclick="toggleSidebar()">
+  <div id="floating-label" class="floating-label">
     <span>&#9776; More Libraries</span>
   </div>
 
   <!-- sidebar-floating -->
   <div id="sidebar-floating" class="sidebar-floating">
-    <button class="close-btn" onclick="closeSidebar()">×</button>
+    <button id="close-sidebar-btn" class="close-btn">×</button>
     <h2>Explore more libraries</h2>
 
     <div class="search-bar">
@@ -55,16 +55,3 @@
   </div>
   <div id="sidebar-floating-overlay" class="sidebar-floating-overlay"></div>
 </div>
-
-<script>
-  // Load floating_label.js if it hasn't been loaded yet
-  (function() {
-    // Check if the script is already loaded
-    if (typeof toggleSidebar !== 'function') {
-      var script = document.createElement('script');
-      script.src = "{% static 'js/floating_label.js' %}";
-      script.defer = true;
-      document.body.appendChild(script);
-    }
-  })();
-</script>

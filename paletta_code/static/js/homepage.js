@@ -5,9 +5,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // initialize search functionality
   initVideoSearch();
   initLibrarySearch();
-
-  // initialize sidebar toggle
-  initSidebar();
 });
 
 function initPopupMenu() {
@@ -30,37 +27,6 @@ function initPopupMenu() {
       event.stopPropagation();
     });
   }
-}
-
-function initSidebar() {
-  // Set up sidebar toggle functionality
-  window.toggleSidebar = function () {
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("sidebar-overlay");
-
-    if (sidebar) {
-      sidebar.classList.toggle("active");
-      if (overlay) {
-        if (sidebar.classList.contains("active")) {
-          overlay.style.display = "block";
-        } else {
-          overlay.style.display = "none";
-        }
-      }
-    }
-  };
-
-  window.closeSidebar = function () {
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("sidebar-overlay");
-
-    if (sidebar) {
-      sidebar.classList.remove("active");
-      if (overlay) {
-        overlay.style.display = "none";
-      }
-    }
-  };
 }
 
 function initVideoSearch() {
