@@ -72,6 +72,16 @@ class CategoryViewSet(viewsets.ModelViewSet):
         
         return response
     
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new category, ensuring it's associated with a library.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
     @action(detail=True, methods=['get'])
     def image(self, request, pk=None):
         """
