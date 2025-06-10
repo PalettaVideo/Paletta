@@ -9,4 +9,4 @@ class LibrariesConfig(AppConfig):
         """
         Import signals when the app is ready.
         """
-        import paletta_code.paletta_project.libraries.private_category
+        import libraries.private_category
