@@ -83,12 +83,6 @@ body {
   fill: #80B824;
 }
 
-.main-content {
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 10vh);
-}
-
 .clips-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
