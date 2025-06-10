@@ -6,7 +6,7 @@
 /* Main layout container */
 .layout, .container {
     display: flex;
-    margin-top: 80px; /* Provides space below the fixed header */
+    margin-top: 120px; /* Provides space below the fixed header */
     padding: 20px;
     gap: 20px;
     background-color: #f7f9fa; /* A clean, light grey background for the page */
