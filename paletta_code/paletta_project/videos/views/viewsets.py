@@ -8,6 +8,7 @@ import logging
 from ..services import VideoLogService
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
+from django.db.models import Q
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +30,10 @@ class CategoryViewSet(viewsets.ModelViewSet):
         Filter categories based on query parameters.
         If library ID is provided, filter categories by that library.
         If no library ID is provided, use the current library from session.
+        Hides 'Private' category from users who are not the library owner.
         """
         queryset = super().get_queryset()
+        user = self.request.user
         
         # Get library ID from query parameter
         library_id = self.request.query_params.get('library', None)
@@ -42,6 +45,13 @@ class CategoryViewSet(viewsets.ModelViewSet):
         elif self.request.session.get('current_library_id'):
             library_id = self.request.session.get('current_library_id')
             queryset = queryset.filter(library_id=library_id)
+
+        # Exclude 'Private' category if the user is not the library owner
+        if library_id and user.is_authenticated:
+            # We must check if the library owner is the user.
+            # Using Q objects for "is private AND user is not owner"
+            private_category_q = Q(name='Private') & ~Q(library__owner=user)
+            queryset = queryset.exclude(private_category_q)
         
         # Add library information to the log for debugging
         if library_id:
@@ -118,9 +128,19 @@ class VideoViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """
-        Filter videos based on query parameters and user permissions
+        Filter videos based on query parameters and user permissions.
+        Hides videos in 'Private' categories from users who are not the library owner.
         """
         queryset = Video.objects.all()
+        user = self.request.user
+
+        # Exclude videos from 'Private' categories if the user is not the library owner
+        if user.is_authenticated:
+            private_video_q = Q(category__name='Private') & ~Q(library__owner=user)
+            queryset = queryset.exclude(private_video_q)
+        else:
+            # Exclude all private videos for anonymous users
+            queryset = queryset.exclude(category__name='Private')
         
         # Apply filters from query parameters
         category_id = self.request.query_params.get('category', None)
@@ -134,7 +154,6 @@ class VideoViewSet(viewsets.ModelViewSet):
         if search:
             queryset = queryset.filter(title__icontains=search)
             
-        # For non-authenticated users, only show published videos
         if self.action in ['list', 'retrieve']:
             queryset = queryset
         

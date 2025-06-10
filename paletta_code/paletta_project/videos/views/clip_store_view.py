@@ -139,6 +139,15 @@ class ClipStoreView(TemplateView):
         """
         # Start with all videos (including unpublished ones for development)
         queryset = Video.objects.all()
+        user = self.request.user
+
+        # Exclude videos from 'Private' categories if the user is not the library owner
+        if user.is_authenticated:
+            private_video_q = Q(category__name='Private') & ~Q(library__owner=user)
+            queryset = queryset.exclude(private_video_q)
+        else:
+            # Exclude all private videos for anonymous users
+            queryset = queryset.exclude(category__name='Private')
         
         # Filter by library if specified
         if library:
