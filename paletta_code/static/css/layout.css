@@ -39,14 +39,15 @@
     transition: background-color 0.2s, color 0.2s;
 }
 
-.sidebar ul li a:hover {
+.sidebar ul li a:hover, .sidebar ul li a:focus {
     background-color: #f0f8e3; /* A light green for hover */
+    color: #333;
 }
 
 /* Active link in the sidebar */
 .sidebar ul li a.active {
     background-color: #80B824;
-    color: white;
+    color: #000000;
     font-weight: bold;
 }
 

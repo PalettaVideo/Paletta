@@ -1,4 +1,3 @@
-
 body {
   margin: 0;
   font-family: 'Montserrat';
@@ -45,34 +44,6 @@ z-index: 2000;
   background-color: #f9f9f9;
 }
 
-.sidebar {
-  position: fixed;
-  top: 60px;
-  left: 0;
-  height: calc(100% - 60px);
-  width: 200px;
-  background: white;
-  border-right: 1px solid #ddd;
-  padding: 20px;
-  box-sizing: border-box;
-  margin-top: 50px;
-}
-
-
-.backbutton svg{
-  width: 20px;
-  height: 20px;
-  fill: black;
-
-}
-.backbutton span{
-  color: #000;
-  font-weight: bold;
-  margin-bottom: 10px;
-  font-family: "Montserrat";
-}
-
-
 .categorysearch {
   width: 400px; 
   display: flex;
@@ -81,6 +52,7 @@ z-index: 2000;
   border-radius: 20px;
   overflow: hidden;
   background-color: white;
+  margin-left: 10px;
 }
 
 .categorysearch input {
@@ -99,31 +71,12 @@ z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: 10px;
 }
 
 .categorysearch button svg {
   width: 15px;
   height: 15px;
   fill: #80B824;
-}
-
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-}
-
-.sidebar ul li {
-  padding: 10px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  text-align: center;
-  font-family: "Montserrat";
-}
-
-.sidebar ul li.active, .sidebar ul li:hover {
-  background-color: #7bbd42;
-  color: white;
 }
 
 main {
