@@ -12,6 +12,7 @@
     <!-- CSS Reusables -->
     <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
     <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <!-- CSS -->
     <link rel="stylesheet" href="{% static 'css/edit_video.css' %}">
     <!-- JS -->
@@ -21,16 +22,16 @@
 <body>
     {% include "html_reusables/header_reusable.html" %}
 
-    <div class="container">
-        <div class="sidebar">
+    <div class="layout">
+        <aside class="sidebar">
             <ul>
                 <li><a href="{% url 'upload' %}">Upload</a></li>
                 <li><a href="{% url 'upload_history' %}">Your Uploads</a></li>
                 <li><a href="#" class="active">Edit Video</a></li>
             </ul>
-        </div>
+        </aside>
 
-        <main>
+        <main class="content">
             {% if video_not_found %}
             <div class="error-message">
                 <h2>Video Not Found</h2>

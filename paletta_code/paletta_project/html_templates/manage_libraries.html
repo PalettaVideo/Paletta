@@ -12,9 +12,9 @@
     <!-- CSS Reusables -->
     <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
     <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <!-- CSS -->
     <link rel="stylesheet" href="{% static 'css/manage_libraries.css' %}">
-    <link rel="stylesheet" href="{% static 'css/sidebar_admin.css' %}">
     <!-- JS -->
     <script src="{% static 'js/manage_libraries.js' %}" defer></script>
 </head>
@@ -22,16 +22,14 @@
 <body>
 {% include "html_reusables/header_reusable.html" %}
 
-<div class="container">
+<div class="layout">
     <!-- Sidebar -->
-    <aside>
-        <div class="sidebar">
-            <ul>
-                <li><a href="{% url 'create_library' %}">Create a Library</a></li>
-                <li><a href="{% url 'manage_libraries' %}" class="active">Manage All Libraries</a></li>
-                <li><a href="{% url 'manage_administrators' %}">Manage Administrators</a></li>
-            </ul>
-        </div>
+    <aside class="sidebar">
+        <ul>
+            <li><a href="{% url 'create_library' %}">Create a Library</a></li>
+            <li><a href="{% url 'manage_libraries' %}" class="active">Manage All Libraries</a></li>
+            <li><a href="{% url 'manage_administrators' %}">Manage Administrators</a></li>
+        </ul>
     </aside>
 
     <!-- Main Content -->
