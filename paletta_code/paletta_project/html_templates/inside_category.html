@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
   <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
   <link rel="stylesheet" href="{% static 'css/floating.css' %}">
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}">
   <!-- CSS -->
   <link rel="stylesheet" href="{% static 'css/inside_category.css' %}">
   <!-- JS -->
@@ -24,7 +25,7 @@
 </head>
 <body>
 {% include "html_reusables/header_reusable.html" %}
-<main>
+<div class="layout">
   <aside class="sidebar">
     <div class="backbutton">
       {% if library_slug %}
@@ -53,7 +54,7 @@
     </ul>
   </aside>
   
-  <section class="main-content">
+  <main class="content">
     <div class="banner">
       {% if current_category %}
         <div class="imagecontainer">
@@ -215,8 +216,8 @@
       </div>
     </div>
     {% endif %}
-  </section>
-</main>
+  </main>
+</div>
 
 </body>
 {% include "html_reusables/footer_reusable.html" %}

@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
     <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
     <link rel="stylesheet" href="{% static 'css/sidebar_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <!-- CSS -->
     <link rel="stylesheet" href="{% static 'css/upload_history.css' %}">
     <!-- JS -->
@@ -21,14 +22,14 @@
 <body>
   {% include "html_reusables/header_reusable.html" %}
   {% csrf_token %}
-  <div class="container">
-      <div class="sidebar">
+  <div class="layout">
+      <aside class="sidebar">
         <ul>
           <li><a href="{% url 'upload' %}">Upload</a></li>
           <li><a href="{% url 'upload_history' %}" class="active">History</a></li>
         </ul>
-      </div>
-      <div class="main-content">
+      </aside>
+      <main class="content">
           <h1> Your Upload History</h1>
           
           {% if videos %}
@@ -60,7 +61,7 @@
               </div>
           {% endif %}
           
-      </div>
+      </main>
   </div>
 
   <!-- Delete confirmation modal -->

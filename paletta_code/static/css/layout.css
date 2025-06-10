@@ -1,0 +1,60 @@
+/* 
+  Shared layout styles for pages with a sidebar.
+  This ensures a consistent look and feel across the application.
+*/
+
+/* Main layout container */
+.layout, .container {
+    display: flex;
+    margin-top: 80px; /* Provides space below the fixed header */
+    padding: 20px;
+    gap: 20px;
+    background-color: #f7f9fa; /* A clean, light grey background for the page */
+    min-height: calc(100vh - 80px); /* Ensure layout takes at least the full viewport height */
+}
+
+/* Shared Sidebar Styles */
+.sidebar {
+    flex: 0 0 250px; /* Prevents the sidebar from growing or shrinking */
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    height: fit-content; /* Sidebar is only as tall as its content */
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar ul li a {
+    display: block;
+    padding: 12px 15px;
+    color: #333;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.sidebar ul li a:hover {
+    background-color: #f0f8e3; /* A light green for hover */
+}
+
+/* Active link in the sidebar */
+.sidebar ul li a.active {
+    background-color: #80B824;
+    color: white;
+    font-weight: bold;
+}
+
+/* Shared Content Area Styles */
+.content, .main-content {
+    flex-grow: 1; /* Allows the content area to take up the remaining space */
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+} 
