@@ -22,7 +22,7 @@ from accounts.views.login import CustomLoginView
 from accounts.views.signup import SignupView
 from accounts.views.forgot_password import ForgotPasswordView
 from accounts.views.home_view import HomeView, LogoutView
-from accounts.views.update_profile import ProfileView, ProfileUpdateView
+from accounts.views.update_profile import ProfileView, ProfileUpdateView, CollectionView
 from accounts.views.admin_view import ManageAdministratorsView
 from videos.views.clip_store_view import CategoryClipView
 from videos.views.video_detail_view import VideoDetailView
@@ -65,7 +65,7 @@ urlpatterns = [
     # User profile and account pages
     path('profile/', ProfileView.as_view(), name='profile'),
     path('profile/update/', ProfileUpdateView.as_view(), name='profile_update'),
-    path('collection/', TemplateView.as_view(template_name='collection.html'), name='collection'),
+    path('collection/', CollectionView.as_view(), name='collection'),
     
     # Order management routes - include the orders app URLs
     path('', include('orders.urls')),
