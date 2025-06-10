@@ -47,7 +47,7 @@
 /* Active link in the sidebar */
 .sidebar ul li a.active {
     background-color: #80B824;
-    color: #000000;
+    color: #fff;
     font-weight: bold;
 }
 
