@@ -97,6 +97,29 @@ class HomeView(TemplateView):
         # Return the single homepage template with the context
         return render(request, 'homepage.html', context)
 
+class StaticPageMixin:
+    """A mixin to add the current library context to a static page view."""
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        library_id = self.request.session.get('current_library_id')
+        if library_id:
+            try:
+                context['current_library'] = Library.objects.get(id=library_id)
+            except Library.DoesNotExist:
+                context['current_library'] = None
+        else:
+            context['current_library'] = None
+        return context
+
+class AboutUsView(StaticPageMixin, TemplateView):
+    template_name = 'about_us.html'
+
+class ContactUsView(StaticPageMixin, TemplateView):
+    template_name = 'contact_us.html'
+
+class QAndAView(StaticPageMixin, TemplateView):
+    template_name = 'q_and_a.html'
+
 class LogoutView(TemplateView):
     """View to handle user logout."""
     

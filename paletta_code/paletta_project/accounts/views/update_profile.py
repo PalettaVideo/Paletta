@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
 from libraries.models import Library
 
@@ -37,11 +38,10 @@ class ProfileView(TemplateView):
         }
         return render(request, self.template_name, context)
 
-class CollectionView(TemplateView):
+class CollectionView(LoginRequiredMixin, TemplateView):
     """View to handle user's collection page."""
     template_name = 'collection.html'
 
-    @method_decorator(login_required)
     def get_context_data(self, **kwargs):
         """Add library context to the collection page."""
         context = super().get_context_data(**kwargs)

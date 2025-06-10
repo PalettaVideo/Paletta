@@ -21,7 +21,7 @@ def health_check(request):
 from accounts.views.login import CustomLoginView
 from accounts.views.signup import SignupView
 from accounts.views.forgot_password import ForgotPasswordView
-from accounts.views.home_view import HomeView, LogoutView
+from accounts.views.home_view import HomeView, LogoutView, AboutUsView, ContactUsView, QAndAView
 from accounts.views.update_profile import ProfileView, ProfileUpdateView, CollectionView
 from accounts.views.admin_view import ManageAdministratorsView
 from videos.views.clip_store_view import CategoryClipView
@@ -71,9 +71,9 @@ urlpatterns = [
     path('', include('orders.urls')),
     
     # Additional page routes
-    path('about/', TemplateView.as_view(template_name='about_us.html'), name='about_us'),
-    path('contact/', TemplateView.as_view(template_name='contact_us.html'), name='contact_us'),
-    path('help/', TemplateView.as_view(template_name='q_and_a.html'), name='q_and_a'),
+    path('about/', AboutUsView.as_view(), name='about_us'),
+    path('contact/', ContactUsView.as_view(), name='contact_us'),
+    path('help/', QAndAView.as_view(), name='q_and_a'),
     
     # Video detail route
     path('clip/<int:video_id>/', VideoDetailView.as_view(), name='clip_detail'),

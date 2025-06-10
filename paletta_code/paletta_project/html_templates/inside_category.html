@@ -4,7 +4,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>{% if current_category %}{{ current_category.name }}{% else %}All Videos{% endif %} - Paletta</title>
+  <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - {% if current_category %}{{ current_category.name }}{% else %}All Videos{% endif %}</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Styles -->
