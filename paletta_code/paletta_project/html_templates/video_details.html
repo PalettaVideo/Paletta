@@ -84,36 +84,11 @@
       </div>
       <div class="attributes">
         <h2>Attributes</h2>
-        <p><strong>Duration:</strong> {{ clip.duration_display }}</p>
+        <p><strong>Duration:</strong> {{ duration_formatted }}</p>
         <p><strong>Format:</strong> {{ clip.format|upper|default:"Unknown" }}</p>
         <p><strong>File Size:</strong> {{ clip.file_size|filesizeformat }}</p>
       </div>
     </div>
-<!-- Related Clips feature not available yet
-    <div class="related-clips">
-      <h2>Related Clips:</h2>
-      <div class="related-container">
-        {% if related_clips %}
-          {% for related_clip in related_clips %}
-        <div class="clip-card">
-              <a href="{% url 'clip_detail' clip_id=related_clip.id %}">
-                {% if related_clip.thumbnail %}
-                  <img src="{{ related_clip.thumbnail }}" alt="{{ related_clip.title }}">
-                {% else %}
-                  <img src="{% static 'picture/default_thumbnail.png' %}" alt="{{ related_clip.title }}">
-                {% endif %}
-                <p>{{ related_clip.title }}</p>
-              </a>
-        </div>
-          {% endfor %}
-        {% else %}
-          <div class="no-related-clips">
-            <p>No related clips found</p>
-        </div>
-        {% endif %}
-      </div>
-    </div> 
--->
   </main>
 
 <!-- Popup -->
