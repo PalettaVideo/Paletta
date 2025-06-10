@@ -1,6 +1,6 @@
 body {
     font-family: 'Montserrat';
-    margin-top: 120px;
+    margin: 0;
     padding: 0;
     background-color: #ffffff;
 }
@@ -9,12 +9,9 @@ body {
     display: flex;
 }
 
-
-
-
 .content {
     flex-grow: 1;
-    padding: 20px;
+    padding: 20px 40px;
 }
 .profile-box {
     background: #fff;
