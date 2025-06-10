@@ -16,10 +16,13 @@ class StaticStorage(S3Boto3Storage):
 
 class MediaStorage(S3Boto3Storage):
     """Handles user-uploaded media files like thumbnails and logos."""
-    location = 'thumbnails'  # Store files in a /thumbnails/ folder
+    location = 'media'
     file_overwrite = False
-    # Lazily load the bucket name from settings.
-    bucket_name = setting('AWS_MEDIA_BUCKET_NAME')
+
+    @property
+    def bucket_name(self):
+        """Lazily load the bucket name from settings to avoid import-time errors."""
+        return settings.AWS_MEDIA_BUCKET_NAME
 
     @property
     def custom_domain(self):
