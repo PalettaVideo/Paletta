@@ -61,21 +61,30 @@
 <main>
   {% include "html_reusables/sidebar_library_reusable.html" %}
   <div class="title-section">
+    
     {% if current_library and current_library.name != 'Paletta' %}
       <img src="{% if current_library.logo %}{{ current_library.logo.url }}{% else %}{% static 'picture/default-logo.jpg' %}{% endif %}" alt="{{ current_library.name }} Logo">
+     
       <h1>
         Welcome to<br>
         {{ current_library.name }}
       </h1>
     {% elif current_library and current_library.name == 'Paletta' %}
-      <img src="{% static 'picture/logo.jpg' %}" alt="Logo">
-      <h1>
-        Your Footage, Your Story
-      </h1>
+        <div class="title-left">
+          <img src="{% static 'picture/logo.jpg' %}" alt="Logo">
+        </div> 
+    <div class="vertical-line"></div>
+        <div class="title-right">
+          <span class="clip-line1">Clip</span>
+          <span class="clip-line2">Store</span>
+        </div>
+    <div>
+      
+    </div>
     {% endif %}
   </div>
 
-  <p>Discover Any Clip You Like From Your Library</p>
+  <p>Discover Clips to Bring your Vision to Life</p>
   <div class="search-bar">
     <input type="text" id="video-search-input" placeholder="Search...">
     <button id="video-search-button">
@@ -86,7 +95,10 @@
     </button>
   </div>
 
-  <div class="categories" id="categories-container">
+<!-- new VIEWALL section -->
+  <div class="viewall" id="viewall">
+
+
     <!-- "All" category is always shown -->
     {% if library_slug %}
     <a href="{% url 'library_clip_store' library_slug=library_slug %}" style="text-decoration: none;">
@@ -96,38 +108,104 @@
     <!-- Fallback if no library is selected - redirect to home -->
     <a href="{% url 'home' %}" style="text-decoration: none;">
     {% endif %}
-      <div class="category">
-        <img src="{% static 'picture/All.png' %}" alt="All">
-        <span>All</span>
-      </div>
+    <img src="{% static 'picture/viewall.png' %}" alt="All">
+    <span>View All</span>
+      
+
     </a>
     
-    <!-- Dynamic categories from database for authenticated users -->
-    {% for category in categories %}
-    {% if library_slug %}
-    <a href="{% url 'library_category' library_slug=library_slug category_slug=category.name|slugify %}" style="text-decoration: none;">
-    {% elif current_library %}
-    <a href="{% url 'library_category' library_slug=current_library.name|slugify category_slug=category.name|slugify %}" style="text-decoration: none;">
-    {% else %}
-    <!-- Fallback if no library is selected -->
-    <a href="{% url 'home' %}" style="text-decoration: none;">
-    {% endif %}
-      <div class="category">
-        <!-- Use the category image URL if available, otherwise use a default image -->
-        {% if category.image_url %}
-          <img src="{{ category.image_url }}" alt="{{ category.name }}" 
-              data-category="{{ category.name }}" class="category-image">
+
+  </div>
+
+  <div class="categoriestitle">
+    <span>Categories</span>
+  </div>
+  
+  <!-- new categories section -->
+  <div class="categories-wrap">
+      <div class="categories" id="categories-container">
+        
+       
+          <div class="category">
+            <img src="{% static 'picture/campus_life.png' %}" alt="All">
+            <span>Campus Life</span>
+          </div>
+
+        <div class="category">
+          <img src="{% static 'picture/Teaching&Learning.jpeg' %}" alt="campus_life">
+          <span>Teaching & Learning</span>
+        </div>
+        
+        <div class="category">
+          <img src="{% static 'picture/Research&Innovation.png' %}" alt="All">
+          <span>Research & Innovation</span>
+        </div>
+
+        <div class="category">
+          <img src="{% static 'picture/City&Environment.jpg' %}" alt="All">
+          <span>City & Environment</span>
+        </div>
+
+        <div class="category">
+          <img src="{% static 'picture/Aerial&Establishing_shots.png' %}" alt="All">
+          <span>Aerial & Establishing shots</span>
+        </div>
+
+        <div class="category">
+          <img src="{% static 'picture/People&Portraits.png' %}" alt="All">
+          <span>People & Portraits</span>
+        </div>
+        
+        <div class="category">
+          <img src="{% static 'picture/Culture&Events.png' %}" alt="All">
+          <span>Culture & Events</span>
+        </div>
+
+        <div class="category">
+          <img src="{% static 'picture/Workspaces&Facilities.jpg' %}" alt="All">
+          <span>Workspaces & Facilities</span>
+        </div>
+
+        <div class="category">
+          <img src="{% static 'picture/Cutaways&Abstracts.png' %}" alt="All">
+          <span>Cutaways & Abstracts</span>
+        </div>
+
+        <div class="category">
+          <img src="{% static 'picture/Historical&Archive.jpg' %}" alt="All">
+          <span>Historical & Archieve</span>
+        </div>
+
+
+        
+        <!-- Dynamic categories from database for authenticated users -->
+        {% for category in categories %}
+        {% if library_slug %}
+        <a href="{% url 'library_category' library_slug=library_slug category_slug=category.name|slugify %}" style="text-decoration: none;">
+        {% elif current_library %}
+        <a href="{% url 'library_category' library_slug=current_library.name|slugify category_slug=category.name|slugify %}" style="text-decoration: none;">
         {% else %}
-          <img src="{% static 'picture/main_campus.png' %}" alt="{{ category.name }}" 
-              data-category="{{ category.name }}" class="category-image">
+        <!-- Fallback if no library is selected -->
+        <a href="{% url 'home' %}" style="text-decoration: none;">
         {% endif %}
-        <span>{{ category.name }}</span>
+          <div class="category">
+            <!-- Use the category image URL if available, otherwise use a default image -->
+            {% if category.image_url %}
+              <img src="{{ category.image_url }}" alt="{{ category.name }}" 
+                  data-category="{{ category.name }}" class="category-image">
+            {% else %}
+              <img src="{% static 'picture/main_campus.png' %}" alt="{{ category.name }}" 
+                  data-category="{{ category.name }}" class="category-image">
+            {% endif %}
+            <span>{{ category.name }}</span>
+          </div>
+        </a>
+        {% empty %}
+        <!-- If no categories are found, show a message -->
+        <p class="no-categories">No categories created yet. Reach out to Admin for more information.</p>
+        {% endfor %}
       </div>
-    </a>
-    {% empty %}
-    <!-- If no categories are found, show a message -->
-    <p class="no-categories">No categories created yet. Reach out to Admin for more information.</p>
-    {% endfor %}
+
   </div>
 </main>
 

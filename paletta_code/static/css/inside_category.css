@@ -50,12 +50,13 @@ z-index: 2000;
   top: 60px;
   left: 0;
   height: calc(100% - 60px);
-  width: 200px;
+  width: 220px;
   background: white;
   border-right: 1px solid #ddd;
   padding: 20px;
   box-sizing: border-box;
   margin-top: 50px;
+  overflow-y: auto;
 }
 
 
@@ -111,6 +112,7 @@ z-index: 2000;
 .sidebar ul {
   list-style: none;
   padding: 0;
+  margin-bottom: 50px;
 }
 
 .sidebar ul li {
@@ -136,6 +138,12 @@ main {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 10vh);
+}
+
+.category-list a{
+  display: block; 
+  text-decoration: none; 
+  color: inherit;
 }
 
 .clips-grid {

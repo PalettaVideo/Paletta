@@ -42,8 +42,39 @@
     <ul class="category-list">
       {% if library_slug %}
       <li class="{% if category_filter == 'all' or not category_filter or is_clip_store %}active{% endif %}" data-category="all">
-        <a href="{% url 'library_clip_store' library_slug=library_slug %}" style="display: block; text-decoration: none; color: inherit;">All Clips</a>
+        <a href="{% url 'library_clip_store' library_slug=library_slug %}" style="display: block; text-decoration: none; color: inherit;">View All</a>
       </li>
+      <li>
+        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Campus Life</a>
+      </li>
+      <li>
+        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Teaching & Learning</a>
+      </li>
+      <li>
+        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Research & Innovation</a>
+      </li>
+      <li>
+        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >City & Environment</a>
+      </li>
+      <li>
+        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Aerial & Establishing shots</a>
+      </li>
+      <li>
+        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >People & Portraits</a>
+      </li>
+      <li>
+        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Culture & Events</a>
+      </li>
+      <li>
+        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Workspaces & Facilities</a>
+      </li>
+      <li>
+        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Cutaways & Abstracts</a>
+      </li>
+      <li>
+        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Historical & Archieve</a>
+      </li>
+      
       {% for category in categories %}
       <li class="{% if category_filter|lower == category.name|lower or category_slug == category.name|slugify or current_category and current_category.id == category.id %}active{% endif %}" data-category="{{ category.name|lower }}">
         <a href="{% url 'library_category' library_slug=library_slug category_slug=category.name|slugify %}" style="display: block; text-decoration: none; color: inherit;">{{ category.name }}</a>
