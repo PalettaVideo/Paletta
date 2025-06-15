@@ -81,22 +81,7 @@ document.addEventListener("DOMContentLoaded", function () {
     localStorage.setItem(getCartStorageKey(), JSON.stringify([]));
   }
 
-  // Initialize UI and event listeners
-  initializeUI();
   setupEventListeners();
-
-  /**
-   * Initialize UI elements and storage
-   */
-  function initializeUI() {
-    // Initialize local storage if not present
-    if (!localStorage.getItem(COLLECTION_STORAGE_KEY)) {
-      localStorage.setItem(COLLECTION_STORAGE_KEY, JSON.stringify([]));
-    }
-    if (!localStorage.getItem(CART_STORAGE_KEY)) {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify([]));
-    }
-  }
 
   /**
    * Set up event listeners
