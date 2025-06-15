@@ -2,6 +2,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // Clear any stale library cache before initializing the page
   clearStaleLibraryCache();
 
+  // Check for static version changes and clear all cache if needed
+  checkStaticVersionAndClearCache();
+
   // Add debug logging for library context
   const currentLibrarySlug = getCurrentLibrarySlug();
   const currentLibraryName =
@@ -25,6 +28,45 @@ document.addEventListener("DOMContentLoaded", function () {
   initLibrarySearch();
 });
 
+// Check for static version changes and clear cache if needed
+function checkStaticVersionAndClearCache() {
+  // Get current static version from script tag URL
+  const scriptTags = document.querySelectorAll('script[src*="homepage.js"]');
+  let currentVersion = null;
+
+  for (const script of scriptTags) {
+    const src = script.src;
+    const versionMatch = src.match(/[?&]v=([^&]+)/);
+    if (versionMatch) {
+      currentVersion = versionMatch[1];
+      break;
+    }
+  }
+
+  if (currentVersion) {
+    const storedVersion = localStorage.getItem("staticVersion");
+
+    if (storedVersion && storedVersion !== currentVersion) {
+      console.log(
+        `[Cache Debug] Static version changed from ${storedVersion} to ${currentVersion}, clearing all cache`
+      );
+
+      // Clear all localStorage
+      localStorage.clear();
+
+      // Clear sessionStorage as well
+      sessionStorage.clear();
+
+      console.log(
+        "[Cache Debug] All browser cache cleared due to version change"
+      );
+    }
+
+    // Store the current version
+    localStorage.setItem("staticVersion", currentVersion);
+  }
+}
+
 // Get current library context for cache clearing
 function getCurrentLibrarySlug() {
   // Try to get from meta tag first (most reliable)
@@ -46,14 +88,10 @@ function getCurrentLibrarySlug() {
   return "paletta";
 }
 
-// Clear stale localStorage data from other libraries
+// Clear stale library cache
 function clearStaleLibraryCache() {
   const currentLibrarySlug = getCurrentLibrarySlug();
   const keysToRemove = [];
-
-  console.log(
-    `[Homepage Cache Debug] Clearing cache for library: ${currentLibrarySlug}`
-  );
 
   // Check all localStorage keys
   for (let i = 0; i < localStorage.length; i++) {
@@ -75,7 +113,6 @@ function clearStaleLibraryCache() {
   // Remove stale keys
   keysToRemove.forEach((key) => {
     localStorage.removeItem(key);
-    console.log(`[Homepage Cache Debug] Removed stale key: ${key}`);
   });
 
   // Also clear any general cache that might interfere
@@ -86,31 +123,27 @@ function clearStaleLibraryCache() {
     "categoryData",
   ];
   generalCacheKeys.forEach((key) => {
-    const storedValue = localStorage.getItem(key);
-    if (storedValue && storedValue !== currentLibrarySlug) {
+    if (
+      localStorage.getItem(key) &&
+      localStorage.getItem(key) !== currentLibrarySlug
+    ) {
       localStorage.removeItem(key);
-      console.log(
-        `[Homepage Cache Debug] Removed general cache key: ${key} (was: ${storedValue})`
-      );
     }
   });
 
-  // Force clear any cached library state
+  // Clear any window-level cache objects
   if (typeof window.libraryCache !== "undefined") {
     window.libraryCache = {};
   }
 
   if (keysToRemove.length > 0) {
     console.log(
-      `[Homepage Cache Debug] Cleared ${keysToRemove.length} stale localStorage entries for library switch`
+      `[Cache Debug] Cleared ${keysToRemove.length} stale localStorage entries for library switch`
     );
   }
 
   // Set current library slug to prevent future caching issues
   localStorage.setItem("lastLibrarySlug", currentLibrarySlug);
-  console.log(
-    `[Homepage Cache Debug] Set lastLibrarySlug to: ${currentLibrarySlug}`
-  );
 }
 
 function initPopupMenu() {

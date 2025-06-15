@@ -1,6 +1,9 @@
 from django import template
 from django.urls import reverse
 from django.utils.text import slugify
+from django.templatetags.static import static
+from django.conf import settings
+import time
 
 register = template.Library()
 
@@ -35,12 +38,12 @@ def current_library_slug(context):
     return slugify(current_library.name) if current_library else 'paletta'
 
 @register.filter
-def library_slugify(name):
+def library_slugify(value):
     """
-    Convert library name to slug format.
+    Convert a library name to a URL-friendly slug.
     Usage: {{ library.name|library_slugify }}
     """
-    return slugify(name) if name else 'paletta'
+    return slugify(value)
 
 @register.simple_tag(takes_context=True)
 def library_title(context, page_title=""):
@@ -55,4 +58,23 @@ def library_title(context, page_title=""):
     
     if page_title:
         return f"{library_name} - {page_title}"
-    return library_name 
+    return library_name
+
+@register.simple_tag
+def versioned_static(path):
+    """
+    Generate versioned static file URLs to force cache invalidation.
+    Usage: {% versioned_static 'js/homepage.js' %}
+    """
+    # Get the static URL
+    static_url = static(path)
+    
+    # Add version parameter based on settings or current timestamp
+    version = getattr(settings, 'STATIC_VERSION', None)
+    if not version:
+        # Fallback to timestamp for development
+        version = str(int(time.time()))
+    
+    # Add version parameter
+    separator = '&' if '?' in static_url else '?'
+    return f"{static_url}{separator}v={version}" 

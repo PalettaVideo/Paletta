@@ -84,6 +84,10 @@ if AWS_STORAGE_ENABLED:
     DEFAULT_FILE_STORAGE = 'paletta_core.storage.MediaStorage'
     MEDIA_URL = f'https://{AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com/{MediaStorage.location}/'
 
+# Static file versioning for cache busting
+# Change this value whenever you want to force cache invalidation
+STATIC_VERSION = '2.0.0'
+
 # Download link configuration
 DOWNLOAD_LINK_EXPIRY_HOURS = int(os.environ.get('DOWNLOAD_LINK_EXPIRY_HOURS', '24'))
 DELETE_LOCAL_FILE_AFTER_UPLOAD = os.environ.get('DELETE_LOCAL_FILE_AFTER_UPLOAD', 'True') == 'True'

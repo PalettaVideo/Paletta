@@ -154,6 +154,19 @@ STATICFILES_DIRS = [
     Path(__file__).resolve().parent.parent.parent / 'static',  # Absolute path to static
 ]
 
+# Static file versioning for cache busting
+# Change this value whenever you want to force cache invalidation
+STATIC_VERSION = '2.0.1'
+
+# Cache control settings
+# Prevent HTML caching but allow static file caching
+CACHE_MIDDLEWARE_ALIAS = 'default'
+CACHE_MIDDLEWARE_SECONDS = 0  # Don't cache HTML pages
+CACHE_MIDDLEWARE_KEY_PREFIX = ''
+
+# Add cache control headers for different content types
+USE_ETAGS = True
+
 # Media files (User uploaded files)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR.parent / 'media'
