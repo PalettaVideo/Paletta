@@ -8,9 +8,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
+  <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
+  <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
   {% if clip %}
   <meta name="clip-id" content="{{ clip.id }}">
+  <meta name="clip-thumbnail" content="{% if clip.thumbnail %}{{ clip.thumbnail.url }}{% endif %}">
   {% endif %}
+  
   <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
@@ -23,6 +27,10 @@
   <script src="{% static 'js/video_details.js' %}" defer></script>
 </head>
 <body>
+  <!-- Debug comments for troubleshooting -->
+  <!-- Current Library: {% if current_library %}{{ current_library.name }} (ID: {{ current_library.id }}){% else %}None{% endif %} -->
+  <!-- Clip ID: {% if clip %}{{ clip.id }}{% else %}None{% endif %} -->
+  
   {% include "html_reusables/header_reusable.html" %}
   
   {% csrf_token %}

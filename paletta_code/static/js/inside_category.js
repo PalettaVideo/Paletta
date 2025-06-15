@@ -515,8 +515,11 @@ document.addEventListener("DOMContentLoaded", function () {
    * Open video preview
    */
   function openVideoPreview(videoId) {
-    // Navigate to the video detail page
-    window.location.href = `/clip/${videoId}/`;
+    // Get current library slug for proper URL construction
+    const currentLibrarySlug = getCurrentLibrarySlug();
+
+    // Always use library-specific URL pattern
+    window.location.href = `/library/${currentLibrarySlug}/clip/${videoId}/`;
   }
 
   /**

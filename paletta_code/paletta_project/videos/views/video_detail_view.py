@@ -23,6 +23,11 @@ class VideoDetailView(TemplateView):
         """Get context data for the template."""
         context = super().get_context_data(**kwargs)
         
+        # Use current library from middleware (this is already set by LibraryContextMiddleware)
+        current_library = getattr(self.request, 'current_library', None)
+        if current_library:
+            context['current_library'] = current_library
+        
         # Get the video ID from URL parameters
         video_id = self.kwargs.get('video_id')
         if not video_id:

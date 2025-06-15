@@ -94,6 +94,21 @@ document.addEventListener("DOMContentLoaded", function () {
   // Clear stale data and initialize localStorage for cart and collection if not present
   clearStaleLibraryData();
 
+  // Add debug logging for library context
+  const currentLibrarySlug = getCurrentLibrarySlug();
+  const currentLibraryName =
+    document.querySelector('meta[name="current-library-name"]')?.content ||
+    "Unknown";
+  const clipId =
+    document.querySelector('meta[name="clip-id"]')?.content || "Unknown";
+
+  console.log(`[VideoDetails Debug] Library context initialized:`);
+  console.log(
+    `[VideoDetails Debug] - Current library: ${currentLibraryName} (slug: ${currentLibrarySlug})`
+  );
+  console.log(`[VideoDetails Debug] - Clip ID: ${clipId}`);
+  console.log(`[VideoDetails Debug] - URL: ${window.location.pathname}`);
+
   if (!localStorage.getItem(getCollectionStorageKey())) {
     localStorage.setItem(getCollectionStorageKey(), JSON.stringify([]));
   }
