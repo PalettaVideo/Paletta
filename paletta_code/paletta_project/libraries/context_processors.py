@@ -11,14 +11,14 @@ def library_context(request):
     """
     context = {
         'current_library': None,
-        'available_libraries': [],
+        'all_libraries': [],
     }
     
     # Get library context from middleware
     if hasattr(request, 'current_library'):
         context['current_library'] = request.current_library
         
-    if hasattr(request, 'available_libraries'):
-        context['available_libraries'] = request.available_libraries
+    if hasattr(request, 'all_libraries'):
+        context['all_libraries'] = request.all_libraries
     
     return context 

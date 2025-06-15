@@ -7,6 +7,13 @@
   <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - Home</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Debug meta tags for library context -->
+  <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
+  <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
+  <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
+  <meta name="categories-count" content="{{ categories|length }}">
+  
   <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
@@ -23,6 +30,13 @@
 
 </head>
 <body>
+  <!-- Debug comments for troubleshooting -->
+  <!-- Current Library: {% if current_library %}{{ current_library.name }} (ID: {{ current_library.id }}){% else %}None{% endif %} -->
+  <!-- Categories Count: {{ categories|length }} -->
+  {% if categories %}
+  <!-- Category Names: {% for cat in categories %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %} -->
+  {% endif %}
+  
   <header>
     <div class="actions">
         <a href="{% library_specific_url 'library_upload' %}" style="text-decoration: none;">

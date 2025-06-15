@@ -50,7 +50,9 @@ document.addEventListener("DOMContentLoaded", function () {
       const key = localStorage.key(i);
       if (
         key &&
-        (key.startsWith("userCart_") || key.startsWith("userCollection_"))
+        (key.startsWith("userCart_") ||
+          key.startsWith("userCollection_") ||
+          key.startsWith("categoryCache_"))
       ) {
         // If it's not for the current library, mark for removal
         if (!key.endsWith(`_${currentLibrarySlug}`)) {
@@ -64,11 +66,29 @@ document.addEventListener("DOMContentLoaded", function () {
       localStorage.removeItem(key);
     });
 
+    // Also clear any general cache that might interfere
+    const generalCacheKeys = [
+      "lastLibrarySlug",
+      "cachedCategories",
+      "lastVisitedLibrary",
+    ];
+    generalCacheKeys.forEach((key) => {
+      if (
+        localStorage.getItem(key) &&
+        localStorage.getItem(key) !== currentLibrarySlug
+      ) {
+        localStorage.removeItem(key);
+      }
+    });
+
     if (keysToRemove.length > 0) {
       console.log(
         `Cleared ${keysToRemove.length} stale localStorage entries for library switch`
       );
     }
+
+    // Set current library slug to prevent future caching issues
+    localStorage.setItem("lastLibrarySlug", currentLibrarySlug);
   }
 
   // Clear stale data and initialize localStorage for cart and collection if not present

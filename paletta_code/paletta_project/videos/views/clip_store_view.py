@@ -46,26 +46,14 @@ class ClipStoreView(TemplateView):
         """Get context data for the template."""
         context = super().get_context_data(**kwargs)
         
-        # Check for library slug in URL or query parameter
-        library_slug = self.kwargs.get('library_slug')
-        current_library = None
+        # Use current library from middleware (this is already set by LibraryContextMiddleware)
+        current_library = getattr(self.request, 'current_library', None)
         
-        if library_slug:
-            # New URL format with library_slug
-            current_library = get_library_by_slug(library_slug)
-            if current_library:
-                context['current_library'] = current_library
-        else:
-            # Legacy format with library_id
-            library_id = self.request.GET.get('library_id')
-            if library_id:
-                try:
-                    current_library = Library.objects.get(id=library_id)
-                    context['current_library'] = current_library
-                except Library.DoesNotExist:
-                    pass
+        # Ensure library is in context (middleware should have set this, but just in case)
+        if current_library:
+            context['current_library'] = current_library
         
-        # Get all categories for the sidebar, filtered by library if available
+        # Get all categories for the sidebar, filtered by current library
         if current_library:
             categories = Category.objects.filter(library=current_library).order_by('name')
         else:
@@ -187,30 +175,13 @@ class CategoryClipView(ClipStoreView):
         """Get context data for the template."""
         context = super().get_context_data(**kwargs)
         
-        # Check for new URL format with library_slug and category_slug
-        library_slug = self.kwargs.get('library_slug')
+        # Use current library from middleware (this is already set by LibraryContextMiddleware)
+        current_library = getattr(self.request, 'current_library', None)
         category_slug = self.kwargs.get('category_slug')
         
-        # Get the library if specified
-        current_library = None
-        if library_slug:
-            current_library = get_library_by_slug(library_slug)
-            if not current_library:
-                context['library_not_found'] = True
-                context['attempted_library_slug'] = library_slug
-                return context
-            
-            # Add library info to context
+        # Ensure library is in context (middleware should have set this, but just in case)
+        if current_library:
             context['current_library'] = current_library
-        else:
-            # Legacy format - check for library_id parameter
-            library_id = self.request.GET.get('library_id')
-            if library_id:
-                try:
-                    current_library = Library.objects.get(id=library_id)
-                    context['current_library'] = current_library
-                except Library.DoesNotExist:
-                    pass
         
         # Special case for "clip-store" slug - this represents all videos
         if category_slug == 'clip-store':

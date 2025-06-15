@@ -23,15 +23,17 @@
 
     <h3>Quick Navigation</h3>
     <div class="more-libraries-nav" id="libraries-container">
-      <!-- Default Paletta library -->
+      <!-- Paletta library is always pinned at the top -->
       <div class="library-button">
         <a href="{% url 'library_detail' library_slug='paletta' %}" class="{% if current_library and current_library.name == 'Paletta' %}active{% endif %}">
             <img src="{% static 'picture/logoicon.jpg' %}" alt="Paletta">
             <span>Paletta</span>
         </a>
       </div>
-      <!-- Dynamic libraries from database for authenticated users -->
-        {% for library in available_libraries %}
+      
+      <!-- All other libraries in creation order -->
+      {% for library in all_libraries %}
+        {% if library.name != 'Paletta' %}
         <div class="library-button">
             <a href="{% url 'library_detail' library_slug=library.name|library_slugify %}" class="{% if current_library and current_library.id == library.id %}active{% endif %}">
                 {% if library.logo %}
@@ -42,10 +44,11 @@
                 <span>{{ library.name }}</span>
             </a>
         </div>
-        {% empty %}
-        <!-- No additional libraries message for authenticated users -->
-        <p class="no-libraries">No additional libraries available.</p>
-        {% endfor %}
+        {% endif %}
+      {% empty %}
+      <!-- No additional libraries message -->
+      <p class="no-libraries">No other libraries available.</p>
+      {% endfor %}
     </div>
 
     <div class="admin-nav-btns">

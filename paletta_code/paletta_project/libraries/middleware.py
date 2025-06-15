@@ -17,18 +17,28 @@ class LibraryContextMiddleware(MiddlewareMixin):
     Priority: URL slug > Session > Default Paletta library
     """
     current_library = None
+    url_library_slug = None
     
     # Try to get library from URL kwargs (highest priority)
     if hasattr(request, 'resolver_match') and request.resolver_match:
       url_library_slug = request.resolver_match.kwargs.get('library_slug')
-      if url_library_slug:
-        current_library = self.get_library_by_slug(url_library_slug)
-        if current_library:
-          # Update session to maintain context
-          request.session['current_library_id'] = current_library.id
-          logger.debug(f"Library context set from URL: {current_library.name}")
-        else:
-          logger.warning(f"Library not found for slug: {url_library_slug}")
+    
+    # If no resolver match kwargs, try to extract from URL path directly
+    if not url_library_slug:
+      path_parts = request.path.strip('/').split('/')
+      if len(path_parts) >= 2 and path_parts[0] == 'library':
+        url_library_slug = path_parts[1]
+        logger.debug(f"Extracted library slug from URL path: {url_library_slug}")
+    
+    # Try to find the library by slug
+    if url_library_slug:
+      current_library = self.get_library_by_slug(url_library_slug)
+      if current_library:
+        # Update session to maintain context
+        request.session['current_library_id'] = current_library.id
+        logger.debug(f"Library context set from URL: {current_library.name} (slug: {url_library_slug})")
+      else:
+        logger.warning(f"Library not found for slug: {url_library_slug}")
   
     # Fallback to session if no URL slug or library not found
     if not current_library:
@@ -54,13 +64,14 @@ class LibraryContextMiddleware(MiddlewareMixin):
     # CLEAN APPROACH: Only attach current_library to request
     request.current_library = current_library
     
-    # For authenticated users, get all available libraries
+    # Store the extracted URL slug for debugging
+    request.url_library_slug = url_library_slug
+    
+    # For authenticated users, get all available libraries ordered by creation date
     if request.user.is_authenticated:
-      request.available_libraries = Library.objects.filter(is_active=True).exclude(
-        id=current_library.id if current_library else None
-      )
+      request.all_libraries = Library.objects.filter(is_active=True).order_by('created_at')
     else:
-      request.available_libraries = Library.objects.none()
+      request.all_libraries = Library.objects.none()
     
     return None
   

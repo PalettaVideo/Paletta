@@ -45,6 +45,18 @@ document.addEventListener("DOMContentLoaded", function () {
     return `userCollection_${getCurrentLibrarySlug()}`;
   }
 
+  // Force clear all stale data on every page load to prevent caching issues
+  clearStaleLibraryData();
+
+  // Add debug logging to track library context
+  const currentLibrarySlug = getCurrentLibrarySlug();
+  const currentLibraryName =
+    document.querySelector('meta[name="current-library-name"]')?.content ||
+    "Unknown";
+  console.log(
+    `[Library Debug] Page loaded for library: ${currentLibraryName} (slug: ${currentLibrarySlug})`
+  );
+
   // Initialize UI
   initializeUI();
   setupEventListeners();
@@ -600,14 +612,24 @@ document.addEventListener("DOMContentLoaded", function () {
   // Clear stale localStorage data from other libraries
   function clearStaleLibraryData() {
     const currentLibrarySlug = getCurrentLibrarySlug();
+    const currentLibraryName =
+      document.querySelector('meta[name="current-library-name"]')?.content ||
+      "Unknown";
     const keysToRemove = [];
+
+    console.log(
+      `[Cache Debug] Clearing cache for library switch to: ${currentLibraryName} (${currentLibrarySlug})`
+    );
 
     // Check all localStorage keys
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (
         key &&
-        (key.startsWith("userCart_") || key.startsWith("userCollection_"))
+        (key.startsWith("userCart_") ||
+          key.startsWith("userCollection_") ||
+          key.startsWith("categoryCache_") ||
+          key.startsWith("libraryData_"))
       ) {
         // If it's not for the current library, mark for removal
         if (!key.endsWith(`_${currentLibrarySlug}`)) {
@@ -619,12 +641,39 @@ document.addEventListener("DOMContentLoaded", function () {
     // Remove stale keys
     keysToRemove.forEach((key) => {
       localStorage.removeItem(key);
+      console.log(`[Cache Debug] Removed stale key: ${key}`);
     });
+
+    // Also clear any general cache that might interfere
+    const generalCacheKeys = [
+      "lastLibrarySlug",
+      "cachedCategories",
+      "lastVisitedLibrary",
+      "categoryData",
+    ];
+    generalCacheKeys.forEach((key) => {
+      const storedValue = localStorage.getItem(key);
+      if (storedValue && storedValue !== currentLibrarySlug) {
+        localStorage.removeItem(key);
+        console.log(
+          `[Cache Debug] Removed general cache key: ${key} (was: ${storedValue})`
+        );
+      }
+    });
+
+    // Force clear any cached DOM or JS state by triggering a more aggressive reset
+    if (typeof window.libraryCache !== "undefined") {
+      window.libraryCache = {};
+    }
 
     if (keysToRemove.length > 0) {
       console.log(
-        `Cleared ${keysToRemove.length} stale localStorage entries for library switch`
+        `[Cache Debug] Cleared ${keysToRemove.length} stale localStorage entries for library switch`
       );
     }
+
+    // Set current library slug to prevent future caching issues
+    localStorage.setItem("lastLibrarySlug", currentLibrarySlug);
+    console.log(`[Cache Debug] Set lastLibrarySlug to: ${currentLibrarySlug}`);
   }
 });

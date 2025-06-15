@@ -47,6 +47,11 @@
                           <div class="video-details">
                               <h3>{{ video.title }}</h3>
                               <p>Uploaded: {{ video.upload_date|date:"F j, Y" }}</p>
+                              {% if video.library %}
+                              <div class="library-tag">
+                                  <span class="library-badge">{{ video.library.name }}</span>
+                              </div>
+                              {% endif %}
                               <div class="video-actions">
                                   <a href="#" class="button edit" data-id="{{ video.id }}">Edit</a>
                                   <a href="#" class="button delete" data-id="{{ video.id }}" data-title="{{ video.title }}">Delete</a>

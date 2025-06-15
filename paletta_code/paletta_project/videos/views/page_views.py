@@ -32,6 +32,6 @@ class UploadPageView(TemplateView):
             
         context['current_library'] = current_library
         
-        # Inject the API Gateway URL from settings into the template
-        context['API_GATEWAY_URL'] = settings.API_GATEWAY_URL
+        # Inject the API Gateway URL from settings into the template (optional)
+        context['API_GATEWAY_URL'] = getattr(settings, 'API_GATEWAY_URL', '')
         return context 

@@ -1,4 +1,22 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // Clear any stale library cache before initializing the page
+  clearStaleLibraryCache();
+
+  // Add debug logging for library context
+  const currentLibrarySlug = getCurrentLibrarySlug();
+  const currentLibraryName =
+    document.querySelector('meta[name="current-library-name"]')?.content ||
+    "Unknown";
+  const categoriesCount =
+    document.querySelector('meta[name="categories-count"]')?.content || "0";
+
+  console.log(`[Homepage Debug] Library context initialized:`);
+  console.log(
+    `[Homepage Debug] - Current library: ${currentLibraryName} (slug: ${currentLibrarySlug})`
+  );
+  console.log(`[Homepage Debug] - Categories count: ${categoriesCount}`);
+  console.log(`[Homepage Debug] - URL: ${window.location.pathname}`);
+
   // initialize the popup menu for the user center
   initPopupMenu();
 
@@ -6,6 +24,94 @@ document.addEventListener("DOMContentLoaded", function () {
   initVideoSearch();
   initLibrarySearch();
 });
+
+// Get current library context for cache clearing
+function getCurrentLibrarySlug() {
+  // Try to get from meta tag first (most reliable)
+  const metaLibrarySlug = document.querySelector(
+    'meta[name="current-library-slug"]'
+  )?.content;
+  if (metaLibrarySlug) {
+    return metaLibrarySlug;
+  }
+
+  // Try to get from URL path as fallback
+  const pathParts = window.location.pathname.split("/");
+  const libraryIndex = pathParts.indexOf("library");
+  if (libraryIndex !== -1 && pathParts[libraryIndex + 1]) {
+    return pathParts[libraryIndex + 1];
+  }
+
+  // Fallback to 'paletta' if no library found
+  return "paletta";
+}
+
+// Clear stale localStorage data from other libraries
+function clearStaleLibraryCache() {
+  const currentLibrarySlug = getCurrentLibrarySlug();
+  const keysToRemove = [];
+
+  console.log(
+    `[Homepage Cache Debug] Clearing cache for library: ${currentLibrarySlug}`
+  );
+
+  // Check all localStorage keys
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (
+      key &&
+      (key.startsWith("userCart_") ||
+        key.startsWith("userCollection_") ||
+        key.startsWith("categoryCache_") ||
+        key.startsWith("libraryData_"))
+    ) {
+      // If it's not for the current library, mark for removal
+      if (!key.endsWith(`_${currentLibrarySlug}`)) {
+        keysToRemove.push(key);
+      }
+    }
+  }
+
+  // Remove stale keys
+  keysToRemove.forEach((key) => {
+    localStorage.removeItem(key);
+    console.log(`[Homepage Cache Debug] Removed stale key: ${key}`);
+  });
+
+  // Also clear any general cache that might interfere
+  const generalCacheKeys = [
+    "lastLibrarySlug",
+    "cachedCategories",
+    "lastVisitedLibrary",
+    "categoryData",
+  ];
+  generalCacheKeys.forEach((key) => {
+    const storedValue = localStorage.getItem(key);
+    if (storedValue && storedValue !== currentLibrarySlug) {
+      localStorage.removeItem(key);
+      console.log(
+        `[Homepage Cache Debug] Removed general cache key: ${key} (was: ${storedValue})`
+      );
+    }
+  });
+
+  // Force clear any cached library state
+  if (typeof window.libraryCache !== "undefined") {
+    window.libraryCache = {};
+  }
+
+  if (keysToRemove.length > 0) {
+    console.log(
+      `[Homepage Cache Debug] Cleared ${keysToRemove.length} stale localStorage entries for library switch`
+    );
+  }
+
+  // Set current library slug to prevent future caching issues
+  localStorage.setItem("lastLibrarySlug", currentLibrarySlug);
+  console.log(
+    `[Homepage Cache Debug] Set lastLibrarySlug to: ${currentLibrarySlug}`
+  );
+}
 
 function initPopupMenu() {
   const centerButton = document.getElementById("centerButton");

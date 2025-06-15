@@ -88,6 +88,22 @@ h1 {
     padding-left: 5vh;
 }
 
+.library-tag {
+    margin: 10px 0;
+}
+
+.library-badge {
+    display: inline-block;
+    background-color: #4a90e2;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 .video-meta {
     margin-top: 10px;
 }
