@@ -7,6 +7,7 @@
   <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - My Collection</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
   <meta name="clip-store-url" content="{% library_specific_url 'library_clip_store' %}">
   <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">

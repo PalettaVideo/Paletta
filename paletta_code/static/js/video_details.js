@@ -6,9 +6,80 @@ document.addEventListener("DOMContentLoaded", function () {
     "addToCollectionButton"
   );
 
-  // Use the same localStorage keys as inside_category.js
+  // Storage keys for cart and collection
   const COLLECTION_STORAGE_KEY = "userCollection";
   const CART_STORAGE_KEY = "userCart";
+
+  // Get current library context for localStorage keys
+  function getCurrentLibrarySlug() {
+    // Try to get from meta tag first (most reliable)
+    const metaLibrarySlug = document.querySelector(
+      'meta[name="current-library-slug"]'
+    )?.content;
+    if (metaLibrarySlug) {
+      return metaLibrarySlug;
+    }
+
+    // Try to get from URL path as fallback
+    const pathParts = window.location.pathname.split("/");
+    const libraryIndex = pathParts.indexOf("library");
+    if (libraryIndex !== -1 && pathParts[libraryIndex + 1]) {
+      return pathParts[libraryIndex + 1];
+    }
+
+    // Fallback to 'paletta' if no library found
+    return "paletta";
+  }
+
+  // Get library-specific localStorage keys
+  function getCartStorageKey() {
+    return `userCart_${getCurrentLibrarySlug()}`;
+  }
+
+  function getCollectionStorageKey() {
+    return `userCollection_${getCurrentLibrarySlug()}`;
+  }
+
+  // Clear stale localStorage data from other libraries
+  function clearStaleLibraryData() {
+    const currentLibrarySlug = getCurrentLibrarySlug();
+    const keysToRemove = [];
+
+    // Check all localStorage keys
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        (key.startsWith("userCart_") || key.startsWith("userCollection_"))
+      ) {
+        // If it's not for the current library, mark for removal
+        if (!key.endsWith(`_${currentLibrarySlug}`)) {
+          keysToRemove.push(key);
+        }
+      }
+    }
+
+    // Remove stale keys
+    keysToRemove.forEach((key) => {
+      localStorage.removeItem(key);
+    });
+
+    if (keysToRemove.length > 0) {
+      console.log(
+        `Cleared ${keysToRemove.length} stale localStorage entries for library switch`
+      );
+    }
+  }
+
+  // Clear stale data and initialize localStorage for cart and collection if not present
+  clearStaleLibraryData();
+
+  if (!localStorage.getItem(getCollectionStorageKey())) {
+    localStorage.setItem(getCollectionStorageKey(), JSON.stringify([]));
+  }
+  if (!localStorage.getItem(getCartStorageKey())) {
+    localStorage.setItem(getCartStorageKey(), JSON.stringify([]));
+  }
 
   // Initialize UI and event listeners
   initializeUI();
@@ -240,7 +311,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function updateCartCache(videoId, resolution, price) {
     try {
       // Get current cart from localStorage
-      const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY)) || [];
+      const cart = JSON.parse(localStorage.getItem(getCartStorageKey())) || [];
 
       // Get video details from the page
       const videoDetails = getVideoDetailsFromPage();
@@ -273,7 +344,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       // Save back to localStorage
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      localStorage.setItem(getCartStorageKey(), JSON.stringify(cart));
 
       console.log("Cart updated in localStorage:", cart);
     } catch (error) {
@@ -296,7 +367,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Get current collection from localStorage
       const collection =
-        JSON.parse(localStorage.getItem(COLLECTION_STORAGE_KEY)) || [];
+        JSON.parse(localStorage.getItem(getCollectionStorageKey())) || [];
 
       // Get video details from the page - only if we have valid elements
       const videoDetails = getVideoDetailsFromPage();
@@ -317,7 +388,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Save back to localStorage
         localStorage.setItem(
-          COLLECTION_STORAGE_KEY,
+          getCollectionStorageKey(),
           JSON.stringify(collection)
         );
         console.log("Collection updated in localStorage:", collection);
