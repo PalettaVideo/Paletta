@@ -1,4 +1,5 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
@@ -25,8 +26,8 @@
     <div class="layout">
         <aside class="sidebar">
             <ul>
-                <li><a href="{% url 'upload' %}">Upload</a></li>
-                <li><a href="{% url 'upload_history' %}">Your Uploads</a></li>
+                <li><a href="{% library_specific_url 'library_upload' %}">Upload</a></li>
+                <li><a href="{% library_specific_url 'library_upload_history' %}">Your Uploads</a></li>
                 <li><a href="#" class="active">Edit Video</a></li>
             </ul>
         </aside>
@@ -35,18 +36,18 @@
             {% if video_not_found %}
             <div class="error-message">
                 <h2>Video Not Found</h2>
-                <p>The requested video could not be found. <a href="{% url 'upload_history' %}">Return to upload history</a>.</p>
+                <p>The requested video could not be found. <a href="{% library_specific_url 'library_upload_history' %}">Return to upload history</a>.</p>
             </div>
             {% elif permission_error %}
             <div class="error-message">
                 <h2>Permission Denied</h2>
-                <p>You don't have permission to edit this video. <a href="{% url 'upload_history' %}">Return to upload history</a>.</p>
+                <p>You don't have permission to edit this video. <a href="{% library_specific_url 'library_upload_history' %}">Return to upload history</a>.</p>
             </div>
             {% elif error %}
             <div class="error-message">
                 <h2>Error</h2>
                 <p>{{ error }}</p>
-                <p><a href="{% url 'upload_history' %}">Return to upload history</a>.</p>
+                <p><a href="{% library_specific_url 'library_upload_history' %}">Return to upload history</a>.</p>
             </div>
             {% else %}
             <h2>Edit Video</h2>
@@ -148,7 +149,7 @@
 
                 <div class="form-actions">
                     <button type="submit" class="save-btn">Save Changes</button>
-                    <a href="{% url 'upload_history' %}" class="cancel-btn">Cancel</a>
+                    <a href="{% library_specific_url 'library_upload_history' %}" class="cancel-btn">Cancel</a>
                 </div>
             </form>
             {% endif %}

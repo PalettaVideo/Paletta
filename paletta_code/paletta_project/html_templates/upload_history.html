@@ -1,4 +1,5 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
@@ -25,8 +26,8 @@
   <div class="layout">
       <aside class="sidebar">
         <ul>
-          <li><a href="{% url 'upload' %}">Upload</a></li>
-          <li><a href="{% url 'upload_history' %}" class="active">History</a></li>
+          <li><a href="{% library_specific_url 'library_upload' %}">Upload</a></li>
+          <li><a href="{% library_specific_url 'library_upload_history' %}" class="active">History</a></li>
         </ul>
       </aside>
       <main class="content">
@@ -57,7 +58,7 @@
           {% else %}
               <div class="no-videos">
                   <p>You haven't uploaded any videos yet.</p>
-                  <a href="{% url 'upload' %}" class="button">Upload Your First Video</a>
+                  <a href="{% library_specific_url 'library_upload' %}" class="button">Upload Your First Video</a>
               </div>
           {% endif %}
           

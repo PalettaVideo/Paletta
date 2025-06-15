@@ -4,7 +4,7 @@ from accounts.models import User
 import os
 from django.core.validators import FileExtensionValidator
 from django.urls import reverse
-from paletta_core.storage import MediaStorage
+from paletta_core.storage import get_media_storage
 
 def category_image_path(instance, filename):
     """
@@ -18,7 +18,7 @@ class Category(models.Model):
     name = models.CharField(max_length=25)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    image = models.ImageField(upload_to=category_image_path, blank=True, null=True, storage=MediaStorage())
+    image = models.ImageField(upload_to=category_image_path, blank=True, null=True, storage=get_media_storage)
     library = models.ForeignKey('libraries.Library', on_delete=models.CASCADE, related_name='categories')
     
     class Meta:
@@ -108,7 +108,7 @@ class Video(models.Model):
   )
   
   # Thumbnail image
-  thumbnail = models.ImageField(upload_to=thumbnail_upload_path, null=True, blank=True)
+  thumbnail = models.ImageField(upload_to=thumbnail_upload_path, null=True, blank=True, storage=get_media_storage)
   
   # Additional metadata
   duration = models.PositiveIntegerField(null=True, blank=True, help_text="Duration in seconds")

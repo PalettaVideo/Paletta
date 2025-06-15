@@ -1,4 +1,5 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
@@ -31,14 +32,20 @@
     <div class="content">
       <div class="video-container">
           <div class="navigation-buttons">
-            {% if clip.category %}
-              <a href="{% url 'library_category' library_slug=library.slug category_slug=clip.category|slugify %}">
-                <button class="back-button">Back to all videos in Category -  '{{ clip.category }}'</button>
+            {% if clip.category and current_library %}
+              <a href="{% library_specific_url 'library_category' category_slug=clip.category.name|library_slugify %}">
+                <button class="back-button">Back to all videos in Category -  '{{ clip.category.name }}'</button>
               </a>
             {% endif %}
-            <a href="{% url 'library_clip_store' library_slug=library.slug %}">
-              <button class="back-button">Back to all videos in Library -  '{{ library.name }}'</button>
+            {% if current_library %}
+            <a href="{% library_specific_url 'library_clip_store' %}">
+              <button class="back-button">Back to all videos in Library -  '{{ current_library.name }}'</button>
             </a>
+            {% else %}
+            <a href="{% url 'home' %}">
+              <button class="back-button">Back to Home</button>
+            </a>
+            {% endif %}
           </div>
           {% if clip.storage_status == 'stored' %}
             <video src="{{ clip.get_streaming_url }}" controls></video>

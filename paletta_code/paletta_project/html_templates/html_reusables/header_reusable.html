@@ -1,11 +1,10 @@
 {% load static %}
+{% load library_tags %}
 <script src="{% static 'js/header_reusable.js' %}" defer></script>
 <header>
   <div class="logo-container">
-    {% if library_slug %}
-    <a href="{% url 'library_detail' library_slug=library_slug %}" style="text-decoration: none;">
-    {% elif current_library %}
-    <a href="{% url 'library_detail' library_slug=current_library.name|slugify %}" style="text-decoration: none;">
+    {% if current_library %}
+    <a href="{% library_specific_url 'library_detail' %}" style="text-decoration: none;">
     {% else %}
     <a href="{% url 'home' %}" style="text-decoration: none;">
     {% endif %}
@@ -27,13 +26,7 @@
       </button>
     </div>
     <div class="actions">
-      {% if library_slug %}
-      <a href="{% url 'upload' %}?library_slug={{ library_slug }}" style="text-decoration: none;">
-      {% elif current_library %}
-      <a href="{% url 'upload' %}?library_slug={{ current_library.name|slugify }}" style="text-decoration: none;">
-      {% else %}
-      <a href="{% url 'upload' %}" style="text-decoration: none;">
-      {% endif %}
+      <a href="{% library_specific_url 'library_upload' %}" style="text-decoration: none;">
         <button>
           <svg style="enable-background:new 0 0 24 24;" version="1.1" viewBox="0 0 24 24" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
             <g id="grid_system"/>
@@ -58,10 +51,10 @@
         My Center
       </button>
       <div class="popup" id="popupMenu" style="display: none;">
-        <a href="{% url 'profile' %}">My Profile</a>
-        <a href="{% url 'collection' %}">My Collection</a>
-        <a href="{% url 'cart' %}">My Cart</a>
-        <a href="{% url 'orders_list' %}">My Order</a>
+        <a href="{% library_specific_url 'library_profile' %}">My Profile</a>
+        <a href="{% library_specific_url 'library_collection' %}">My Collection</a>
+        <a href="{% library_specific_url 'library_cart' %}">My Cart</a>
+        <a href="{% library_specific_url 'library_orders_list' %}">My Orders</a>
         <a href="{% url 'logout' %}">Log Out</a>
       </div>
     </div>

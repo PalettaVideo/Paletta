@@ -1,4 +1,5 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
@@ -28,10 +29,10 @@
     <div class="layout">
         <aside class="sidebar">
             <ul>
-                <li><a href="{% url 'profile' %}" class="active">My profile</a></li>
-                <li><a href="{% url 'collection' %}">My collection</a></li>
-                <li><a href="{% url 'cart' %}">My cart</a></li>
-                <li><a href="{% url 'orders_list' %}">My orders</a></li>
+                <li><a href="{% library_specific_url 'library_profile' %}" class="active">My profile</a></li>
+                <li><a href="{% library_specific_url 'library_collection' %}">My collection</a></li>
+                <li><a href="{% library_specific_url 'library_cart' %}">My cart</a></li>
+                <li><a href="{% library_specific_url 'library_orders_list' %}">My orders</a></li>
             </ul>
         </aside>
         <main class="content">

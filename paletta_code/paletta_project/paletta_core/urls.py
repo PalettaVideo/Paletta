@@ -27,6 +27,9 @@ from accounts.views.admin_view import ManageAdministratorsView
 from videos.views.clip_store_view import CategoryClipView
 from videos.views.video_detail_view import VideoDetailView
 from videos.views.thumbnail_view import VideoThumbnailAPIView
+from videos.views.page_views import UploadPageView
+from videos.views.upload_view import UploadHistoryView
+from orders.views import CartView, CheckoutView, OrdersListView, OrderDetailView
 
 # Create a class for category views
 class CategoryView(TemplateView):
@@ -57,15 +60,21 @@ urlpatterns = [
     path('home/', HomeView.as_view(), name='home'),
     path('logout/', LogoutView.as_view(), name='logout'),
     
-    # New user-friendly URLs for libraries and categories
+    # Library-specific URLs (with library context)
     path('library/<str:library_slug>/', HomeView.as_view(), name='library_detail'),
     path('library/<str:library_slug>/category/clip-store/', CategoryClipView.as_view(), name='library_clip_store'),
     path('library/<str:library_slug>/category/<str:category_slug>/', CategoryClipView.as_view(), name='library_category'),
+    path('library/<str:library_slug>/clip/<int:video_id>/', VideoDetailView.as_view(), name='library_clip_detail'),
+    path('library/<str:library_slug>/upload/', UploadPageView.as_view(), name='library_upload'),
+    path('library/<str:library_slug>/upload/history/', UploadHistoryView.as_view(), name='library_upload_history'),
+    path('library/<str:library_slug>/profile/', ProfileView.as_view(), name='library_profile'),
+    path('library/<str:library_slug>/collection/', CollectionView.as_view(), name='library_collection'),
+    path('library/<str:library_slug>/cart/', CartView.as_view(), name='library_cart'),
+    path('library/<str:library_slug>/checkout/', CheckoutView.as_view(), name='library_checkout'),
+    path('library/<str:library_slug>/orders/', OrdersListView.as_view(), name='library_orders_list'),
+    path('library/<str:library_slug>/orders/<int:pk>/', OrderDetailView.as_view(), name='library_order_detail'),
     
-    # User profile and account pages
-    path('profile/', ProfileView.as_view(), name='profile'),
-    path('profile/update/', ProfileUpdateView.as_view(), name='profile_update'),
-    path('collection/', CollectionView.as_view(), name='collection'),
+
     
     # Order management routes - include the orders app URLs
     path('', include('orders.urls')),
@@ -75,8 +84,7 @@ urlpatterns = [
     path('contact/', ContactUsView.as_view(), name='contact_us'),
     path('help/', QAndAView.as_view(), name='q_and_a'),
     
-    # Video detail route
-    path('clip/<int:video_id>/', VideoDetailView.as_view(), name='clip_detail'),
+
     
     # Library management routes
     path('libraries/create/', login_required(CreateLibraryView.as_view()), name='create_library'),

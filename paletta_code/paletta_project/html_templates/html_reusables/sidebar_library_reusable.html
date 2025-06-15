@@ -1,4 +1,5 @@
 {% load static %}
+{% load library_tags %}
 <div id="sidebar-component">
   <!--- Floating label -->
   <div id="floating-label" class="floating-label">
@@ -24,15 +25,15 @@
     <div class="more-libraries-nav" id="libraries-container">
       <!-- Default Paletta library -->
       <div class="library-button">
-        <a href="{% url 'home' %}" class="{% if not current_library or current_library.name == 'Paletta' %}active{% endif %}">
+        <a href="{% url 'library_detail' library_slug='paletta' %}" class="{% if current_library and current_library.name == 'Paletta' %}active{% endif %}">
             <img src="{% static 'picture/logoicon.jpg' %}" alt="Paletta">
             <span>Paletta</span>
         </a>
       </div>
       <!-- Dynamic libraries from database for authenticated users -->
-        {% for library in libraries %}
+        {% for library in available_libraries %}
         <div class="library-button">
-            <a href="{% url 'library_detail' library_slug=library.name|slugify %}" class="{% if current_library and current_library.id == library.id %}active{% endif %}">
+            <a href="{% url 'library_detail' library_slug=library.name|library_slugify %}" class="{% if current_library and current_library.id == library.id %}active{% endif %}">
                 {% if library.logo %}
                     <img src="{{ library.logo.url }}" alt="{{ library.name }}">
                 {% else %}

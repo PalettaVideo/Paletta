@@ -1,4 +1,5 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
@@ -26,12 +27,12 @@
     <div class="layout">
         <aside class="sidebar">
             <ul>
-                <li><a href="{% url 'upload' %}" class="active">Upload</a></li>
-                <li><a href="{% url 'upload_history' %}">History</a></li>
+                <li><a href="{% library_specific_url 'library_upload' %}" class="active">Upload</a></li>
+                <li><a href="{% library_specific_url 'library_upload_history' %}">History</a></li>
             </ul>
         </aside>
         <main class="content">
-          <form id="upload-form" method="post" enctype="multipart/form-data" data-success-url="{% url 'upload_history' %}" data-api-gateway-url="{{ API_GATEWAY_URL }}/getPresignedVideoUploadURL" data-library-id="{{ current_library.id }}" novalidate>
+          <form id="upload-form" method="post" enctype="multipart/form-data" data-success-url="{% library_specific_url 'library_upload_history' %}" data-api-gateway-url="{{ API_GATEWAY_URL }}/getPresignedVideoUploadURL" data-library-id="{{ current_library.id }}" novalidate>
             {% csrf_token %}
             <h1>Upload your clip</h1>
             

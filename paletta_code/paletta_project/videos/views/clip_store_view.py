@@ -10,7 +10,7 @@ import logging
 from django.shortcuts import redirect
 from django.urls import reverse
 
-from accounts.views.home_view import get_library_by_slug, get_library_slug
+from accounts.views.home_view import get_library_by_slug
 from django.utils.text import slugify
 from libraries.models import Library
 
@@ -55,7 +55,6 @@ class ClipStoreView(TemplateView):
             current_library = get_library_by_slug(library_slug)
             if current_library:
                 context['current_library'] = current_library
-                context['library_slug'] = library_slug
         else:
             # Legacy format with library_id
             library_id = self.request.GET.get('library_id')
@@ -63,7 +62,6 @@ class ClipStoreView(TemplateView):
                 try:
                     current_library = Library.objects.get(id=library_id)
                     context['current_library'] = current_library
-                    context['library_slug'] = get_library_slug(current_library.name)
                 except Library.DoesNotExist:
                     pass
         
@@ -204,7 +202,6 @@ class CategoryClipView(ClipStoreView):
             
             # Add library info to context
             context['current_library'] = current_library
-            context['library_slug'] = library_slug
         else:
             # Legacy format - check for library_id parameter
             library_id = self.request.GET.get('library_id')
@@ -212,7 +209,6 @@ class CategoryClipView(ClipStoreView):
                 try:
                     current_library = Library.objects.get(id=library_id)
                     context['current_library'] = current_library
-                    context['library_slug'] = get_library_slug(current_library.name)
                 except Library.DoesNotExist:
                     pass
         

@@ -1,4 +1,5 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 {% load video_tags %}
 <!DOCTYPE html>
@@ -29,10 +30,8 @@
   <aside class="sidebar">
     <ul class="category-list">
       <li>
-        {% if library_slug %}
-        <a href="{% url 'library_detail' library_slug=library_slug %}">
-        {% elif current_library %}
-        <a href="{% url 'library_detail' library_slug=current_library.name|slugify %}">
+        {% if current_library %}
+        <a href="{% library_specific_url 'library_detail' %}">
         {% else %}
         <a href="{% url 'home' %}">
         {% endif %}
@@ -41,15 +40,15 @@
         </a>
       </li>
       <li class="{% if category_filter == 'all' or not category_filter or is_clip_store %}active{% endif %}" data-category="all">
-        {% if library_slug %}
-        <a href="{% url 'library_clip_store' library_slug=library_slug %}">All Clips</a>
+        {% if current_library %}
+        <a href="{% library_specific_url 'library_clip_store' %}">All Clips</a>
         {% else %}
         <a href="#">All Clips</a>
         {% endif %}
       </li>
       {% for category in categories %}
-      <li class="{% if category_filter|lower == category.name|lower or category_slug == category.name|slugify or current_category and current_category.id == category.id %}active{% endif %}" data-category="{{ category.name|lower }}">
-        <a href="{% url 'library_category' library_slug=library_slug category_slug=category.name|slugify %}">{{ category.name }}</a>
+      <li class="{% if category_filter|lower == category.name|lower or category_slug == category.name|library_slugify or current_category and current_category.id == category.id %}active{% endif %}" data-category="{{ category.name|lower }}">
+        <a href="{% library_specific_url 'library_category' category_slug=category.name|library_slugify %}">{{ category.name }}</a>
       </li>
       {% endfor %}
     </ul>
@@ -182,10 +181,10 @@
     <div class="pagination-controls" id="pagination-controls">
       <div class="pagination-wrapper">
         {% if page_obj.has_previous %}
-          {% if library_slug and category_slug %}
-            <a href="{% url 'library_category' library_slug=library_slug category_slug=category_slug %}?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn prev">&laquo; Previous</a>
-          {% elif library_slug %}
-            <a href="{% url 'library_detail' library_slug=library_slug %}?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn prev">&laquo; Previous</a>
+          {% if current_library and category_slug %}
+            <a href="{% library_specific_url 'library_category' category_slug=category_slug %}?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn prev">&laquo; Previous</a>
+          {% elif current_library %}
+            <a href="{% library_specific_url 'library_detail' %}?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn prev">&laquo; Previous</a>
           {% else %}
             <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn prev">&laquo; Previous</a>
           {% endif %}
@@ -195,10 +194,10 @@
           {% if page_obj.number == num %}
             <span class="pagination-btn page active">{{ num }}</span>
           {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-            {% if library_slug and category_slug %}
-              <a href="{% url 'library_category' library_slug=library_slug category_slug=category_slug %}?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn page">{{ num }}</a>
-            {% elif library_slug %}
-              <a href="{% url 'library_detail' library_slug=library_slug %}?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn page">{{ num }}</a>
+            {% if current_library and category_slug %}
+              <a href="{% library_specific_url 'library_category' category_slug=category_slug %}?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn page">{{ num }}</a>
+            {% elif current_library %}
+              <a href="{% library_specific_url 'library_detail' %}?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn page">{{ num }}</a>
             {% else %}
               <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn page">{{ num }}</a>
             {% endif %}
@@ -206,10 +205,10 @@
         {% endfor %}
         
         {% if page_obj.has_next %}
-          {% if library_slug and category_slug %}
-            <a href="{% url 'library_category' library_slug=library_slug category_slug=category_slug %}?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn next">Next &raquo;</a>
-          {% elif library_slug %}
-            <a href="{% url 'library_detail' library_slug=library_slug %}?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn next">Next &raquo;</a>
+          {% if current_library and category_slug %}
+            <a href="{% library_specific_url 'library_category' category_slug=category_slug %}?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn next">Next &raquo;</a>
+          {% elif current_library %}
+            <a href="{% library_specific_url 'library_detail' %}?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn next">Next &raquo;</a>
           {% else %}
             <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn next">Next &raquo;</a>
           {% endif %}

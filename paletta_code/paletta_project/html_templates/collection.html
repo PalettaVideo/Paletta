@@ -1,4 +1,5 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
@@ -6,7 +7,7 @@
   <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - My Collection</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="clip-store-url" content="{% url 'library_clip_store' library_slug='all' %}">
+  <meta name="clip-store-url" content="{% library_specific_url 'library_clip_store' %}">
   <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
@@ -29,10 +30,10 @@
 <aside class="sidebar">
   <nav>
     <ul>
-        <li><a href="{% url 'profile' %}">My profile</a></li>
-        <li><a href="{% url 'collection' %}" class="active">My collection</a></li>
-        <li><a href="{% url 'cart' %}">My cart</a></li>
-        <li><a href="{% url 'orders_list' %}">My orders</a></li>
+        <li><a href="{% library_specific_url 'library_profile' %}">My profile</a></li>
+        <li><a href="{% library_specific_url 'library_collection' %}" class="active">My collection</a></li>
+        <li><a href="{% library_specific_url 'library_cart' %}">My cart</a></li>
+        <li><a href="{% library_specific_url 'library_orders_list' %}">My orders</a></li>
     </ul>
   </nav>
 </aside>

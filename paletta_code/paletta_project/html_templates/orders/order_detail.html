@@ -1,4 +1,5 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
@@ -26,17 +27,17 @@
     <div class="layout">
         <aside class="sidebar">
             <ul>
-                <li><a href="{% url 'profile' %}">My profile</a></li>
-                <li><a href="{% url 'collection' %}">My collection</a></li>
-                <li><a href="{% url 'cart' %}">My cart</a></li>
-                <li><a href="{% url 'orders_list' %}" class="active">My orders</a></li>
+                <li><a href="{% library_specific_url 'library_profile' %}">My profile</a></li>
+                <li><a href="{% library_specific_url 'library_collection' %}">My collection</a></li>
+                <li><a href="{% library_specific_url 'library_cart' %}">My cart</a></li>
+                <li><a href="{% library_specific_url 'library_orders_list' %}" class="active">My orders</a></li>
             </ul>
         </aside>
         
         <main class="main-content">
             <div class="container">
                 <div class="order-header">
-                    <a href="{% url 'orders_list' %}" class="back-link">&larr; Back to Orders</a>
+                    <a href="{% library_specific_url 'library_orders_list' %}" class="back-link">&larr; Back to Orders</a>
                     <h1>Order #{{ order.id }}</h1>
                     <div class="order-meta">
                         <p>Order Date: {{ order.order_date|date:"F j, Y, H:i" }}</p>

@@ -3,6 +3,7 @@ from django.utils import timezone
 from accounts.models import User
 from videos.models import Video
 from django.core.exceptions import ValidationError
+from paletta_core.storage import get_media_storage
 
 class Library(models.Model):
     """
@@ -25,7 +26,7 @@ class Library(models.Model):
     name = models.CharField(max_length=25, unique=True)
     description = models.TextField(blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_libraries')
-    logo = models.ImageField(upload_to='library_logos/', blank=True, null=True)
+    logo = models.ImageField(upload_to='library_logos/', blank=True, null=True, storage=get_media_storage)
     # Store color scheme as JSON
     color_scheme = models.JSONField(default=dict, blank=True)
     storage_tier = models.CharField(max_length=20, choices=STORAGE_TIER_CHOICES, default='basic')

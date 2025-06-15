@@ -66,6 +66,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'libraries.middleware.LibraryContextMiddleware',  # Add library context middleware
 ]
 
 ROOT_URLCONF = 'paletta_core.urls'
@@ -85,6 +86,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.static',  # Add this for {% static %} tag
+                'libraries.context_processors.library_context',  # Add library context processor
             ],
         },
     },
@@ -156,6 +158,8 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR.parent / 'media'
 
+# AWS Storage Configuration - Disabled in development
+AWS_STORAGE_ENABLED = False
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

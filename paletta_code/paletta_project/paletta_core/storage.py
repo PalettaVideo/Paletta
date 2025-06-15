@@ -1,6 +1,6 @@
 from storages.backends.s3boto3 import S3Boto3Storage
-from storages.utils import setting
 from django.conf import settings
+from django.core.files.storage import default_storage
 
 
 class StaticStorage(S3Boto3Storage):
@@ -31,3 +31,15 @@ class MediaStorage(S3Boto3Storage):
         initialization errors.
         """
         return f'{settings.AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com'
+
+
+def get_media_storage():
+    """
+    Returns the appropriate storage class based on whether AWS is enabled.
+    This prevents import-time errors when AWS settings are not available.
+    """
+    aws_enabled = getattr(settings, 'AWS_STORAGE_ENABLED', False)
+    if aws_enabled:
+        return MediaStorage()
+    else:
+        return default_storage

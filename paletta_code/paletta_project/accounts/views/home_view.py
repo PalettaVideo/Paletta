@@ -5,17 +5,12 @@ from django.contrib import messages
 from videos.models import Category
 from videos.serializers import CategorySerializer
 from libraries.models import Library
-from django.http import Http404
 from django.utils.text import slugify
-
-def get_library_slug(library_name):
-    """Convert a library name to a URL-friendly slug."""
-    return slugify(library_name)
 
 def get_library_by_slug(slug):
     """Get a library by its slug."""
     for library in Library.objects.all():
-        if get_library_slug(library.name) == slug:
+        if slugify(library.name) == slug:
             return library
     return None
 
@@ -86,12 +81,12 @@ class HomeView(TemplateView):
             # Get all libraries for the sidebar
             libraries = Library.objects.filter(is_active=True).exclude(id=paletta_library.id if paletta_library else None)
             
-            # Add slugs to context for building URLs
+            # CLEAN APPROACH: Let middleware handle library context
+            # No need to manually add library_slug to context
             context = {
                 'categories': serializer.data,
                 'libraries': libraries,
                 'current_library': current_library,
-                'library_slug': get_library_slug(current_library.name) if current_library else None
             }
         
         # Return the single homepage template with the context

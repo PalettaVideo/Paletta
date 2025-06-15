@@ -5,7 +5,6 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404
 import logging
 from ..models import Video, VideoTag
-from accounts.views.home_view import get_library_slug
 
 logger = logging.getLogger(__name__)
 
@@ -63,12 +62,8 @@ class VideoDetailView(TemplateView):
                 category=clip.category
             ).exclude(id=clip.id).order_by('-upload_date')[:4]
             
-            # Add library information to context if available
-            if clip.library:
-                context['library'] = {
-                    'name': clip.library.name,
-                    'slug': get_library_slug(clip.library.name)
-                }
+            # CLEAN APPROACH: Library context is handled by middleware
+            # Templates will generate slugs on-demand using template tags
             
         except Exception as e:
             logger.error(f"Error retrieving video details: {str(e)}")
