@@ -18,7 +18,7 @@ class Command(BaseCommand):
         # Find the settings files relative to the Django project directory
         settings_files = [
             'paletta_core/settings_development.py',
-            '../paletta_project/settings_production.py'
+            'paletta_project/settings_production.py'
         ]
         
         if options['set_version']:
