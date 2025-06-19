@@ -51,7 +51,11 @@ class VideoListAPIView(generics.ListAPIView):
         # Apply category filter
         category = self.request.query_params.get('category', None)
         if category and category.lower() != 'all':
-            queryset = queryset.filter(category__name__iexact=category)
+            # Handle both subject_area and paletta_category filtering
+            queryset = queryset.filter(
+                Q(subject_area__subject_area__iexact=category) |
+                Q(paletta_category__code__iexact=category)
+            )
         
         # Apply tags filter
         tags = self.request.query_params.getlist('tags', [])
@@ -149,17 +153,22 @@ class CategoryVideosAPIView(generics.ListAPIView):
         logger.info(f"Category lookup: encoded='{encoded_category_name}', decoded='{decoded_category_name}', db_lookup='{db_category_name}'")
         
         # Try to find the category first to confirm it exists
+        # Check both subject areas and paletta categories
         try:
-            category = Category.objects.get(name__iexact=db_category_name)
-            logger.info(f"Found category: '{category.display_name}' (id: {category.id})")
-        except Category.DoesNotExist:
+            # First try to find as a subject area
+            try:
+                category = Category.objects.get(subject_area__iexact=db_category_name)
+                logger.info(f"Found subject area category: '{category.display_name}' (id: {category.id})")
+                queryset = Video.objects.filter(subject_area=category)
+            except Category.DoesNotExist:
+                # Then try to find as a paletta category
+                from videos.models import PalettaCategory
+                paletta_category = PalettaCategory.objects.get(code__iexact=db_category_name)
+                logger.info(f"Found paletta category: '{paletta_category.display_name}' (id: {paletta_category.id})")
+                queryset = Video.objects.filter(paletta_category=paletta_category)
+        except (Category.DoesNotExist, PalettaCategory.DoesNotExist):
             logger.warning(f"Category '{db_category_name}' does not exist in database")
             return Video.objects.none()  # Return empty queryset if category doesn't exist
-        
-        # Continue with queryset filtering using the found category
-        queryset = Video.objects.filter(
-            category=category
-        )
         
         # Apply search filter
         search_query = self.request.query_params.get('search', None)

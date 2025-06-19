@@ -46,18 +46,29 @@ User = get_user_model()
 # Create content types
 content_types = ['campus_life', 'teaching_learning', 'research_innovation', 'city_environment', 'aerial_establishing', 'people_portraits', 'culture_events', 'workspaces_facilities', 'cutaways_abstracts', 'historical_archive']
 
+print("Creating content types...")
 for ct in content_types:
-    ContentType.objects.get_or_create(code=ct)
+    obj, created = ContentType.objects.get_or_create(code=ct)
+    if created:
+        print(f"Created ContentType: {ct}")
+    else:
+        print(f"ContentType already exists: {ct}")
 
 # Create Paletta categories  
 paletta_categories = ['people_community', 'buildings_architecture', 'classrooms_learning', 'field_trips_outdoor', 'events_conferences', 'research_innovation_spaces', 'technology_equipment', 'everyday_campus', 'urban_natural_environments', 'backgrounds_abstracts', 'private']
 
+print("Creating Paletta categories...")
 for pc in paletta_categories:
-    PalettaCategory.objects.get_or_create(code=pc)
+    obj, created = PalettaCategory.objects.get_or_create(code=pc)
+    if created:
+        print(f"Created PalettaCategory: {pc}")
+    else:
+        print(f"PalettaCategory already exists: {pc}")
 
 # Create default Paletta library
 admin_user = User.objects.filter(is_superuser=True).first()
 if admin_user:
+    print("Creating default Paletta library...")
     paletta_lib, created = Library.objects.get_or_create(
         name='Paletta',
         defaults={
