@@ -48,10 +48,8 @@ class Category(models.Model):
         ('historical_archive', 'Historical & Archive'),
     ]
     
-    # Keep the old name field temporarily for migration
-    name = models.CharField(max_length=25)  # Original field, will be removed later
-    subject_area = models.CharField(max_length=50, choices=SUBJECT_AREA_CHOICES, null=True, blank=True)
-    content_type = models.CharField(max_length=50, choices=CONTENT_TYPE_CHOICES, null=True, blank=True)
+    subject_area = models.CharField(max_length=50, choices=SUBJECT_AREA_CHOICES)
+    content_type = models.CharField(max_length=50, choices=CONTENT_TYPE_CHOICES)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     image = models.ImageField(upload_to=category_image_path, blank=True, null=True, storage=get_media_storage)
@@ -61,17 +59,14 @@ class Category(models.Model):
     class Meta:
         verbose_name_plural = "Categories"
         ordering = ['subject_area', 'content_type']
-        # Keep old constraint temporarily, will be updated in final migration
-        unique_together = ['name', 'library']
+        unique_together = ['subject_area', 'content_type', 'library']
     
     @property
     def display_name(self):
         """Generate display name from subject area and content type"""
-        if self.subject_area and self.content_type:
-            subject_display = dict(self.SUBJECT_AREA_CHOICES).get(self.subject_area, self.subject_area)
-            content_display = dict(self.CONTENT_TYPE_CHOICES).get(self.content_type, self.content_type)
-            return f"{subject_display} - {content_display}"
-        return self.name  # Fallback to old name field during transition
+        subject_display = dict(self.SUBJECT_AREA_CHOICES).get(self.subject_area, self.subject_area)
+        content_display = dict(self.CONTENT_TYPE_CHOICES).get(self.content_type, self.content_type)
+        return f"{subject_display} - {content_display}"
     
     @property
     def slug(self):
