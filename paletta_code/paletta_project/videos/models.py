@@ -164,7 +164,7 @@ class Video(models.Model):
   tags = models.ManyToManyField(Tag, through='VideoTag', related_name='videos')
   
   # New dual-category structure
-  subject_area = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='videos', null=True, blank=True, help_text="Required: Select one subject area")
+  subject_area = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='videos', help_text="Required: Select one subject area")
   content_types = models.ManyToManyField(ContentType, related_name='videos', help_text="Required: Select 1-3 content types")
   paletta_category = models.ForeignKey(PalettaCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='videos', help_text="For Paletta library videos only")
   
@@ -230,21 +230,6 @@ class Video(models.Model):
             raise ValidationError("At least one content type must be selected.")
         if content_count > 3:
             raise ValidationError("Maximum of 3 content types can be selected.")
-    
-    # Validate category assignment based on library type
-    if self.library:
-        if self.library.category_source == 'paletta':
-            # Paletta library: must have paletta_category, no subject_area
-            if not self.paletta_category:
-                raise ValidationError("Videos in Paletta libraries must have a Paletta category assigned.")
-            if self.subject_area:
-                raise ValidationError("Videos in Paletta libraries should not have a subject area assigned.")
-        else:
-            # Custom library: must have subject_area, no paletta_category
-            if not self.subject_area:
-                raise ValidationError("Videos in custom libraries must have a subject area assigned.")
-            if self.paletta_category:
-                raise ValidationError("Videos in custom libraries should not have a Paletta category assigned.")
 
   def __str__(self):
     return self.title

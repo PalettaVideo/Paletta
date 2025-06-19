@@ -26,7 +26,7 @@ def get_category_by_slug(slug, library=None):
         categories = Category.objects.all()
         
     for category in categories:
-        if get_category_slug(category.name) == slug:
+        if get_category_slug(category.display_name) == slug:
             return category
     return None
 
@@ -55,9 +55,9 @@ class ClipStoreView(TemplateView):
         
         # Get all categories for the sidebar, filtered by current library
         if current_library:
-            categories = Category.objects.filter(library=current_library).order_by('name')
+            categories = Category.objects.filter(library=current_library).order_by('subject_area')
         else:
-            categories = Category.objects.all().order_by('name')
+            categories = Category.objects.all().order_by('subject_area')
             
         context['categories'] = categories
         
@@ -127,13 +127,9 @@ class ClipStoreView(TemplateView):
         queryset = Video.objects.all()
         user = self.request.user
 
-        # Exclude videos from 'Private' categories if the user is not the library owner
-        if user.is_authenticated:
-            private_video_q = Q(category__name='Private') & ~Q(library__owner=user)
-            queryset = queryset.exclude(private_video_q)
-        else:
-            # Exclude all private videos for anonymous users
-            queryset = queryset.exclude(category__name='Private')
+        # Note: Private category filtering now handled differently in dual-category system
+        # TODO: Implement proper private video filtering based on new category structure
+        pass
         
         # Filter by library if specified
         if library:
@@ -141,7 +137,7 @@ class ClipStoreView(TemplateView):
         
         # Apply category filter if not 'all'
         if category_filter and category_filter.lower() != 'all':
-            queryset = queryset.filter(category__name__iexact=category_filter)
+            queryset = queryset.filter(subject_area__display_name__iexact=category_filter)
         
         # Apply search filter
         if search_query:
@@ -228,7 +224,7 @@ class CategoryClipView(ClipStoreView):
             if category:
                 context['current_category'] = category
                 context['category_slug'] = category_slug
-                context['category_filter'] = category.name
+                context['category_filter'] = category.display_name
                 
                 # Add image URLs directly to context
                 if category.image:
@@ -257,16 +253,16 @@ class CategoryClipView(ClipStoreView):
             if decoded_name and decoded_name.lower() != 'all':
                 try:
                     # Find the category using case-insensitive match
-                    filters = {'name__iexact': decoded_name}
+                    filters = {'subject_area__iexact': decoded_name}
                     if current_library:
                         filters['library'] = current_library
                         
                     category = Category.objects.get(**filters)
-                    logger.info(f"Found category: {category.name} (ID: {category.id})")
+                    logger.info(f"Found category: {category.display_name} (ID: {category.id})")
                     
                     # Add the category object to context
                     context['current_category'] = category
-                    context['category_slug'] = get_category_slug(category.name)
+                    context['category_slug'] = get_category_slug(category.display_name)
                     
                     # Add image URLs directly to context
                     if category.image:

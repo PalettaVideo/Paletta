@@ -151,7 +151,7 @@ class CategoryVideosAPIView(generics.ListAPIView):
         # Try to find the category first to confirm it exists
         try:
             category = Category.objects.get(name__iexact=db_category_name)
-            logger.info(f"Found category: '{category.name}' (id: {category.id})")
+            logger.info(f"Found category: '{category.display_name}' (id: {category.id})")
         except Category.DoesNotExist:
             logger.warning(f"Category '{db_category_name}' does not exist in database")
             return Video.objects.none()  # Return empty queryset if category doesn't exist

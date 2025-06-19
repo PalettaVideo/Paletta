@@ -400,14 +400,14 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                             # Update existing category
                             try:
                                 category = Category.objects.get(id=category_id, library=library)
-                                category.name = category_data.get('name', category.name)
+                                # Note: Category name is now handled through subject_area enum
                                 category.description = category_data.get('description', category.description)
                                 
                                 # Handle image if provided
                                 if 'image' in category_data and category_data['image'] and category_data['image'].startswith('data:'):
                                     image_file = process_base64_image(
                                         category_data['image'],
-                                        name=f"category_{category.name}"
+                                        name=f"category_{category.display_name}"
                                     )
                                     category.image = image_file
                                     
@@ -419,7 +419,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                         else:
                             # Create new category
                             new_category = Category(
-                                name=category_data.get('name'),
+                                subject_area=category_data.get('subject_area'),
                                 description=category_data.get('description', ''),
                                 library=library
                             )
@@ -429,7 +429,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                             if 'image' in category_data and category_data['image'] and category_data['image'].startswith('data:'):
                                 image_file = process_base64_image(
                                     category_data['image'],
-                                    name=f"category_{new_category.name}"
+                                    name=f"category_{new_category.display_name}"
                                 )
                                 new_category.image = image_file
                                 new_category.save()
