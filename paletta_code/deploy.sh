@@ -68,6 +68,12 @@ if admin_user:
             'is_active': True
         }
     )
+    # Always ensure the Paletta library owner is the superuser
+    if not created and paletta_lib.owner != admin_user:
+        paletta_lib.owner = admin_user
+        paletta_lib.save()
+        print("Updated Paletta library owner to superuser")
+    
     if created:
         print("Created default Paletta library")
     else:

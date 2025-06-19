@@ -228,13 +228,13 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                             return JsonResponse({
                                 'status': 'error',
                                 'message': f"Category validation failed: {category_serializer.errors}"
-                            }, status=400)
+                            }, status=400, content_type='application/json')
                 except json.JSONDecodeError as e:
                     print(f"JSON decode error: {str(e)}")
                     return JsonResponse({
                         'status': 'error',
                         'message': f"Invalid category data format: {str(e)}"
-                    }, status=400)
+                    }, status=400, content_type='application/json')
             else:
                 print("No categories provided or empty categories array")
                 
@@ -270,20 +270,20 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                     'status': 'success',
                     'message': 'Library created successfully.',
                     'redirect_url': reverse('manage_libraries')
-                })
+                }, content_type='application/json')
             else:
                 print(f"Library validation errors: {serializer.errors}")
                 return JsonResponse({
                     'status': 'error',
                     'message': f"Library validation failed: {serializer.errors}"
-                }, status=400)
+                }, status=400, content_type='application/json')
                 
         except Exception as e:
             print(f"Error creating library: {str(e)}")
             return JsonResponse({
                 'status': 'error',
                 'message': f"An error occurred: {str(e)}"
-            }, status=500)
+            }, status=500, content_type='application/json')
 
 class ManageLibrariesView(LoginRequiredMixin, TemplateView):
     template_name = 'manage_libraries.html'
@@ -349,7 +349,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
             return JsonResponse({
                 'status': 'error',
                 'message': "No library specified"
-            }, status=400)
+            }, status=400, content_type='application/json')
             
         try:
             library = Library.objects.get(id=library_id)
@@ -360,7 +360,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                 return JsonResponse({
                     'status': 'error',
                     'message': "You don't have permission to edit this library."
-                }, status=403)
+                }, status=403, content_type='application/json')
             
             # Update library fields
             library_name = request.POST.get('library_name')
@@ -445,7 +445,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                     return JsonResponse({
                         'status': 'error',
                         'message': "Invalid category data format"
-                    }, status=400)
+                    }, status=400, content_type='application/json')
             
             # Process contributors
             if 'contributors' in request.POST:
@@ -497,21 +497,21 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                     return JsonResponse({
                         'status': 'error',
                         'message': "Invalid contributor data format"
-                    }, status=400)
+                    }, status=400, content_type='application/json')
             
             return JsonResponse({
                 'status': 'success',
                 'message': 'Library updated successfully',
                 'redirect_url': reverse('manage_libraries')
-            })
+            }, content_type='application/json')
             
         except Library.DoesNotExist:
             return JsonResponse({
                 'status': 'error',
                 'message': "Library not found"
-            }, status=404)
+            }, status=404, content_type='application/json')
         except Exception as e:
             return JsonResponse({
                 'status': 'error',
                 'message': str(e)
-            }, status=500)
+            }, status=500, content_type='application/json')

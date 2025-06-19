@@ -2,7 +2,7 @@ from django.views.generic import TemplateView
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.contrib import messages
-from videos.models import Category
+from videos.models import Category, PalettaCategory
 from videos.serializers import CategorySerializer
 from libraries.models import Library
 from django.utils.text import slugify
@@ -45,12 +45,31 @@ class HomeView(TemplateView):
         
         if request.user.is_authenticated:
             try:
-                # Get categories that belong to the current library
-                categories = Category.objects.filter(library=current_library).order_by('name')
-                logger.debug(f"[HomePage Debug] Found {categories.count()} categories for library {current_library.name if current_library else 'None'}")
+                # Get categories based on library type
+                if current_library and current_library.uses_paletta_categories:
+                    # For Paletta libraries, get PalettaCategory objects
+                    paletta_categories = PalettaCategory.objects.filter(is_active=True).order_by('code')
+                    # Convert to a format the template can use
+                    categories = []
+                    for pc in paletta_categories:
+                        categories.append({
+                            'id': pc.id,
+                            'name': pc.display_name,
+                            'display_name': pc.display_name,
+                            'code': pc.code,
+                            'image_url': None,  # PalettaCategory doesn't have images yet
+                        })
+                    logger.debug(f"[HomePage Debug] Found {len(categories)} Paletta categories")
+                else:
+                    # For custom libraries, get Category objects (subject areas)
+                    categories = Category.objects.filter(library=current_library).order_by('subject_area')
+                    # Use the serializer to get proper image URLs
+                    serializer = CategorySerializer(categories, many=True, context={'request': request})
+                    categories = serializer.data
+                    logger.debug(f"[HomePage Debug] Found {len(categories)} custom categories for library {current_library.name if current_library else 'None'}")
                 
                 # Log first few category names for debugging
-                category_names = [cat.name for cat in categories[:5]]
+                category_names = [cat['name'] if isinstance(cat, dict) else cat.display_name for cat in categories[:5]]
                 logger.debug(f"[HomePage Debug] First few categories: {category_names}")
                 
             except Exception as e:
@@ -58,21 +77,18 @@ class HomeView(TemplateView):
                 messages.error(request, f'Error fetching categories: {str(e)}')
                 logger.error(f"[HomePage Debug] Error fetching categories: {str(e)}")
             
-            # Use the serializer to get proper image URLs
-            serializer = CategorySerializer(categories, many=True, context={'request': request})
-            
             # Get all libraries for the sidebar
             libraries = Library.objects.filter(is_active=True)
             
             # CLEAN APPROACH: Let middleware handle library context
             # No need to manually add library_slug to context
             context = {
-                'categories': serializer.data,
+                'categories': categories,
                 'libraries': libraries,
                 'current_library': current_library,
             }
             
-            logger.debug(f"[HomePage Debug] Context categories count: {len(serializer.data)}")
+            logger.debug(f"[HomePage Debug] Context categories count: {len(categories)}")
         else:
             logger.debug("[HomePage Debug] User not authenticated")
         
