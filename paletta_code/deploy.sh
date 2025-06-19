@@ -13,6 +13,14 @@ cd /home/ssm-user/Paletta/paletta_code/paletta_project
 # Set Django settings
 export DJANGO_SETTINGS_MODULE=paletta_project.settings_production
 
+echo "Testing database connection..."
+if python manage.py check --database default; then
+    echo "Database connection successful!"
+else
+    echo "ERROR: Cannot connect to database!"
+    exit 1
+fi
+
 echo "Removing old migration files..."
 # Remove old migration files but keep __init__.py
 find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
@@ -25,7 +33,12 @@ echo "Creating migrations..."
 python manage.py makemigrations
 
 echo "Applying migrations..."
-python manage.py migrate
+if python manage.py migrate; then
+    echo "Migrations applied successfully!"
+else
+    echo "ERROR: Migration failed!"
+    exit 1
+fi
 
 echo "Creating superuser..."
 if ! python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); exit(0 if User.objects.filter(is_superuser=True).exists() else 1)"; then
@@ -99,15 +112,30 @@ echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
 echo "Restarting services..."
-sudo systemctl restart paletta nginx
+if sudo systemctl restart paletta nginx; then
+    echo "Services restarted successfully!"
+else
+    echo "WARNING: Service restart failed. Check logs with 'sudo journalctl -u paletta -f'"
+    exit 1
+fi
 
 echo "Deployment complete!"
 echo "Checking service status..."
 sudo systemctl status paletta nginx --no-pager
 
 echo ""
-echo "Paletta is ready!"
-echo "Access the application at paletta.io"
-echo "Admin panel: /admin/"
-echo ""
-EOF 
+echo "Performing final health check..."
+sleep 3  # Give services time to fully start
+
+if curl -f -s http://localhost/healthcheck/ > /dev/null; then
+    echo "Health check passed!"
+    echo ""
+    echo "Paletta is ready!"
+    echo "Access the application at paletta.io"
+    echo "Admin panel: /admin/"
+    echo ""
+else
+    echo "WARNING: Health check failed. Application may not be responding correctly."
+    echo "   Check logs with: sudo journalctl -u paletta -f"
+    echo ""
+fi 

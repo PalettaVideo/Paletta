@@ -145,11 +145,44 @@ class ClipStoreView(TemplateView):
         # Apply category filter if not 'all'
         if category_filter and category_filter.lower() != 'all':
             if library and library.uses_paletta_categories:
-                # For Paletta libraries, filter by paletta_category
-                queryset = queryset.filter(paletta_category__display_name__iexact=category_filter)
+                # For Paletta libraries, we need to find the PalettaCategory by display_name
+                # and then filter by its code since display_name is a property
+                from videos.models import PalettaCategory
+                try:
+                    # Find the PalettaCategory that matches the display_name
+                    paletta_cat = None
+                    for pc in PalettaCategory.objects.filter(is_active=True):
+                        if pc.display_name.lower() == category_filter.lower():
+                            paletta_cat = pc
+                            break
+                    
+                    if paletta_cat:
+                        queryset = queryset.filter(paletta_category=paletta_cat)
+                    else:
+                        # If no matching category found, return empty queryset
+                        queryset = queryset.none()
+                except Exception as e:
+                    logger.error(f"Error filtering by Paletta category '{category_filter}': {e}")
+                    queryset = queryset.none()
             else:
-                # For custom libraries, filter by subject_area
-                queryset = queryset.filter(subject_area__display_name__iexact=category_filter)
+                # For custom libraries, we need to find the Category by display_name
+                # and then filter by the actual object since display_name is a property
+                try:
+                    # Find the Category that matches the display_name
+                    matching_category = None
+                    for cat in Category.objects.filter(library=library, is_active=True):
+                        if cat.display_name.lower() == category_filter.lower():
+                            matching_category = cat
+                            break
+                    
+                    if matching_category:
+                        queryset = queryset.filter(subject_area=matching_category)
+                    else:
+                        # If no matching category found, return empty queryset
+                        queryset = queryset.none()
+                except Exception as e:
+                    logger.error(f"Error filtering by subject area category '{category_filter}': {e}")
+                    queryset = queryset.none()
         
         # Apply search filter
         if search_query:

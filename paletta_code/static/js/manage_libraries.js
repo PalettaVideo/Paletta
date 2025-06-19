@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", function () {
       ".modal-header h3"
     ).textContent = `Manage Categories - ${libraryName}`;
 
-    // Show modal
+      // Show modal
     modal.style.display = "block";
 
     // Load current categories
