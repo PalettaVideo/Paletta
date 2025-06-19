@@ -1,17 +1,22 @@
 #!/bin/bash
 
-# Paletta Clean Deployment Script
-# Run this after dropping the database to set everything up correctly
+# Paletta FRESH Deployment Script
+# Use this when you've dropped the database completely
 
 set -e  # Exit on any error
 
-echo "Starting Paletta clean deployment..."
+echo "Starting Paletta FRESH deployment..."
 
 # Navigate to project directory
 cd /home/ssm-user/Paletta/paletta_code/paletta_project
 
 # Set Django settings
 export DJANGO_SETTINGS_MODULE=paletta_project.settings_production
+
+echo "Removing old migration files..."
+# Remove old migration files but keep __init__.py
+find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+find . -path "*/migrations/*.pyc" -delete
 
 echo "Bumping static version..."
 python manage.py bump_static_version
