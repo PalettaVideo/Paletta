@@ -15,6 +15,11 @@ class Library(models.Model):
         ('enterprise', 'Enterprise'),
     ]
     
+    CATEGORY_SOURCE_CHOICES = [
+        ('paletta_style', 'Use Paletta Style Categories'),
+        ('custom', 'Create My Own Categories'),
+    ]
+    
     # Storage size constants (in bytes)
     GB = 1024 * 1024 * 1024  # 1 GB in bytes
     TB = GB * 1024  # 1 TB in bytes
@@ -35,12 +40,30 @@ class Library(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     videos = models.ManyToManyField(Video, related_name='libraries', blank=True)
     is_active = models.BooleanField(default=True)
+    
+    # Category source selection
+    category_source = models.CharField(
+        max_length=20, 
+        choices=CATEGORY_SOURCE_CHOICES, 
+        default='custom',
+        help_text="Choose the source for video categories in this library"
+    )
 
     class Meta:
         verbose_name_plural = "Libraries"
 
     def __str__(self):
         return self.name
+    
+    @property
+    def is_paletta_library(self):
+        """Check if this is the main Paletta library"""
+        return self.name.lower() == 'paletta'
+    
+    @property
+    def uses_paletta_categories(self):
+        """Check if this library uses Paletta style categories"""
+        return self.category_source == 'paletta_style' or self.is_paletta_library
     
     @property
     def storage_size_gb(self):
@@ -81,10 +104,65 @@ class Library(models.Model):
                 'secondary': '#FFFFFF',
                 'text': '#000000'
             }
+        
+        # Paletta library must use Paletta categories
+        if self.is_paletta_library and self.category_source != 'paletta_style':
+            self.category_source = 'paletta_style'
 
     def save(self, *args, **kwargs):
         self.clean()
+        is_new = self.pk is None
         super().save(*args, **kwargs)
+        
+        # Create default categories based on source choice
+        if is_new:
+            self.setup_default_categories()
+    
+    def setup_default_categories(self):
+        """Set up default categories based on the library's category source"""
+        from videos.models import Category, PalettaCategory, ContentType
+        
+        # Always create all content types (they're global)
+        content_types_data = [
+            'campus_life', 'teaching_learning', 'research_innovation', 
+            'city_environment', 'aerial_establishing', 'people_portraits',
+            'culture_events', 'workspaces_facilities', 'cutaways_abstracts', 
+            'historical_archive'
+        ]
+        
+        for ct_code in content_types_data:
+            ContentType.objects.get_or_create(code=ct_code)
+        
+        # Create all Paletta categories (they're global)
+        paletta_categories_data = [
+            'people_community', 'buildings_architecture', 'classrooms_learning',
+            'field_trips_outdoor', 'events_conferences', 'research_innovation_spaces',
+            'technology_equipment', 'everyday_campus', 'urban_natural_environments',
+            'backgrounds_abstracts'
+        ]
+        
+        for pc_code in paletta_categories_data:
+            PalettaCategory.objects.get_or_create(code=pc_code)
+        
+        # Create subject area categories for this library
+        if self.category_source == 'custom':
+            # For custom libraries, create all subject areas by default
+            subject_areas = [
+                'engineering_sciences', 'mathematical_physical_sciences', 'medical_sciences',
+                'life_sciences', 'brain_sciences', 'built_environment', 'population_health',
+                'arts_humanities', 'social_historical_sciences', 'education', 'fine_art',
+                'law', 'business'
+            ]
+            
+            for subject_code in subject_areas:
+                Category.objects.get_or_create(
+                    subject_area=subject_code,
+                    library=self,
+                    defaults={'is_active': True}
+                )
+        
+        # Paletta style libraries don't need subject area categories 
+        # as they use PalettaCategory instead
         
     def get_storage_display(self):
         """Return a human-readable storage size string."""

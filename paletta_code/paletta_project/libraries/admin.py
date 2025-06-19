@@ -9,14 +9,18 @@ class LibraryAdminForm(ModelForm):
 
 class LibraryAdmin(admin.ModelAdmin):
     form = LibraryAdminForm
-    list_display = ('name', 'owner', 'created_at', 'storage_tier', 'get_storage_display', 'is_active')
-    list_filter = ['owner', 'storage_tier', 'is_active']
+    list_display = ('name', 'owner', 'category_source', 'created_at', 'storage_tier', 'get_storage_display', 'is_active')
+    list_filter = ['owner', 'storage_tier', 'category_source', 'is_active']
     search_fields = ('name', 'description')
-    readonly_fields = ('storage_size_display',)
+    readonly_fields = ('storage_size_display', 'is_paletta_library', 'uses_paletta_categories')
     list_per_page = 20
     fieldsets = (
         (None, {
             'fields': ('name', 'description', 'owner', 'logo', 'is_active')
+        }),
+        ('Category Settings', {
+            'fields': ('category_source', 'is_paletta_library', 'uses_paletta_categories'),
+            'description': 'Configure how categories are managed for this library.'
         }),
         ('Storage Settings', {
             'fields': ('storage_tier', 'storage_size_display',)

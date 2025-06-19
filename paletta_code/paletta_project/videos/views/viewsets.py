@@ -1,6 +1,6 @@
 from rest_framework import viewsets, permissions, status
 from ..models import Category, Video
-from ..serializers import CategorySerializer, VideoSerializer
+from ..serializers import CategorySerializer, VideoSerializer, CategoryListSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from ..tasks import generate_and_send_download_link
@@ -9,15 +9,46 @@ from ..services import VideoLogService
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.db.models import Q
+from libraries.models import Library, UserLibraryRole
 
 logger = logging.getLogger(__name__)
+
+class IsLibraryOwnerOrAdmin(permissions.BasePermission):
+    """
+    Custom permission to only allow library owners or admins to create/modify categories.
+    """
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        
+        # Allow read operations for everyone
+        if request.method in permissions.SAFE_METHODS:
+            return True
+            
+        # For create/update/delete operations, check library ownership
+        library_id = request.data.get('library') or request.query_params.get('library')
+        if not library_id:
+            return False
+            
+        try:
+            library = Library.objects.get(id=library_id)
+            # Check if user is the library owner or an admin
+            return (library.owner == request.user or 
+                   UserLibraryRole.objects.filter(
+                       library=library, 
+                       user=request.user, 
+                       role='admin'
+                   ).exists())
+        except Library.DoesNotExist:
+            return False
 
 @method_decorator(never_cache, name='list')
 @method_decorator(never_cache, name='retrieve')
 class CategoryViewSet(viewsets.ModelViewSet):
     """
-    API viewset for managing video categories.
-    Provides CRUD operations for categories.
+    API viewset for managing predefined video categories.
+    Only library owners and admins can create/modify categories.
+    Categories use fixed enums for subject areas and content types.
     
     Query parameters:
     - library: Filter categories by library ID
@@ -25,12 +56,21 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     
+    def get_permissions(self):
+        """
+        Set permissions based on action type.
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            permission_classes = [IsLibraryOwnerOrAdmin]
+        else:
+            permission_classes = [permissions.AllowAny]
+        return [permission() for permission in permission_classes]
+    
     def get_queryset(self):
         """
         Filter categories based on query parameters.
         If library ID is provided, filter categories by that library.
         If no library ID is provided, use the current library from session.
-        Hides 'Private' category from users who are not the library owner.
         """
         queryset = super().get_queryset()
         user = self.request.user
@@ -46,12 +86,22 @@ class CategoryViewSet(viewsets.ModelViewSet):
             library_id = self.request.session.get('current_library_id')
             queryset = queryset.filter(library_id=library_id)
 
-        # Exclude 'Private' category if the user is not the library owner
+        # Only show active categories unless user is library owner/admin
         if library_id and user.is_authenticated:
-            # We must check if the library owner is the user.
-            # Using Q objects for "is private AND user is not owner"
-            private_category_q = Q(name='Private') & ~Q(library__owner=user)
-            queryset = queryset.exclude(private_category_q)
+            try:
+                library = Library.objects.get(id=library_id)
+                is_owner_or_admin = (library.owner == user or 
+                                   UserLibraryRole.objects.filter(
+                                       library=library, 
+                                       user=user, 
+                                       role='admin'
+                                   ).exists())
+                if not is_owner_or_admin:
+                    queryset = queryset.filter(is_active=True)
+            except Library.DoesNotExist:
+                queryset = queryset.filter(is_active=True)
+        else:
+            queryset = queryset.filter(is_active=True)
         
         # Add library information to the log for debugging
         if library_id:
@@ -84,13 +134,44 @@ class CategoryViewSet(viewsets.ModelViewSet):
     
     def create(self, request, *args, **kwargs):
         """
-        Create a new category, ensuring it's associated with a library.
+        Create a new category, ensuring it's associated with a library and user has permission.
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+    @action(detail=False, methods=['get'])
+    def available_combinations(self, request):
+        """
+        Return all available subject area and content type combinations
+        """
+        combinations = Category.get_available_combinations()
+        serializer = CategoryListSerializer(combinations, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def subject_areas(self, request):
+        """
+        Return all available subject areas
+        """
+        subject_areas = [
+            {'code': code, 'display': display} 
+            for code, display in Category.SUBJECT_AREA_CHOICES
+        ]
+        return Response(subject_areas)
+    
+    @action(detail=False, methods=['get'])
+    def content_types(self, request):
+        """
+        Return all available content types
+        """
+        content_types = [
+            {'code': code, 'display': display} 
+            for code, display in Category.CONTENT_TYPE_CHOICES
+        ]
+        return Response(content_types)
     
     @action(detail=True, methods=['get'])
     def image(self, request, pk=None):
