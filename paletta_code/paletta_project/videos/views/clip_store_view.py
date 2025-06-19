@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.db.models import Count, Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from ..models import Category, Tag, Video, VideoTag
+from ..models import Category, Tag, Video, VideoTag, PalettaCategory
 from ..serializers import CategorySerializer, VideoSerializer
 import urllib.parse
 import logging
@@ -19,15 +19,23 @@ def get_category_slug(category_name):
     return slugify(category_name)
 
 def get_category_by_slug(slug, library=None):
-    """Get a category by its slug, optionally filtering by library."""
-    if library:
-        categories = Category.objects.filter(library=library)
+    """Get a category by its slug, handling both PalettaCategory and Category objects."""
+    if not library:
+        return None
+    
+    if library.uses_paletta_categories:
+        # For Paletta-style libraries, search in PalettaCategory objects
+        paletta_categories = PalettaCategory.objects.filter(is_active=True)
+        for pc in paletta_categories:
+            if get_category_slug(pc.display_name) == slug:
+                return pc
     else:
-        categories = Category.objects.all()
-        
-    for category in categories:
-        if get_category_slug(category.display_name) == slug:
-            return category
+        # For custom libraries, search in Category objects
+        categories = Category.objects.filter(library=library, is_active=True)
+        for category in categories:
+            if get_category_slug(category.display_name) == slug:
+                return category
+    
     return None
 
 logger = logging.getLogger(__name__)
@@ -53,14 +61,29 @@ class ClipStoreView(TemplateView):
         if current_library:
             context['current_library'] = current_library
         
-        # Get all categories for the sidebar, filtered by current library
+        # Get all categories for the sidebar, based on library type
         if current_library:
-            categories = Category.objects.filter(library=current_library).order_by('subject_area')
+            if current_library.uses_paletta_categories:
+                # For Paletta libraries, get PalettaCategory objects
+                paletta_categories = PalettaCategory.objects.filter(is_active=True).order_by('code')
+                # Convert to a format the template can use
+                categories = []
+                for pc in paletta_categories:
+                    categories.append({
+                        'id': pc.id,
+                        'name': pc.display_name,
+                        'display_name': pc.display_name,
+                        'code': pc.code,
+                        'type': 'paletta_category',
+                    })
+                context['categories'] = categories
+            else:
+                # For custom libraries, get Category objects
+                categories = Category.objects.filter(library=current_library, is_active=True).order_by('subject_area')
+                context['categories'] = categories
         else:
-            categories = Category.objects.all().order_by('subject_area')
+            context['categories'] = []
             
-        context['categories'] = categories
-        
         # Get popular tags for filtering - annotate with video count and order by that count
         if current_library:
             # Filter tags by the current library
@@ -77,38 +100,8 @@ class ClipStoreView(TemplateView):
         context['search_query'] = self.request.GET.get('search', '')
         context['sort_by'] = self.request.GET.get('sort_by', 'newest')
         
-        # Get filter parameters
-        search_query = self.request.GET.get('search', '')
-        tags = self.request.GET.getlist('tags', [])
-        sort_by = self.request.GET.get('sort_by', 'newest')
-        page = self.request.GET.get('page', 1)
-        
-        # Fetch videos with filters
-        videos_queryset = self.get_videos_queryset(
-            category_filter='all',
-            search_query=search_query,
-            tags=tags,
-            sort_by=sort_by,
-            library=current_library  # Pass the library for filtering
-        )
-        
-        # Paginate results
-        paginator = Paginator(videos_queryset, self.paginate_by)
-        try:
-            videos_page = paginator.page(page)
-        except PageNotAnInteger:
-            videos_page = paginator.page(1)
-        except EmptyPage:
-            videos_page = paginator.page(paginator.num_pages)
-            
-        # Add pagination info to context
-        context['videos'] = videos_page.object_list
-        context['page_obj'] = videos_page
-        context['is_paginated'] = videos_page.has_other_pages()
-        context['paginator'] = paginator
-        
         return context
-    
+
     def get_videos_queryset(self, category_filter=None, search_query=None, tags=None, sort_by=None, library=None):
         """
         Get videos with filters applied.
@@ -127,9 +120,23 @@ class ClipStoreView(TemplateView):
         queryset = Video.objects.all()
         user = self.request.user
 
-        # Note: Private category filtering now handled differently in dual-category system
-        # TODO: Implement proper private video filtering based on new category structure
-        pass
+        # Filter private videos based on user permissions
+        if user.is_authenticated:
+            # For authenticated users, exclude private videos unless they're the library owner
+            if library:
+                private_videos_q = Q(
+                    # Private Paletta category videos
+                    (Q(paletta_category__code='private') & ~Q(library__owner=user)) |
+                    # Private subject area videos
+                    (Q(subject_area__subject_area='private') & ~Q(library__owner=user))
+                )
+                queryset = queryset.exclude(private_videos_q)
+        else:
+            # For anonymous users, exclude ALL private videos
+            queryset = queryset.exclude(
+                Q(paletta_category__code='private') | 
+                Q(subject_area__subject_area='private')
+            )
         
         # Filter by library if specified
         if library:
@@ -137,7 +144,12 @@ class ClipStoreView(TemplateView):
         
         # Apply category filter if not 'all'
         if category_filter and category_filter.lower() != 'all':
-            queryset = queryset.filter(subject_area__display_name__iexact=category_filter)
+            if library and library.uses_paletta_categories:
+                # For Paletta libraries, filter by paletta_category
+                queryset = queryset.filter(paletta_category__display_name__iexact=category_filter)
+            else:
+                # For custom libraries, filter by subject_area
+                queryset = queryset.filter(subject_area__display_name__iexact=category_filter)
         
         # Apply search filter
         if search_query:
@@ -217,63 +229,29 @@ class CategoryClipView(ClipStoreView):
             
             return context
         
-        # Get the category based on either the slug or the URL parameter
+        # Get the category based on the slug
         if category_slug and category_slug != 'clip-store':
-            # New format - get category by slug
+            # Get category by slug (handles both PalettaCategory and Category)
             category = get_category_by_slug(category_slug, current_library)
             if category:
                 context['current_category'] = category
                 context['category_slug'] = category_slug
-                context['category_filter'] = category.display_name
                 
-                # Add image URLs directly to context
-                if category.image:
+                # Handle display name based on category type
+                if hasattr(category, 'display_name'):
+                    context['category_filter'] = category.display_name
+                else:
+                    context['category_filter'] = str(category)
+                
+                # Add image URLs directly to context (only Category objects have images)
+                if hasattr(category, 'image') and category.image:
                     context['category_image_url'] = category.image.url
             else:
                 # Category not found
                 context['category_not_found'] = True
                 context['attempted_category_name'] = category_slug
+                logger.warning(f"Category not found for slug: '{category_slug}' in library: {current_library.name if current_library else 'None'}")
                 return context
-        else:
-            # Legacy format - get category from URL parameter
-            category_name = self.kwargs.get('category', 'all')
-            
-            # Properly decode the URL-encoded category name
-            try:
-                decoded_name = urllib.parse.unquote(category_name)
-                logger.info(f"Category URL parameter: '{category_name}', decoded: '{decoded_name}'")
-            except Exception as e:
-                logger.error(f"Error decoding category name: {str(e)}")
-                decoded_name = category_name
-            
-            # Use the decoded name for filtering and display
-            context['category_filter'] = decoded_name
-            
-            # Look up the category in the database if not 'all'
-            if decoded_name and decoded_name.lower() != 'all':
-                try:
-                    # Find the category using case-insensitive match
-                    filters = {'subject_area__iexact': decoded_name}
-                    if current_library:
-                        filters['library'] = current_library
-                        
-                    category = Category.objects.get(**filters)
-                    logger.info(f"Found category: {category.display_name} (ID: {category.id})")
-                    
-                    # Add the category object to context
-                    context['current_category'] = category
-                    context['category_slug'] = get_category_slug(category.display_name)
-                    
-                    # Add image URLs directly to context
-                    if category.image:
-                        context['category_image_url'] = category.image.url
-                    
-                except Category.DoesNotExist:
-                    # Category not found
-                    logger.warning(f"Category not found: '{decoded_name}'")
-                    context['category_not_found'] = True
-                    context['attempted_category_name'] = decoded_name
-                    return context
         
         # Get the category filter name for the query
         category_filter = context.get('category_filter', 'all')

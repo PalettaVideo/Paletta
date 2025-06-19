@@ -436,3 +436,127 @@ main label {
         padding: 12px;
     }
 }
+
+/* Custom Categories Interface Styles */
+.custom-categories-interface {
+    margin-top: 20px;
+    padding: 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.custom-categories-interface h4 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.interface-description {
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 0.95em;
+}
+
+.subject-areas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.subject-area-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.subject-area-item:hover {
+    border-color: #80B824;
+    background-color: #f0f8e8;
+}
+
+.subject-area-item input[type="checkbox"] {
+    margin-right: 10px;
+    transform: scale(1.1);
+    accent-color: #80B824;
+}
+
+.subject-area-item label {
+    cursor: pointer;
+    font-weight: 500;
+    color: #333;
+    flex: 1;
+    font-size: 0.95em;
+}
+
+.subject-area-item input[type="checkbox"]:checked + label {
+    color: #80B824;
+    font-weight: 600;
+}
+
+.custom-categories-note {
+    padding: 15px;
+    background-color: #e8f4fd;
+    border: 1px solid #b8daff;
+    border-radius: 6px;
+    margin-top: 15px;
+}
+
+.custom-categories-note small {
+    color: #0c5460;
+    line-height: 1.4;
+}
+
+/* Category Source Options Enhancement */
+.category-source-options {
+    margin-bottom: 20px;
+}
+
+.category-option {
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.category-option:hover {
+    border-color: #80B824;
+    background-color: #f8f9fa;
+}
+
+.category-option input[type="radio"]:checked + label {
+    color: #80B824;
+}
+
+.category-option input[type="radio"]:checked ~ .option-description {
+    color: #333;
+}
+
+.option-description {
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 8px;
+    line-height: 1.4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .subject-areas-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .category-option {
+        padding: 12px;
+    }
+    
+    .custom-categories-interface {
+        padding: 15px;
+    }
+}

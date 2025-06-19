@@ -10,6 +10,9 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.db.models import Q
 from libraries.models import Library, UserLibraryRole
+from rest_framework.views import APIView
+from django.http import JsonResponse
+from ..models import Tag, VideoTag, ContentType, PalettaCategory
 
 logger = logging.getLogger(__name__)
 
@@ -193,6 +196,45 @@ class CategoryViewSet(viewsets.ModelViewSet):
                 {'error': 'Failed to retrieve category image'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Delete a category with proper permission checks and response format
+        """
+        try:
+            category = self.get_object()
+            
+            # Check if user has permission to delete this category
+            if category.library.owner != request.user and not UserLibraryRole.objects.filter(
+                library=category.library, user=request.user, role='admin'
+            ).exists():
+                return Response({
+                    'status': 'error',
+                    'message': 'You do not have permission to delete this category.'
+                }, status=403)
+            
+            # Check if there are videos using this category
+            video_count = Video.objects.filter(subject_area=category).count()
+            if video_count > 0:
+                return Response({
+                    'status': 'error',
+                    'message': f'Cannot delete category. {video_count} video(s) are using this category. Please reassign or delete those videos first.'
+                }, status=400)
+            
+            category_name = category.display_name
+            self.perform_destroy(category)
+            
+            return Response({
+                'status': 'success',
+                'message': f'Category "{category_name}" deleted successfully.'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error deleting category: {str(e)}")
+            return Response({
+                'status': 'error',
+                'message': 'Failed to delete category.'
+            }, status=500)
 
 class VideoViewSet(viewsets.ModelViewSet):
     """
@@ -369,3 +411,131 @@ class VideoViewSet(viewsets.ModelViewSet):
             request, 
             message="You do not have permission to access this category."
         ) 
+
+@method_decorator(never_cache, name='get')
+class UnifiedCategoryViewSet(APIView):
+    """
+    Unified API for categories that returns appropriate categories based on library type.
+    - For Paletta-style libraries: Returns PalettaCategory objects
+    - For custom libraries: Returns Category objects (subject areas)
+    
+    Query parameters:
+    - library: Library ID to filter categories for
+    """
+    
+    def get(self, request, *args, **kwargs):
+        """
+        Return categories appropriate for the specified library
+        """
+        try:
+            # Get library ID from query parameter
+            library_id = request.query_params.get('library', None)
+            
+            if not library_id:
+                return Response(
+                    {'error': 'Library ID is required'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get the library
+            try:
+                library = Library.objects.get(id=library_id)
+            except Library.DoesNotExist:
+                return Response(
+                    {'error': 'Library not found'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            categories_data = []
+            
+            if library.uses_paletta_categories:
+                # For Paletta-style libraries, return PalettaCategory objects
+                paletta_categories = PalettaCategory.objects.filter(is_active=True).order_by('code')
+                
+                for pc in paletta_categories:
+                    categories_data.append({
+                        'id': f'paletta_{pc.id}',  # Prefix to distinguish from regular categories
+                        'name': pc.display_name,
+                        'display_name': pc.display_name,
+                        'code': pc.code,
+                        'type': 'paletta_category',
+                        'library': {
+                            'id': library.id,
+                            'name': library.name
+                        },
+                        'is_active': pc.is_active,
+                        'description': pc.description or '',
+                        'image_url': None,  # PalettaCategory doesn't have images yet
+                    })
+                
+                logger.debug(f"Returned {len(categories_data)} Paletta categories for library {library.name}")
+                
+            else:
+                # For custom libraries, return Category objects (subject areas)
+                categories = Category.objects.filter(library=library, is_active=True).order_by('subject_area')
+                
+                for category in categories:
+                    image_url = None
+                    if category.image:
+                        image_url = request.build_absolute_uri(category.image.url)
+                    
+                    categories_data.append({
+                        'id': category.id,
+                        'name': category.display_name,
+                        'display_name': category.display_name,
+                        'subject_area': category.subject_area,
+                        'type': 'subject_area',
+                        'library': {
+                            'id': library.id,
+                            'name': library.name
+                        },
+                        'is_active': category.is_active,
+                        'description': category.description or '',
+                        'image_url': image_url,
+                        'created_at': category.created_at.isoformat() if category.created_at else None,
+                    })
+                
+                logger.debug(f"Returned {len(categories_data)} custom categories for library {library.name}")
+            
+            return Response(categories_data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error in UnifiedCategoryViewSet: {str(e)}")
+            return Response(
+                {'error': 'Failed to retrieve categories'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+@method_decorator(never_cache, name='get')
+class ContentTypeViewSet(APIView):
+    """
+    API for content types - these are global and used by all libraries
+    """
+    
+    def get(self, request, *args, **kwargs):
+        """
+        Return all available content types
+        """
+        try:
+            content_types = ContentType.objects.filter(is_active=True).order_by('code')
+            
+            content_types_data = []
+            for ct in content_types:
+                content_types_data.append({
+                    'id': ct.id,
+                    'code': ct.code,
+                    'name': ct.display_name,
+                    'display_name': ct.display_name,
+                    'description': ct.description or '',
+                    'is_active': ct.is_active,
+                })
+            
+            logger.debug(f"Returned {len(content_types_data)} content types")
+            return Response(content_types_data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error in ContentTypeViewSet: {str(e)}")
+            return Response(
+                {'error': 'Failed to retrieve content types'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) 

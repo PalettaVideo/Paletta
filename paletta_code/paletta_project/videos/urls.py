@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import VideoViewSet, CategoryViewSet
+from .views.viewsets import UnifiedCategoryViewSet, ContentTypeViewSet
 from .views.upload_view import UploadHistoryView
 from .views.download_view import DownloadRequestView
 from .views.clip_store_view import ClipStoreView, CategoryClipView
@@ -25,6 +26,10 @@ urlpatterns = [
     
     # Thumbnail endpoint - moved to top level for easier access
     path('api/clip/<int:clip_id>/thumbnail/', VideoThumbnailAPIView.as_view(), name='api_clip_thumbnail'),
+    
+    # NEW: Unified category API that handles both Paletta and custom categories
+    path('api/unified-categories/', UnifiedCategoryViewSet.as_view(), name='api_unified_categories'),
+    path('api/content-types/', ContentTypeViewSet.as_view(), name='api_content_types'),
     
     # API endpoint for categories that matches the frontend expectation
     path('categories/', CategoryViewSet.as_view({'get': 'list', 'post': 'create'}), name='api_categories'),

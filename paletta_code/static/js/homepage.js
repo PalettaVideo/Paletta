@@ -13,13 +13,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const categoriesCount =
     document.querySelector('meta[name="categories-count"]')?.content || "0";
 
-  console.log(`[Homepage Debug] Library context initialized:`);
-  console.log(
-    `[Homepage Debug] - Current library: ${currentLibraryName} (slug: ${currentLibrarySlug})`
-  );
-  console.log(`[Homepage Debug] - Categories count: ${categoriesCount}`);
-  console.log(`[Homepage Debug] - URL: ${window.location.pathname}`);
-
   // initialize the popup menu for the user center
   initPopupMenu();
 
@@ -47,19 +40,10 @@ function checkStaticVersionAndClearCache() {
     const storedVersion = localStorage.getItem("staticVersion");
 
     if (storedVersion && storedVersion !== currentVersion) {
-      console.log(
-        `[Cache Debug] Static version changed from ${storedVersion} to ${currentVersion}, clearing all cache`
-      );
-
       // Clear all localStorage
       localStorage.clear();
-
       // Clear sessionStorage as well
       sessionStorage.clear();
-
-      console.log(
-        "[Cache Debug] All browser cache cleared due to version change"
-      );
     }
 
     // Store the current version
@@ -134,12 +118,6 @@ function clearStaleLibraryCache() {
   // Clear any window-level cache objects
   if (typeof window.libraryCache !== "undefined") {
     window.libraryCache = {};
-  }
-
-  if (keysToRemove.length > 0) {
-    console.log(
-      `[Cache Debug] Cleared ${keysToRemove.length} stale localStorage entries for library switch`
-    );
   }
 
   // Set current library slug to prevent future caching issues

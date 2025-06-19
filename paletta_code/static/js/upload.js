@@ -266,12 +266,14 @@ document.addEventListener("DOMContentLoaded", function () {
         currentLibraryId = libraryInfo.getAttribute("data-library-id");
       }
 
-      // Build API URL with library filter if we have a library ID
-      let apiUrl = "/videos/categories/";
-      if (currentLibraryId) {
-        apiUrl += `?library=${currentLibraryId}`;
+      if (!currentLibraryId) {
+        console.error("No library ID found, cannot fetch categories");
+        return;
       }
-      console.log(`Using API URL: ${apiUrl}`);
+
+      // Use the new unified category API
+      let apiUrl = `/videos/api/unified-categories/?library=${currentLibraryId}`;
+      console.log(`Using unified API URL: ${apiUrl}`);
 
       // fetch cache options
       const response = await fetch(apiUrl, {
@@ -289,29 +291,14 @@ document.addEventListener("DOMContentLoaded", function () {
         throw new Error(`Failed to fetch categories: ${response.statusText}`);
       }
 
-      const data = await response.json();
-      console.log("Categories raw data:", data);
+      const categories = await response.json();
+      console.log("Categories data:", categories);
 
       const categorySelect = document.getElementById("category");
       if (!categorySelect) {
         console.error("Category select element not found in DOM");
         return;
       }
-
-      // Handle different possible API response formats
-      let categories = [];
-      if (data.results && Array.isArray(data.results)) {
-        // DRF paginated response format
-        categories = data.results;
-      } else if (Array.isArray(data)) {
-        // Simple array response format
-        categories = data;
-      } else if (typeof data === "object" && !Array.isArray(data)) {
-        // Object response format (convert to array)
-        categories = Object.values(data);
-      }
-
-      console.log("Processed categories:", categories);
 
       // Clear existing options
       categorySelect.innerHTML = "";
@@ -327,46 +314,11 @@ document.addEventListener("DOMContentLoaded", function () {
         categories.forEach((category) => {
           const option = document.createElement("option");
 
-          // Handle new category structure with subject_area and content_type
-          let categoryId, categoryName, libraryId, libraryName;
+          // Handle both Paletta and custom categories
+          option.value = category.id;
+          option.textContent = category.display_name || category.name;
+          option.setAttribute("data-type", category.type || "unknown");
 
-          if (category.id !== undefined) {
-            categoryId = category.id;
-            // Use display_name for the full formatted name
-            categoryName =
-              category.display_name ||
-              category.name ||
-              `${category.subject_area_display || category.subject_area} - ${
-                category.content_type_display || category.content_type
-              }`;
-
-            // Log library information if available for debugging
-            if (category.library !== undefined) {
-              if (typeof category.library === "object") {
-                libraryId = category.library.id;
-                libraryName = category.library.name;
-              } else {
-                libraryId = category.library;
-              }
-              console.log(
-                `Category ${categoryName} (ID: ${categoryId}) belongs to library: ${
-                  libraryName || libraryId
-                }`
-              );
-            }
-          } else if (category.pk !== undefined) {
-            categoryId = category.pk;
-            categoryName =
-              category.fields?.display_name ||
-              category.fields?.name ||
-              "Unknown";
-          } else {
-            console.warn("Unexpected category format:", category);
-            return; // Skip this category
-          }
-
-          option.value = categoryId;
-          option.textContent = categoryName;
           categorySelect.appendChild(option);
         });
         console.log(
@@ -379,9 +331,151 @@ document.addEventListener("DOMContentLoaded", function () {
         option.textContent = "No categories available";
         categorySelect.appendChild(option);
       }
+
+      // Also fetch and populate content types
+      await fetchContentTypes();
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
+  }
+
+  async function fetchContentTypes() {
+    try {
+      console.log("Fetching content types...");
+
+      const response = await fetch("/videos/api/content-types/", {
+        method: "GET",
+        cache: "no-cache",
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
+
+      if (!response.ok) {
+        console.error(
+          "Failed to fetch content types. Status:",
+          response.status
+        );
+        return;
+      }
+
+      const contentTypes = await response.json();
+      console.log("Content types data:", contentTypes);
+
+      // Create content types selection UI if it doesn't exist
+      createContentTypesUI(contentTypes);
+    } catch (error) {
+      console.error("Error fetching content types:", error);
+    }
+  }
+
+  function createContentTypesUI(contentTypes) {
+    // Check if content types UI already exists
+    let contentTypesContainer = document.getElementById(
+      "content-types-container"
+    );
+
+    if (!contentTypesContainer) {
+      // Create the content types selection UI
+      const categoryFormGroup = document.querySelector(
+        ".form-group:has(#category)"
+      );
+      if (!categoryFormGroup) {
+        console.error(
+          "Could not find category form group to insert content types"
+        );
+        return;
+      }
+
+      // Create content types form group
+      const contentTypesFormGroup = document.createElement("div");
+      contentTypesFormGroup.className = "form-group";
+      contentTypesFormGroup.innerHTML = `
+        <label for="content-types">Content Types (Select 1-3)</label>
+        <div id="content-types-container" class="content-types-container">
+          <div class="content-types-info">
+            <small>Select 1 to 3 content types that best describe your video content.</small>
+          </div>
+          <div id="content-types-grid" class="content-types-grid">
+            <!-- Content types will be inserted here -->
+          </div>
+          <div id="content-types-error" class="error-message" style="display: none;">
+            Please select 1 to 3 content types.
+          </div>
+        </div>
+      `;
+
+      // Insert after the category form group
+      categoryFormGroup.parentNode.insertBefore(
+        contentTypesFormGroup,
+        categoryFormGroup.nextSibling
+      );
+      contentTypesContainer = document.getElementById(
+        "content-types-container"
+      );
+    }
+
+    const contentTypesGrid = document.getElementById("content-types-grid");
+    if (!contentTypesGrid) {
+      console.error("Content types grid not found");
+      return;
+    }
+
+    // Clear existing content types
+    contentTypesGrid.innerHTML = "";
+
+    // Add content types as checkboxes
+    contentTypes.forEach((contentType) => {
+      const checkboxWrapper = document.createElement("div");
+      checkboxWrapper.className = "content-type-item";
+      checkboxWrapper.innerHTML = `
+        <input type="checkbox" id="content-type-${contentType.id}" name="content_types" value="${contentType.id}" class="content-type-checkbox">
+        <label for="content-type-${contentType.id}" class="content-type-label">
+          <span class="content-type-name">${contentType.display_name}</span>
+        </label>
+      `;
+      contentTypesGrid.appendChild(checkboxWrapper);
+    });
+
+    // Add validation for 1-3 content types selection
+    const checkboxes = contentTypesGrid.querySelectorAll(
+      ".content-type-checkbox"
+    );
+    const errorDiv = document.getElementById("content-types-error");
+
+    checkboxes.forEach((checkbox) => {
+      checkbox.addEventListener("change", function () {
+        const selectedCount = contentTypesGrid.querySelectorAll(
+          ".content-type-checkbox:checked"
+        ).length;
+
+        if (selectedCount > 3) {
+          // Uncheck this checkbox if more than 3 are selected
+          this.checked = false;
+          errorDiv.textContent = "You can select a maximum of 3 content types.";
+          errorDiv.style.display = "block";
+        } else if (selectedCount === 0) {
+          errorDiv.textContent = "Please select at least 1 content type.";
+          errorDiv.style.display = "block";
+        } else {
+          errorDiv.style.display = "none";
+        }
+
+        // Disable other checkboxes if 3 are selected
+        checkboxes.forEach((cb) => {
+          if (!cb.checked && selectedCount >= 3) {
+            cb.disabled = true;
+            cb.parentElement.classList.add("disabled");
+          } else {
+            cb.disabled = false;
+            cb.parentElement.classList.remove("disabled");
+          }
+        });
+      });
+    });
+
+    console.log(`Added ${contentTypes.length} content types to the form`);
   }
 
   async function handleFormSubmit(e) {
@@ -491,6 +585,11 @@ document.addEventListener("DOMContentLoaded", function () {
       ? libraryInfo.getAttribute("data-library-id")
       : null;
 
+    // Get selected content types
+    const selectedContentTypes = Array.from(
+      document.querySelectorAll(".content-type-checkbox:checked")
+    ).map((checkbox) => checkbox.value);
+
     // Use FormData to send both file and text data
     const formData = new FormData();
     formData.append("title", titleInput.value.trim());
@@ -502,6 +601,11 @@ document.addEventListener("DOMContentLoaded", function () {
     formData.append("duration", videoMetadata.duration);
     formData.append("file_size", videoMetadata.fileSize);
     formData.append("format", videoMetadata.format);
+
+    // Add content types (multiple values)
+    selectedContentTypes.forEach((contentTypeId) => {
+      formData.append("content_types", contentTypeId);
+    });
 
     // Append the thumbnail file if it exists
     const thumbnailFile = previewImageInput.files[0];
@@ -529,7 +633,46 @@ document.addEventListener("DOMContentLoaded", function () {
   function validateForm() {
     const title = titleInput.value.trim();
     const category = document.getElementById("category").value;
-    return title !== "" && category !== "";
+
+    // Validate content types selection
+    const selectedContentTypes = document.querySelectorAll(
+      ".content-type-checkbox:checked"
+    );
+    const contentTypesError = document.getElementById("content-types-error");
+
+    if (!title) {
+      alert("Please enter a video title");
+      titleInput.focus();
+      return false;
+    }
+
+    if (!category) {
+      alert("Please select a category");
+      document.getElementById("category").focus();
+      return false;
+    }
+
+    if (selectedContentTypes.length === 0) {
+      alert("Please select at least 1 content type");
+      if (contentTypesError) {
+        contentTypesError.textContent =
+          "Please select at least 1 content type.";
+        contentTypesError.style.display = "block";
+      }
+      return false;
+    }
+
+    if (selectedContentTypes.length > 3) {
+      alert("Please select no more than 3 content types");
+      if (contentTypesError) {
+        contentTypesError.textContent =
+          "Please select no more than 3 content types.";
+        contentTypesError.style.display = "block";
+      }
+      return false;
+    }
+
+    return true;
   }
 
   function showUploadLimitModal() {

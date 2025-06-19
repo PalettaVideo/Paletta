@@ -62,9 +62,21 @@
                         <div class="library-description">{{ library.description|truncatechars:80 }}</div>
                     </div>
                     <div class="library-actions">
-                        <a href="{% url 'edit_library' %}?library_id={{ library.id }}"><button class="edit"><i class="fas fa-edit"></i> Edit</button></a>
-                        <button class="stop" data-library-id="{{ library.id }}"><i class="fas fa-pause"></i> {% if library.is_active %}Stop{% else %}Start{% endif %}</button>
-                        <button class="close" data-library-id="{{ library.id }}"><i class="fas fa-times"></i> Close</button>
+                        <button class="btn btn-primary btn-sm" onclick="editLibrary('{{ library.id }}')">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        {% if library.category_source == 'custom' %}
+                        <button class="btn btn-secondary btn-sm" onclick="manageCategoriesModal('{{ library.id }}', '{{ library.name }}')">
+                            <i class="fas fa-tags"></i> Categories
+                        </button>
+                        {% endif %}
+                        <button class="btn btn-warning btn-sm" onclick="toggleLibraryStatus('{{ library.id }}', '{{ library.is_active|yesno:"true,false" }}')">
+                            <i class="fas fa-{{ library.is_active|yesno:'pause,play' }}"></i> 
+                            {{ library.is_active|yesno:"Stop,Start" }}
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteLibrary('{{ library.id }}', '{{ library.name }}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
                     </div>
                 </div>
                 {% endfor %}
@@ -88,6 +100,51 @@
             </div>
         </div>
     </main>
+</div>
+
+<!-- Category Management Modal -->
+<div id="categoriesModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Manage Categories</h3>
+            <span class="close-modal" onclick="closeCategoriesModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="categories-content">
+                <p>Loading categories...</p>
+            </div>
+            
+            <div class="add-category-section">
+                <h4>Add New Subject Area</h4>
+                <div class="subject-areas-grid" id="available-subject-areas">
+                    <!-- Will be populated dynamically -->
+                </div>
+                <button type="button" class="btn btn-success" onclick="addSelectedCategories()">
+                    <i class="fas fa-plus"></i> Add Selected Categories
+                </button>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeCategoriesModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="confirmTitle">Confirm Action</h3>
+            <span class="close-modal" onclick="closeConfirmModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Are you sure you want to proceed?</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirmBtn" onclick="executeConfirmedAction()">Confirm</button>
+        </div>
+    </div>
 </div>
 
 {% include "html_reusables/footer_reusable.html" %}

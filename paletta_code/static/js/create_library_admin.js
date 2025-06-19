@@ -67,6 +67,9 @@ document.addEventListener("DOMContentLoaded", function () {
     'input[name="category_source"]'
   );
   const previewContent = document.getElementById("preview-content");
+  const customCategoriesInterface = document.getElementById(
+    "custom-categories-interface"
+  );
 
   // Category structure data
   const categoryStructures = {
@@ -126,6 +129,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const structure = categoryStructures[selectedSource];
 
+    // Update preview content
     previewContent.innerHTML = `
       <h5>${structure.title}</h5>
       ${structure.sections
@@ -139,6 +143,15 @@ document.addEventListener("DOMContentLoaded", function () {
         )
         .join("")}
     `;
+
+    // Show/hide custom categories interface
+    if (customCategoriesInterface) {
+      if (selectedSource === "custom") {
+        customCategoriesInterface.style.display = "block";
+      } else {
+        customCategoriesInterface.style.display = "none";
+      }
+    }
   }
 
   // Add event listeners to radio buttons
@@ -162,6 +175,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Create FormData object
       const formData = new FormData(libraryForm);
+
+      // Handle custom categories if "custom" is selected
+      const selectedSource = document.querySelector(
+        'input[name="category_source"]:checked'
+      )?.value;
+      if (selectedSource === "custom") {
+        const selectedSubjectAreas = Array.from(
+          document.querySelectorAll(
+            'input[name="custom_subject_areas"]:checked'
+          )
+        ).map((checkbox) => ({
+          subject_area: checkbox.value,
+          description: `Custom ${checkbox.nextElementSibling.textContent} category`,
+        }));
+
+        if (selectedSubjectAreas.length > 0) {
+          formData.append(
+            "custom_categories_json",
+            JSON.stringify(selectedSubjectAreas)
+          );
+          console.log(
+            `Adding ${selectedSubjectAreas.length} custom categories:`,
+            selectedSubjectAreas
+          );
+        }
+      }
 
       // Debug form data
       console.log("Form submission data:");
@@ -244,6 +283,19 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!categorySourceField) {
       alert("Please select a category management option");
       return false;
+    }
+
+    // Additional validation for custom categories
+    if (categorySourceField.value === "custom") {
+      const selectedSubjectAreas = document.querySelectorAll(
+        'input[name="custom_subject_areas"]:checked'
+      );
+      if (selectedSubjectAreas.length === 0) {
+        alert(
+          "Please select at least one subject area for your custom library"
+        );
+        return false;
+      }
     }
 
     return true;

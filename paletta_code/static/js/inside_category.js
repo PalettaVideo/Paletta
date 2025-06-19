@@ -620,10 +620,6 @@ document.addEventListener("DOMContentLoaded", function () {
       "Unknown";
     const keysToRemove = [];
 
-    console.log(
-      `[Cache Debug] Clearing cache for library switch to: ${currentLibraryName} (${currentLibrarySlug})`
-    );
-
     // Check all localStorage keys
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -644,7 +640,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // Remove stale keys
     keysToRemove.forEach((key) => {
       localStorage.removeItem(key);
-      console.log(`[Cache Debug] Removed stale key: ${key}`);
     });
 
     // Also clear any general cache that might interfere
@@ -658,9 +653,6 @@ document.addEventListener("DOMContentLoaded", function () {
       const storedValue = localStorage.getItem(key);
       if (storedValue && storedValue !== currentLibrarySlug) {
         localStorage.removeItem(key);
-        console.log(
-          `[Cache Debug] Removed general cache key: ${key} (was: ${storedValue})`
-        );
       }
     });
 
@@ -669,14 +661,7 @@ document.addEventListener("DOMContentLoaded", function () {
       window.libraryCache = {};
     }
 
-    if (keysToRemove.length > 0) {
-      console.log(
-        `[Cache Debug] Cleared ${keysToRemove.length} stale localStorage entries for library switch`
-      );
-    }
-
     // Set current library slug to prevent future caching issues
     localStorage.setItem("lastLibrarySlug", currentLibrarySlug);
-    console.log(`[Cache Debug] Set lastLibrarySlug to: ${currentLibrarySlug}`);
   }
 });

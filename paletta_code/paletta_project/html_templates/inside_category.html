@@ -50,8 +50,8 @@
         {% endif %}
       </li>
       {% for category in categories %}
-      <li class="{% if category_filter|lower == category.name|lower or category_slug == category.name|library_slugify or current_category and current_category.id == category.id %}active{% endif %}" data-category="{{ category.name|lower }}">
-        <a href="{% library_specific_url 'library_category' category_slug=category.name|library_slugify %}">{{ category.name }}</a>
+      <li class="{% if category_filter|lower == category.display_name|lower or category_slug == category.display_name|library_slugify or current_category and current_category.id == category.id %}active{% endif %}" data-category="{{ category.display_name|lower }}">
+        <a href="{% library_specific_url 'library_category' category_slug=category.display_name|library_slugify %}">{{ category.display_name }}</a>
       </li>
       {% endfor %}
     </ul>
@@ -61,13 +61,13 @@
     <div class="banner">
       {% if current_category %}
         <div class="imagecontainer">
-          <h1 class="banner-title">{{ current_category.name }}</h1>
+          <h1 class="banner-title">{{ current_category.display_name }}</h1>
           <!-- Simple image priority flow -->
           {% if category_image_url %}
-            <img src="{{ category_image_url }}" alt="{{ current_category.name }}" class="category-image">
+            <img src="{{ category_image_url }}" alt="{{ current_category.display_name }}" class="category-image">
           {% else %}
             <!-- Default image when no images are available -->
-            <img src="{% static 'picture/All.png' %}" alt="{{ current_category.name }}" class="category-image">
+            <img src="{% static 'picture/All.png' %}" alt="{{ current_category.display_name }}" class="category-image">
           {% endif %}
         </div>
       {% elif category_not_found %}

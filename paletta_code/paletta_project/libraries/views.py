@@ -50,74 +50,116 @@ class LibraryViewSet(viewsets.ModelViewSet):
     
     def destroy(self, request, *args, **kwargs):
         """Close (delete) a library"""
-        instance = self.get_object()
-        self.perform_destroy(instance)
-        return Response({
-            'success': True,
-            'message': 'Library closed successfully.'
-        }, status=status.HTTP_200_OK)
+        try:
+            instance = self.get_object()
+            
+            # Check if user has permission to delete this library
+            if instance.owner != request.user and not UserLibraryRole.objects.filter(
+                library=instance, user=request.user, role='admin'
+            ).exists():
+                return Response({
+                    'status': 'error',
+                    'message': 'You do not have permission to delete this library.'
+                }, status=403)
+            
+            self.perform_destroy(instance)
+            return Response({
+                'status': 'success',
+                'message': 'Library deleted successfully.'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
         
     @action(detail=True, methods=['post'])
     def toggle_status(self, request, pk=None):
-        """Toggle a library's active status"""
-        library = self.get_object()
-        
-        # Only the library administrator can change the status
-        if library.owner != request.user:
-            return Response(
-                {"error": "Only the library administrator can change the library status."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        """Toggle library active/inactive status"""
+        try:
+            library = self.get_object()
             
-        # Get the desired status from the request
-        active = request.data.get('active', not library.is_active)
-        
-        # Update the library status
-        library.is_active = active
-        library.save(update_fields=['is_active'])
-        
-        return Response({
-            'success': True,
-            'is_active': library.is_active,
-            'message': f"Library {'started' if active else 'stopped'} successfully."
-        }, status=status.HTTP_200_OK)
-        
+            # Check if user has permission to modify this library
+            if library.owner != request.user and not UserLibraryRole.objects.filter(
+                library=library, user=request.user, role='admin'
+            ).exists():
+                return Response({
+                    'status': 'error',
+                    'message': 'You do not have permission to modify this library.'
+                }, status=403)
+            
+            # Toggle the status
+            library.is_active = not library.is_active
+            library.save()
+            
+            status_text = 'activated' if library.is_active else 'deactivated'
+            return Response({
+                'status': 'success',
+                'message': f'Library has been {status_text} successfully.',
+                'is_active': library.is_active
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
+
     @action(detail=True, methods=['post'])
-    def add_member(self, request, pk=None):
-        library = self.get_object()
-        
-        # Only the library administrator can add members
-        if library.owner != request.user:
-            return Response(
-                {"detail": "Only the library administrator can add members."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+    def add_categories(self, request, pk=None):
+        """Add custom categories to a library"""
+        try:
+            library = self.get_object()
             
-        user_id = request.data.get('user_id')
-        role = request.data.get('role', 'contributor')
-        
-        if not user_id:
-            return Response(
-                {"detail": "User ID is required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            # Check if user has permission to modify this library
+            if library.owner != request.user and not UserLibraryRole.objects.filter(
+                library=library, user=request.user, role='admin'
+            ).exists():
+                return Response({
+                    'status': 'error',
+                    'message': 'You do not have permission to modify this library.'
+                }, status=403)
             
-        # Check if the user is already a member
-        if UserLibraryRole.objects.filter(library=library, user_id=user_id).exists():
-            return Response(
-                {"detail": "User is already a member of this library."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            # Check if library uses custom categories
+            if library.category_source != 'custom':
+                return Response({
+                    'status': 'error',
+                    'message': 'This library does not use custom categories.'
+                }, status=400)
             
-        # Create the library member
-        user_role = UserLibraryRole.objects.create(
-            library=library,
-            user_id=user_id,
-            role=role
-        )
-        
-        serializer = UserLibraryRoleSerializer(user_role)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            categories_data = request.data.get('categories', [])
+            if not categories_data:
+                return Response({
+                    'status': 'error',
+                    'message': 'No categories provided.'
+                }, status=400)
+            
+            # Import here to avoid circular imports
+            from videos.models import Category
+            
+            created_categories = []
+            for category_data in categories_data:
+                # Create the category
+                category = Category.objects.create(
+                    subject_area=category_data.get('subject_area'),
+                    description=category_data.get('description', ''),
+                    library=library,
+                    is_active=True
+                )
+                created_categories.append(category)
+            
+            return Response({
+                'status': 'success',
+                'message': f'Successfully added {len(created_categories)} categories.',
+                'created_count': len(created_categories)
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
 
 class UserLibraryRoleViewSet(viewsets.ModelViewSet):
     queryset = UserLibraryRole.objects.all()
@@ -163,10 +205,15 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
             print("POST data:", request.POST)
             print("FILES:", request.FILES)
             
+            # Get category source selection
+            category_source = request.POST.get('category_source', 'custom')
+            print(f"Category source: {category_source}")
+            
             data = {
                 'name': request.POST.get('name'),
                 'description': request.POST.get('description'),
-                # Other fields as needed
+                'category_source': category_source,
+                'storage_tier': request.POST.get('storage_tier', 'basic'),
             }
             
             # Handle color
@@ -177,68 +224,8 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                     'secondary': '#FFFFFF',
                     'text': '#000000'
                 }
-                
-            # First, process any categories
-            categories = []
-            categories_json = request.POST.get('categories_json')
-            print(f"Raw categories_json: {categories_json}")
             
-            if categories_json and categories_json != '[]':
-                try:
-                    categories_data = json.loads(categories_json)
-                    print(f"Parsed categories data (count: {len(categories_data)}): {categories_data}")
-                    
-                    for category_data in categories_data:
-                        print(f"Processing category: {category_data.get('subject_area')}_{category_data.get('content_type')}")
-                        # Create category data dict for serializer with enum fields
-                        category_dict = {
-                            'subject_area': category_data.get('subject_area'),
-                            'content_type': category_data.get('content_type'),
-                            'description': category_data.get('description'),
-                            'library': library.id  # Set the library ID for validation
-                        }
-                        
-                        # Use the CategorySerializer from videos app
-                        category_serializer = CategorySerializer(data=category_dict)
-                        if category_serializer.is_valid():
-                            print(f"Category {category_data.get('subject_area')}_{category_data.get('content_type')} validated successfully")
-                            # Save the category
-                            category = category_serializer.save()
-                            
-                            # Handle category image if provided as base64
-                            if 'image' in category_data and category_data['image'].startswith('data:image'):
-                                print(f"Processing image for category {category_data.get('subject_area')}_{category_data.get('content_type')}")
-                                try:
-                                    # Convert base64 to file and save
-                                    image_file = process_base64_image(
-                                        category_data['image'], 
-                                        name=f"category_{category_data.get('subject_area', 'unnamed')}_{category_data.get('content_type', 'unnamed')}"
-                                    )
-                                    category.image = image_file
-                                    category.save()
-                                    print(f"Image saved for category {category_data.get('subject_area')}_{category_data.get('content_type')}")
-                                except Exception as e:
-                                    print(f"Error saving category image: {e}")
-                            else:
-                                print(f"No valid image found for category {category_data.get('subject_area')}_{category_data.get('content_type')}")
-                            
-                            categories.append(category)
-                        else:
-                            print(f"Category validation errors for {category_data.get('subject_area')}_{category_data.get('content_type')}: {category_serializer.errors}")
-                            return JsonResponse({
-                                'status': 'error',
-                                'message': f"Category validation failed: {category_serializer.errors}"
-                            }, status=400, content_type='application/json')
-                except json.JSONDecodeError as e:
-                    print(f"JSON decode error: {str(e)}")
-                    return JsonResponse({
-                        'status': 'error',
-                        'message': f"Invalid category data format: {str(e)}"
-                    }, status=400, content_type='application/json')
-            else:
-                print("No categories provided or empty categories array")
-                
-            # Then create the library
+            # Create the library first
             serializer = LibrarySerializer(data=data)
             if serializer.is_valid():
                 # Save with owner set to the current user
@@ -250,14 +237,36 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                     library.logo = logo
                     library.save()
                 
-                # If any videos belong to the library, associate them with the created categories
-                if categories and hasattr(library, 'videos'):
-                    for video in library.videos.all():
-                        # Check if video doesn't already have a category
-                        if not video.category:
-                            # Assign the first category as default
-                            video.category = categories[0]
-                            video.save()
+                print(f"Library created: {library.name} with category_source: {library.category_source}")
+                
+                # Categories are automatically created by the Library.save() method
+                # via the setup_default_categories() method, so we don't need to do anything here
+                # for Paletta-style libraries
+                
+                # For custom libraries, we can optionally handle initial custom categories
+                # if provided in the request (for future enhancement)
+                if category_source == 'custom':
+                    # Handle any custom categories provided (for future implementation)
+                    custom_categories_json = request.POST.get('custom_categories_json')
+                    if custom_categories_json and custom_categories_json != '[]':
+                        try:
+                            custom_categories_data = json.loads(custom_categories_json)
+                            print(f"Creating {len(custom_categories_data)} custom categories")
+                            
+                            for category_data in custom_categories_data:
+                                # Create custom category
+                                from videos.models import Category
+                                Category.objects.create(
+                                    subject_area=category_data.get('subject_area'),
+                                    description=category_data.get('description', ''),
+                                    library=library,
+                                    is_active=True
+                                )
+                                print(f"Created custom category: {category_data.get('subject_area')}")
+                                
+                        except json.JSONDecodeError as e:
+                            print(f"JSON decode error for custom categories: {str(e)}")
+                            # Don't fail the library creation for this
                 
                 # Create an admin role for the creator automatically
                 UserLibraryRole.objects.create(
