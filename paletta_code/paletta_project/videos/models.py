@@ -5,17 +5,84 @@ import os
 from django.core.validators import FileExtensionValidator
 from django.urls import reverse
 from paletta_core.storage import get_media_storage
+from django.core.exceptions import ValidationError
 
 def category_image_path(instance, filename):
     """
     File will be uploaded to MEDIA_ROOT/category_images/<library_name>/<subject_area>_<content_type>/<filename>
     """
-    category_name = f"{instance.subject_area}_{instance.content_type}"
+    if hasattr(instance, 'subject_area'):
+        category_name = f"{instance.subject_area}"
+    else:
+        category_name = instance.slug
     return f'category_images/{instance.library.name}/{category_name}/{filename}'
 
-# Fixed enums for categories
+# Content Type model for multi-select support
+class ContentType(models.Model):
+    """Model representing content types that can be applied to videos"""
+    
+    CONTENT_TYPE_CHOICES = [
+        ('campus_life', 'Campus Life'),
+        ('teaching_learning', 'Teaching & Learning'),
+        ('research_innovation', 'Research & Innovation'),
+        ('city_environment', 'City & Environment'),
+        ('aerial_establishing', 'Aerial & Establishing Shots'),
+        ('people_portraits', 'People & Portraits'),
+        ('culture_events', 'Culture & Events'),
+        ('workspaces_facilities', 'Workspaces & Facilities'),
+        ('cutaways_abstracts', 'Cutaways & Abstracts'),
+        ('historical_archive', 'Historical & Archive'),
+    ]
+    
+    code = models.CharField(max_length=50, choices=CONTENT_TYPE_CHOICES, unique=True)
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        ordering = ['code']
+        
+    @property
+    def display_name(self):
+        return dict(self.CONTENT_TYPE_CHOICES).get(self.code, self.code)
+    
+    def __str__(self):
+        return self.display_name
+
+# Paletta Default Categories model
+class PalettaCategory(models.Model):
+    """Model representing Paletta's default predefined categories"""
+    
+    PALETTA_CATEGORY_CHOICES = [
+        ('people_community', 'People and Community'),
+        ('buildings_architecture', 'Buildings & Architecture'),
+        ('classrooms_learning', 'Classrooms & Learning Spaces'),
+        ('field_trips_outdoor', 'Field Trips & Outdoor Learning'),
+        ('events_conferences', 'Events & Conferences'),
+        ('research_innovation_spaces', 'Research & Innovation Spaces'),
+        ('technology_equipment', 'Technology & Equipment'),
+        ('everyday_campus', 'Everyday Campus Life'),
+        ('urban_natural_environments', 'Urban & Natural Environments'),
+        ('backgrounds_abstracts', 'Backgrounds & Abstracts'),
+    ]
+    
+    code = models.CharField(max_length=50, choices=PALETTA_CATEGORY_CHOICES, unique=True)
+    description = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        ordering = ['code']
+        verbose_name = "Paletta Category"
+        verbose_name_plural = "Paletta Categories"
+        
+    @property
+    def display_name(self):
+        return dict(self.PALETTA_CATEGORY_CHOICES).get(self.code, self.code)
+    
+    def __str__(self):
+        return self.display_name
+
+# Updated Category model for Subject Area
 class Category(models.Model):
-    """Model representing predefined video categories within a specific library."""
+    """Model representing subject area categories within a specific library."""
     
     # Subject area choices (single selection)
     SUBJECT_AREA_CHOICES = [
@@ -34,22 +101,7 @@ class Category(models.Model):
         ('business', 'Business'),
     ]
     
-    # Format/Content type choices (single or multi-select)
-    CONTENT_TYPE_CHOICES = [
-        ('campus_life', 'Campus Life'),
-        ('teaching_learning', 'Teaching & Learning'),
-        ('research_innovation', 'Research & Innovation'),
-        ('city_environment', 'City & Environment'),
-        ('aerial_establishing', 'Aerial & Establishing Shots'),
-        ('people_portraits', 'People & Portraits'),
-        ('culture_events', 'Culture & Events'),
-        ('workspaces_facilities', 'Workspaces & Facilities'),
-        ('cutaways_abstracts', 'Cutaways & Abstracts'),
-        ('historical_archive', 'Historical & Archive'),
-    ]
-    
     subject_area = models.CharField(max_length=50, choices=SUBJECT_AREA_CHOICES)
-    content_type = models.CharField(max_length=50, choices=CONTENT_TYPE_CHOICES)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     image = models.ImageField(upload_to=category_image_path, blank=True, null=True, storage=get_media_storage)
@@ -58,40 +110,24 @@ class Category(models.Model):
     
     class Meta:
         verbose_name_plural = "Categories"
-        ordering = ['subject_area', 'content_type']
-        unique_together = ['subject_area', 'content_type', 'library']
+        ordering = ['subject_area']
+        unique_together = ['subject_area', 'library']
     
     @property
     def display_name(self):
-        """Generate display name from subject area and content type"""
-        subject_display = dict(self.SUBJECT_AREA_CHOICES).get(self.subject_area, self.subject_area)
-        content_display = dict(self.CONTENT_TYPE_CHOICES).get(self.content_type, self.content_type)
-        return f"{subject_display} - {content_display}"
+        """Generate display name from subject area"""
+        return dict(self.SUBJECT_AREA_CHOICES).get(self.subject_area, self.subject_area)
     
     @property
     def slug(self):
         """Generate URL-friendly slug"""
-        return f"{self.subject_area}_{self.content_type}"
+        return self.subject_area
     
     def __str__(self):
         return f"{self.display_name} ({self.library.name})"
         
     def get_absolute_url(self):
         return reverse('category', kwargs={'library_name': self.library.name, 'category_name': self.slug})
-    
-    @classmethod
-    def get_available_combinations(cls):
-        """Get all available subject area and content type combinations"""
-        combinations = []
-        for subject_code, subject_name in cls.SUBJECT_AREA_CHOICES:
-            for content_code, content_name in cls.CONTENT_TYPE_CHOICES:
-                combinations.append({
-                    'subject_area': subject_code,
-                    'content_type': content_code,
-                    'display_name': f"{subject_name} - {content_name}",
-                    'slug': f"{subject_code}_{content_code}"
-                })
-        return combinations
 
 # SQL model for tag
 class Tag(models.Model):
@@ -126,7 +162,12 @@ class Video(models.Model):
   title = models.CharField(max_length=25)
   description = models.TextField(blank=True)
   tags = models.ManyToManyField(Tag, through='VideoTag', related_name='videos')
-  category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='videos')
+  
+  # New dual-category structure
+  subject_area = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='videos', help_text="Required: Select one subject area")
+  content_types = models.ManyToManyField(ContentType, related_name='videos', help_text="Required: Select 1-3 content types")
+  paletta_category = models.ForeignKey(PalettaCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='videos', help_text="For Paletta library videos only")
+  
   library = models.ForeignKey('libraries.Library', on_delete=models.CASCADE, related_name='library_videos')
   uploader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='videos')
   upload_date = models.DateTimeField(default=timezone.now)
@@ -178,6 +219,18 @@ class Video(models.Model):
   views_count = models.PositiveIntegerField(default=0)
   format = models.CharField(max_length=10, blank=True, null=True)
 
+  def clean(self):
+    """Custom validation for video model"""
+    super().clean()
+    
+    # Validate content types count (1-3)
+    if self.pk:  # Only validate if object exists (has been saved)
+        content_count = self.content_types.count()
+        if content_count == 0:
+            raise ValidationError("At least one content type must be selected.")
+        if content_count > 3:
+            raise ValidationError("Maximum of 3 content types can be selected.")
+
   def __str__(self):
     return self.title
     
@@ -200,6 +253,19 @@ class Video(models.Model):
           storage_service = AWSCloudStorageService()
           return storage_service.generate_streaming_url(self)
       return None
+      
+  @property
+  def display_categories(self):
+      """Get display string for all categories"""
+      categories = []
+      if self.subject_area:
+          categories.append(f"Subject: {self.subject_area.display_name}")
+      if self.content_types.exists():
+          content_names = [ct.display_name for ct in self.content_types.all()]
+          categories.append(f"Content: {', '.join(content_names)}")
+      if self.paletta_category:
+          categories.append(f"Paletta: {self.paletta_category.display_name}")
+      return " | ".join(categories)
     
   def delete(self, *args, **kwargs):
     """
@@ -212,56 +278,41 @@ class Video(models.Model):
     video_path = None
     thumbnail_path = None
     
-    # Get the file paths if they exist
-    if self.video_file:
-        try:
+    try:
+        if self.video_file:
             video_path = self.video_file.path
-        except Exception as e:
-            logger.error(f"Error getting video file path during deletion: {e}")
-    
-    if self.thumbnail:
-        try:
+        if self.thumbnail:
             thumbnail_path = self.thumbnail.path
-        except Exception as e:
-            logger.error(f"Error getting thumbnail path during deletion: {e}")
+    except ValueError:
+        # Files might not exist on filesystem
+        pass
     
-    # Delete from AWS S3 if needed
-    if self.storage_url and self.storage_reference_id:
-        from .services import AWSCloudStorageService
-        try:
-            storage_service = AWSCloudStorageService()
-            storage_service.delete_from_storage(self)
-            logger.info(f"Deleted video {self.id} from AWS S3 storage")
-        except Exception as e:
-            logger.error(f"Error deleting video {self.id} from AWS S3: {e}")
-    
-    # Delete the model from the database
+    # Delete the model instance first
     super().delete(*args, **kwargs)
     
-    # After model deletion, delete the physical files
-    if video_path and os.path.exists(video_path):
+    # Then try to delete physical files
+    if video_path and os.path.isfile(video_path):
         try:
             os.remove(video_path)
-            logger.info(f"Deleted video file from filesystem: {video_path}")
-        except Exception as e:
-            logger.error(f"Error deleting video file: {e}")
+            logger.info(f"Deleted video file: {video_path}")
+        except OSError as e:
+            logger.error(f"Error deleting video file {video_path}: {e}")
     
-    if thumbnail_path and os.path.exists(thumbnail_path):
+    if thumbnail_path and os.path.isfile(thumbnail_path):
         try:
             os.remove(thumbnail_path)
-            logger.info(f"Deleted thumbnail from filesystem: {thumbnail_path}")
-        except Exception as e:
-            logger.error(f"Error deleting thumbnail file: {e}")
+            logger.info(f"Deleted thumbnail file: {thumbnail_path}")
+        except OSError as e:
+            logger.error(f"Error deleting thumbnail file {thumbnail_path}: {e}")
 
-# Adding the VideoTag and Upload models from the new schema
 class VideoTag(models.Model):
     """Model representing the many-to-many relationship between videos and tags."""
     video = models.ForeignKey(Video, on_delete=models.CASCADE)
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
-    
+
     class Meta:
         unique_together = ['video', 'tag']
-        
+
     def __str__(self):
         return f"{self.video.title} - {self.tag.name}"
 
@@ -277,11 +328,11 @@ class Upload(models.Model):
     uploader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='uploads')
     upload_date = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
+
     def __str__(self):
         return f"{self.video.title} - {self.get_status_display()}"
 
-# Video activity log model
+
 class VideoLog(models.Model):
     """
     Model for logging video-related activities for admin tracking.
@@ -308,11 +359,11 @@ class VideoLog(models.Model):
     file_size = models.PositiveIntegerField(null=True, blank=True, help_text="Size in bytes")
     storage_status = models.CharField(max_length=20, null=True, blank=True)
     duration = models.PositiveIntegerField(null=True, blank=True, help_text="Duration in seconds")
-    
+
     class Meta:
         ordering = ['-timestamp']
         verbose_name = "Video Log"
         verbose_name_plural = "Video Logs"
-        
+
     def __str__(self):
-        return f"{self.get_log_type_display()} - {self.video.title} - {self.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
+        return f"{self.video.title} - {self.get_log_type_display()} ({self.timestamp})"
