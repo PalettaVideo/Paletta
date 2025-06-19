@@ -80,7 +80,9 @@
                             <!-- Categories will be loaded from API via JavaScript -->
                         </select>
                     </div>
-                    <button type="button" class="button add-btn" id="add-category-btn">+ Add Category</button>
+                    <div class="category-info">
+                        <small>Categories are predefined by library administrators.</small>
+                    </div>
                 </div>
             </div>
             <div class="form-group">
@@ -104,36 +106,36 @@
             <div class="form-group">
                 <div class="recommended-title">Recommended Tags</div>
                 <div class="tags" id="tags-reference">
-                    <span class="tag">university</span>
-                        <span class="tag">buildings</span>
-                        <span class="tag">signs</span>
-                        <span class="tag">students</span>
-                        <span class="tag">campus</span>
-                        <span class="tag">library</span>
-                        <span class="tag">lab</span>
-                        <span class="tag">hall</span>
-                        <span class="tag">classroom</span>
-                        <span class="tag">lecture</span>
-                        <span class="tag">professor</span>
-                        <span class="tag">study</span>
-                        <span class="tag">books</span>
-                        <span class="tag">phd</span>
-                        <span class="tag">masters</span>
-                        <span class="tag">degree</span>
+                    <span class="tag">engineering</span>
+                        <span class="tag">mathematical</span>
+                        <span class="tag">medical</span>
+                        <span class="tag">life sciences</span>
+                        <span class="tag">brain research</span>
+                        <span class="tag">architecture</span>
+                        <span class="tag">health</span>
+                        <span class="tag">humanities</span>
+                        <span class="tag">social sciences</span>
+                        <span class="tag">education</span>
+                        <span class="tag">fine art</span>
+                        <span class="tag">legal</span>
+                        <span class="tag">business</span>
+                        <span class="tag">campus life</span>
+                        <span class="tag">teaching</span>
+                        <span class="tag">learning</span>
                         <span class="tag">research</span>
-                        <span class="tag">science</span>
-                        <span class="tag">school</span>
-                        <span class="tag">college</span>
-                        <span class="tag">graduate</span>
+                        <span class="tag">innovation</span>
+                        <span class="tag">urban</span>
+                        <span class="tag">environment</span>
                         <span class="tag">aerial</span>
-                        <span class="tag">drone</span>
-                        <span class="tag">map</span>
-                        <span class="tag">sign</span>
-                        <span class="tag">building</span>
-                        <span class="tag">stairs</span>
-                        <span class="tag">people</span>
-                        <span class="tag">group</span>
-                        <span class="tag">flag</span>
+                        <span class="tag">establishing</span>
+                        <span class="tag">portraits</span>
+                        <span class="tag">culture</span>
+                        <span class="tag">events</span>
+                        <span class="tag">workplace</span>
+                        <span class="tag">facilities</span>
+                        <span class="tag">abstract</span>
+                        <span class="tag">historical</span>
+                        <span class="tag">archive</span>
 
                 </div>
             </div>
@@ -146,27 +148,6 @@
     </div>
 
 </body>
-
-<!-- Category Modal -->
-<div id="category-modal" class="modal">
-    <div class="modal-content">
-        <span class="close" id="close-category-modal">&times;</span>
-        <h2>Add a Category</h2>
-
-        <label for="category-name">Category Name</label>
-        <input type="text" id="category-name" placeholder="Enter category name">
-
-        <label for="category-description">Category Description</label>
-        <textarea id="category-description" placeholder="Enter description"></textarea>
-
-        <label for="category-image">Category Image</label>
-        <input type="file" id="category-image" accept="image/*">
-        <div id="category-image-preview" style="display: none; margin-top: 10px;"></div>
-
-        <p id="error-text" class="error-text" style="color: #d9534f; display: none;"></p>
-        <button type="button" class="button" id="save-category-btn">Add Category</button>
-    </div>
-</div>
 
 <!-- Modal for upload limit warning -->
 <div id="upload-limit-modal" class="modal" style="display: none;">

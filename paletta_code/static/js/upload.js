@@ -91,184 +91,8 @@ document.addEventListener("DOMContentLoaded", function () {
     uploadForm.addEventListener("submit", handleFormSubmit);
   }
 
-  // Add event listeners for the category modal
-  const addCategoryBtn = document.getElementById("add-category-btn");
-  const categoryModal = document.getElementById("category-modal");
-  const closeCategoryModal = document.getElementById("close-category-modal");
-  const saveCategoryBtn = document.getElementById("save-category-btn");
-  const categoryNameInput = document.getElementById("category-name");
-  const categoryDescInput = document.getElementById("category-description");
-  const categoryImageInput = document.getElementById("category-image");
-  const categoryImagePreview = document.getElementById(
-    "category-image-preview"
-  );
-
-  if (addCategoryBtn) {
-    addCategoryBtn.addEventListener("click", function () {
-      // Reset the form
-      categoryNameInput.value = "";
-      categoryDescInput.value = "";
-      categoryImageInput.value = "";
-      document.getElementById("category-image-preview").style.display = "none";
-      document.getElementById("error-text").style.display = "none";
-
-      // Show the modal
-      categoryModal.style.display = "flex";
-    });
-  }
-
-  if (closeCategoryModal) {
-    closeCategoryModal.addEventListener("click", function () {
-      categoryModal.style.display = "none";
-    });
-  }
-
-  // Close modal when clicking outside
-  window.addEventListener("click", function (event) {
-    if (event.target === categoryModal) {
-      categoryModal.style.display = "none";
-    }
-  });
-
-  // Handle category image preview
-  if (categoryImageInput) {
-    categoryImageInput.addEventListener("change", function () {
-      const file = this.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          const imagePreview = document.getElementById(
-            "category-image-preview"
-          );
-          imagePreview.innerHTML = `<img src="${e.target.result}" alt="Category Image Preview" style="max-width: 100px; max-height: 100px;">`;
-          imagePreview.style.display = "block";
-          // Store the base64 data for later use
-          imagePreview.dataset.base64 = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-  }
-
-  // Handle save category button
-  if (saveCategoryBtn) {
-    saveCategoryBtn.addEventListener("click", function () {
-      // Validate form
-      const errorText = document.getElementById("error-text");
-      const categoryName = categoryNameInput.value.trim();
-
-      if (!categoryName) {
-        errorText.textContent = "Category name is required";
-        errorText.style.display = "block";
-        return;
-      }
-
-      // Clear any previous error
-      errorText.style.display = "none";
-
-      // Create FormData
-      const formData = new FormData();
-      formData.append("name", categoryName);
-      formData.append("description", categoryDescInput.value.trim());
-
-      if (categoryImageInput.files[0]) {
-        formData.append("image", categoryImageInput.files[0]);
-      }
-
-      // Get library ID from the page if available
-      let libraryId;
-      if (uploadForm) {
-        libraryId = uploadForm.dataset.libraryId;
-      }
-
-      // Fallback to library-info element
-      if (!libraryId) {
-        const libraryInfo = document.querySelector(".library-info");
-        if (libraryInfo) {
-          libraryId = libraryInfo.dataset.libraryId;
-        }
-      }
-
-      if (libraryId) {
-        formData.append("library", libraryId);
-      } else {
-        console.error(
-          "Library ID not found on upload form data-library-id attribute or in .library-info element."
-        );
-        // Optionally, show an error to the user
-        errorText.textContent =
-          "Could not determine the library. Please refresh and try again.";
-        errorText.style.display = "block";
-        // Stop the process if library ID is essential
-        saveCategoryBtn.textContent = "Add Category";
-        saveCategoryBtn.disabled = false;
-        return;
-      }
-
-      // Get CSRF token
-      const csrftoken = getCookie("csrftoken");
-
-      // Show loading state
-      saveCategoryBtn.textContent = "Saving...";
-      saveCategoryBtn.disabled = true;
-
-      // Send the request
-      fetch("/videos/categories/", {
-        method: "POST",
-        headers: {
-          "X-CSRFToken": csrftoken,
-        },
-        body: formData,
-      })
-        .then((response) => {
-          if (!response.ok) {
-            return response.text().then((text) => {
-              console.error("Error response text:", text);
-              try {
-                // Try to parse as JSON
-                const errorData = JSON.parse(text);
-                throw new Error(
-                  errorData.detail || `Error: ${response.status}`
-                );
-              } catch (parseError) {
-                // If not JSON, use text as error message
-                throw new Error(
-                  `Error: ${response.status} - ${text.substring(0, 100)}`
-                );
-              }
-            });
-          }
-          return response.json();
-        })
-        .then((data) => {
-          // Add the new category to the dropdown
-          const categorySelect = document.getElementById("category");
-          const option = document.createElement("option");
-          option.value = data.id;
-          option.textContent = data.name;
-          categorySelect.appendChild(option);
-
-          // Select the new category
-          categorySelect.value = data.id;
-
-          // Hide the modal
-          categoryModal.style.display = "none";
-
-          // Show success message
-          alert(`Category "${data.name}" created successfully!`);
-        })
-        .catch((error) => {
-          console.error("Error creating category:", error);
-          errorText.textContent = "Error creating category: " + error.message;
-          errorText.style.display = "block";
-        })
-        .finally(() => {
-          // Reset button state
-          saveCategoryBtn.textContent = "Add Category";
-          saveCategoryBtn.disabled = false;
-        });
-    });
-  }
+  // Category creation removed - categories are now predefined by administrators
+  // Users can only select from existing categories
 
   // functions
   function handleVideoFileSelect(e) {
@@ -503,12 +327,18 @@ document.addEventListener("DOMContentLoaded", function () {
         categories.forEach((category) => {
           const option = document.createElement("option");
 
-          // Handle different category object structures
+          // Handle new category structure with subject_area and content_type
           let categoryId, categoryName, libraryId, libraryName;
 
           if (category.id !== undefined) {
             categoryId = category.id;
-            categoryName = category.name;
+            // Use display_name for the full formatted name
+            categoryName =
+              category.display_name ||
+              category.name ||
+              `${category.subject_area_display || category.subject_area} - ${
+                category.content_type_display || category.content_type
+              }`;
 
             // Log library information if available for debugging
             if (category.library !== undefined) {
@@ -526,7 +356,10 @@ document.addEventListener("DOMContentLoaded", function () {
             }
           } else if (category.pk !== undefined) {
             categoryId = category.pk;
-            categoryName = category.fields?.name || "Unknown";
+            categoryName =
+              category.fields?.display_name ||
+              category.fields?.name ||
+              "Unknown";
           } else {
             console.warn("Unexpected category format:", category);
             return; // Skip this category

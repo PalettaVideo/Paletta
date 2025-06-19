@@ -8,30 +8,95 @@ from paletta_core.storage import get_media_storage
 
 def category_image_path(instance, filename):
     """
-    File will be uploaded to MEDIA_ROOT/category_images/<library_name>/<category_name>/<filename>
+    File will be uploaded to MEDIA_ROOT/category_images/<library_name>/<subject_area>_<content_type>/<filename>
     """
-    return f'category_images/{instance.library.name}/{instance.name}/{filename}'
+    category_name = f"{instance.subject_area}_{instance.content_type}"
+    return f'category_images/{instance.library.name}/{category_name}/{filename}'
 
-# SQL model for category
+# Fixed enums for categories
 class Category(models.Model):
-    """Model representing a video category within a specific library."""
-    name = models.CharField(max_length=25)
+    """Model representing predefined video categories within a specific library."""
+    
+    # Subject area choices (single selection)
+    SUBJECT_AREA_CHOICES = [
+        ('engineering_sciences', 'Engineering Sciences'),
+        ('mathematical_physical_sciences', 'Mathematical & Physical Sciences'),
+        ('medical_sciences', 'Medical Sciences'),
+        ('life_sciences', 'Life Sciences'),
+        ('brain_sciences', 'Brain Sciences'),
+        ('built_environment', 'Built Environment'),
+        ('population_health', 'Population Health'),
+        ('arts_humanities', 'Arts & Humanities'),
+        ('social_historical_sciences', 'Social & Historical Sciences'),
+        ('education', 'Education'),
+        ('fine_art', 'Fine Art'),
+        ('law', 'Law'),
+        ('business', 'Business'),
+    ]
+    
+    # Format/Content type choices (single or multi-select)
+    CONTENT_TYPE_CHOICES = [
+        ('campus_life', 'Campus Life'),
+        ('teaching_learning', 'Teaching & Learning'),
+        ('research_innovation', 'Research & Innovation'),
+        ('city_environment', 'City & Environment'),
+        ('aerial_establishing', 'Aerial & Establishing Shots'),
+        ('people_portraits', 'People & Portraits'),
+        ('culture_events', 'Culture & Events'),
+        ('workspaces_facilities', 'Workspaces & Facilities'),
+        ('cutaways_abstracts', 'Cutaways & Abstracts'),
+        ('historical_archive', 'Historical & Archive'),
+    ]
+    
+    # Keep the old name field temporarily for migration
+    name = models.CharField(max_length=25)  # Original field, will be removed later
+    subject_area = models.CharField(max_length=50, choices=SUBJECT_AREA_CHOICES, null=True, blank=True)
+    content_type = models.CharField(max_length=50, choices=CONTENT_TYPE_CHOICES, null=True, blank=True)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     image = models.ImageField(upload_to=category_image_path, blank=True, null=True, storage=get_media_storage)
     library = models.ForeignKey('libraries.Library', on_delete=models.CASCADE, related_name='categories')
+    is_active = models.BooleanField(default=True, help_text="Whether this category is available for selection")
     
     class Meta:
         verbose_name_plural = "Categories"
-        ordering = ['name']
-        # Ensure name is unique per library
+        ordering = ['subject_area', 'content_type']
+        # Keep old constraint temporarily, will be updated in final migration
         unique_together = ['name', 'library']
     
+    @property
+    def display_name(self):
+        """Generate display name from subject area and content type"""
+        if self.subject_area and self.content_type:
+            subject_display = dict(self.SUBJECT_AREA_CHOICES).get(self.subject_area, self.subject_area)
+            content_display = dict(self.CONTENT_TYPE_CHOICES).get(self.content_type, self.content_type)
+            return f"{subject_display} - {content_display}"
+        return self.name  # Fallback to old name field during transition
+    
+    @property
+    def slug(self):
+        """Generate URL-friendly slug"""
+        return f"{self.subject_area}_{self.content_type}"
+    
     def __str__(self):
-        return f"{self.name} ({self.library.name})"
+        return f"{self.display_name} ({self.library.name})"
         
     def get_absolute_url(self):
-        return reverse('category', kwargs={'library_name': self.library.name, 'category_name': self.name.lower()})
+        return reverse('category', kwargs={'library_name': self.library.name, 'category_name': self.slug})
+    
+    @classmethod
+    def get_available_combinations(cls):
+        """Get all available subject area and content type combinations"""
+        combinations = []
+        for subject_code, subject_name in cls.SUBJECT_AREA_CHOICES:
+            for content_code, content_name in cls.CONTENT_TYPE_CHOICES:
+                combinations.append({
+                    'subject_area': subject_code,
+                    'content_type': content_code,
+                    'display_name': f"{subject_name} - {content_name}",
+                    'slug': f"{subject_code}_{content_code}"
+                })
+        return combinations
 
 # SQL model for tag
 class Tag(models.Model):

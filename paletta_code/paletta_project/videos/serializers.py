@@ -4,16 +4,22 @@ from .services import AWSCloudStorageService
 
 class CategorySerializer(serializers.ModelSerializer):
     """
-    Serializer for the Category model.
-    Includes the image URL for easy access in the frontend.
+    Serializer for the Category model with enum-based subject area and content type.
+    Includes validation to ensure only predefined combinations are allowed.
     """
     video_count = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
+    display_name = serializers.ReadOnlyField(source='name')
+    slug = serializers.ReadOnlyField()
+    subject_area_display = serializers.SerializerMethodField()
+    content_type_display = serializers.SerializerMethodField()
     
     class Meta:
         model = Category
-        fields = ('id', 'name', 'description', 'library', 'created_at', 'video_count', 'image', 'image_url')
-        read_only_fields = ('created_at', 'video_count')
+        fields = ('id', 'subject_area', 'content_type', 'subject_area_display', 'content_type_display', 
+                 'display_name', 'slug', 'description', 'library', 'is_active', 'created_at', 
+                 'video_count', 'image', 'image_url')
+        read_only_fields = ('created_at', 'video_count', 'display_name', 'slug')
     
     def get_video_count(self, obj):
         """Get the count of videos in this category."""
@@ -28,6 +34,69 @@ class CategorySerializer(serializers.ModelSerializer):
             return obj.image.url
         return None
     
+    def get_subject_area_display(self, obj):
+        """Get the display name for subject area."""
+        return dict(Category.SUBJECT_AREA_CHOICES).get(obj.subject_area, obj.subject_area)
+    
+    def get_content_type_display(self, obj):
+        """Get the display name for content type."""
+        return dict(Category.CONTENT_TYPE_CHOICES).get(obj.content_type, obj.content_type)
+    
+    def validate_subject_area(self, value):
+        """Validate that subject area is from the predefined choices."""
+        valid_choices = [choice[0] for choice in Category.SUBJECT_AREA_CHOICES]
+        if value not in valid_choices:
+            raise serializers.ValidationError(
+                f"Invalid subject area. Must be one of: {', '.join(valid_choices)}"
+            )
+        return value
+    
+    def validate_content_type(self, value):
+        """Validate that content type is from the predefined choices."""
+        valid_choices = [choice[0] for choice in Category.CONTENT_TYPE_CHOICES]
+        if value not in valid_choices:
+            raise serializers.ValidationError(
+                f"Invalid content type. Must be one of: {', '.join(valid_choices)}"
+            )
+        return value
+    
+    def validate(self, data):
+        """Validate that the combination of subject_area and content_type is unique per library."""
+        library = data.get('library')
+        subject_area = data.get('subject_area')
+        content_type = data.get('content_type')
+        
+        if library and subject_area and content_type:
+            # Check if this combination already exists for this library (excluding current instance if updating)
+            existing_query = Category.objects.filter(
+                library=library,
+                subject_area=subject_area,
+                content_type=content_type
+            )
+            
+            # If updating, exclude the current instance
+            if self.instance:
+                existing_query = existing_query.exclude(pk=self.instance.pk)
+            
+            if existing_query.exists():
+                raise serializers.ValidationError(
+                    "This category combination already exists for this library."
+                )
+        
+        return data
+
+class CategoryListSerializer(serializers.Serializer):
+    """
+    Serializer for listing all available category combinations without requiring a library.
+    Used for displaying options in forms.
+    """
+    subject_area = serializers.CharField()
+    content_type = serializers.CharField()
+    display_name = serializers.CharField()
+    slug = serializers.CharField()
+    subject_area_display = serializers.CharField()
+    content_type_display = serializers.CharField()
+
 class TagSerializer(serializers.ModelSerializer):
     """
     Serializer for the Tag model.
@@ -50,6 +119,9 @@ class VideoSerializer(serializers.ModelSerializer):
     """
     uploaded_by_username = serializers.ReadOnlyField(source='uploader.username')
     category_name = serializers.ReadOnlyField(source='category.name')
+    category_subject_area = serializers.ReadOnlyField(source='category.subject_area')
+    category_content_type = serializers.ReadOnlyField(source='category.content_type')
+    category_slug = serializers.ReadOnlyField(source='category.slug')
     library_name = serializers.ReadOnlyField(source='library.name')
     tags = serializers.SerializerMethodField()
     video_file_url = serializers.SerializerMethodField()
@@ -58,9 +130,9 @@ class VideoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Video
-        fields = ('id', 'title', 'description', 'category', 'category_name',
-                  'library', 'library_name', 'uploader', 'uploaded_by_username', 
-                  'upload_date', 'updated_at', 'tags', 'video_file', 
+        fields = ('id', 'title', 'description', 'category', 'category_name', 'category_subject_area',
+                  'category_content_type', 'category_slug', 'library', 'library_name', 'uploader', 
+                  'uploaded_by_username', 'upload_date', 'updated_at', 'tags', 'video_file', 
                   'video_file_url', 'thumbnail', 'thumbnail_url',
                   'duration', 'file_size', 'views_count',
                   'storage_status', 'storage_status_display', 'storage_url')

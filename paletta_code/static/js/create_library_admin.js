@@ -62,14 +62,44 @@ document.addEventListener("DOMContentLoaded", function () {
     fileInput.value = "";
   };
 
-  // Category handling
+  // Category handling with predefined enums
   let categoryImageInput = document.getElementById("categoryImage");
   let categoryImagePreview = document.getElementById("imagePreview");
+  let subjectAreaSelect = document.getElementById("subjectArea");
+  let contentTypeSelect = document.getElementById("contentType");
+  let categoryPreview = document.getElementById("categoryPreview");
   let categoriesArray = [];
+
+  // Load predefined enum options
+  loadCategoryOptions();
 
   // Initialize categoriesArray and make sure it's set in the form
   document.getElementById("categories-json").value =
     JSON.stringify(categoriesArray);
+
+  // Handle category preview update
+  function updateCategoryPreview() {
+    const subjectArea = subjectAreaSelect.value;
+    const contentType = contentTypeSelect.value;
+
+    if (subjectArea && contentType) {
+      const subjectDisplay =
+        subjectAreaSelect.options[subjectAreaSelect.selectedIndex].text;
+      const contentDisplay =
+        contentTypeSelect.options[contentTypeSelect.selectedIndex].text;
+      categoryPreview.textContent = `${subjectDisplay} - ${contentDisplay}`;
+    } else {
+      categoryPreview.textContent = "Select both options to see preview";
+    }
+  }
+
+  if (subjectAreaSelect) {
+    subjectAreaSelect.addEventListener("change", updateCategoryPreview);
+  }
+
+  if (contentTypeSelect) {
+    contentTypeSelect.addEventListener("change", updateCategoryPreview);
+  }
 
   categoryImageInput.addEventListener("change", function (event) {
     let file = event.target.files[0];
@@ -90,6 +120,35 @@ document.addEventListener("DOMContentLoaded", function () {
       reader.readAsDataURL(file);
     }
   });
+
+  // Load predefined category options
+  async function loadCategoryOptions() {
+    try {
+      // Load subject areas
+      const subjectResponse = await fetch("/videos/categories/subject_areas/");
+      const subjectAreas = await subjectResponse.json();
+
+      subjectAreas.forEach((area) => {
+        const option = document.createElement("option");
+        option.value = area.code;
+        option.textContent = area.display;
+        subjectAreaSelect.appendChild(option);
+      });
+
+      // Load content types
+      const contentResponse = await fetch("/videos/categories/content_types/");
+      const contentTypes = await contentResponse.json();
+
+      contentTypes.forEach((type) => {
+        const option = document.createElement("option");
+        option.value = type.code;
+        option.textContent = type.display;
+        contentTypeSelect.appendChild(option);
+      });
+    } catch (error) {
+      console.error("Error loading category options:", error);
+    }
+  }
 
   // Form submission handling
   const libraryForm = document.getElementById("library-form");
@@ -194,11 +253,14 @@ document.addEventListener("DOMContentLoaded", function () {
 // Modal functions
 window.openCategoryModal = function () {
   document.getElementById("categoryModal").style.display = "block";
-  document.getElementById("categoryName").value = "";
+  document.getElementById("subjectArea").value = "";
+  document.getElementById("contentType").value = "";
   document.getElementById("categoryDescription").value = "";
   document.getElementById("categoryImage").value = "";
   document.getElementById("imagePreview").style.display = "none";
   document.getElementById("errorText").innerText = "";
+  document.getElementById("categoryPreview").textContent =
+    "Select both options to see preview";
 };
 
 window.closeCategoryModal = function () {
@@ -207,7 +269,8 @@ window.closeCategoryModal = function () {
 
 // Add category to the list
 window.addCategory = function () {
-  const name = document.getElementById("categoryName").value.trim();
+  const subjectArea = document.getElementById("subjectArea").value.trim();
+  const contentType = document.getElementById("contentType").value.trim();
   const description = document
     .getElementById("categoryDescription")
     .value.trim();
@@ -215,15 +278,43 @@ window.addCategory = function () {
   const errorText = document.getElementById("errorText");
 
   // Validate
-  if (!name) {
-    errorText.textContent = "Category name is required";
+  if (!subjectArea) {
+    errorText.textContent = "Subject area is required";
     return;
   }
 
-  // Create category object
+  if (!contentType) {
+    errorText.textContent = "Content type is required";
+    return;
+  }
+
+  // Check for duplicates
+  const existingCategory = categoriesArray.find(
+    (cat) =>
+      cat.subject_area === subjectArea && cat.content_type === contentType
+  );
+
+  if (existingCategory) {
+    errorText.textContent = "This category combination already exists";
+    return;
+  }
+
+  // Get display names
+  const subjectDisplay =
+    document.getElementById("subjectArea").options[
+      document.getElementById("subjectArea").selectedIndex
+    ].text;
+  const contentDisplay =
+    document.getElementById("contentType").options[
+      document.getElementById("contentType").selectedIndex
+    ].text;
+
+  // Create category object with enum fields
   const category = {
-    name: name,
+    subject_area: subjectArea,
+    content_type: contentType,
     description: description,
+    display_name: `${subjectDisplay} - ${contentDisplay}`,
     // The library ID will be assigned server-side during library creation
     library: null,
   };
@@ -262,12 +353,15 @@ function addCategoryToList(category) {
   categoryItem.className = "category-item";
   categoryItem.innerHTML = `
       <div class="category-info">
-          <h3>${category.name}</h3>
-          <p>${category.description || "No description"}</p>
+          <h3>${category.display_name}</h3>
+          <p>${category.description || "No custom description"}</p>
+          <small>Subject: ${category.subject_area} | Type: ${
+    category.content_type
+  }</small>
       </div>
       <button type="button" class="remove-btn" onclick="removeCategory(this, '${
-        category.name
-      }')">Remove</button>
+        category.subject_area
+      }_${category.content_type}')">Remove</button>
   `;
 
   // Add image preview if available
@@ -292,7 +386,7 @@ function addCategoryToList(category) {
   closeCategoryModal();
 }
 
-window.removeCategory = function (button, categoryName) {
+window.removeCategory = function (button, categorySlug) {
   // Get the category item
   const categoryItem = button.parentNode;
 
@@ -303,7 +397,12 @@ window.removeCategory = function (button, categoryName) {
   const categoriesInput = document.getElementById("categories-json");
   let categories = JSON.parse(categoriesInput.value);
 
-  categories = categories.filter((cat) => cat.name !== categoryName);
+  // Parse the slug to get subject_area and content_type
+  const [subjectArea, contentType] = categorySlug.split("_");
+  categories = categories.filter(
+    (cat) =>
+      !(cat.subject_area === subjectArea && cat.content_type === contentType)
+  );
   categoriesInput.value = JSON.stringify(categories);
   categoriesArray = categories; // Update the global categoriesArray
 

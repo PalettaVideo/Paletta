@@ -189,40 +189,42 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                     print(f"Parsed categories data (count: {len(categories_data)}): {categories_data}")
                     
                     for category_data in categories_data:
-                        print(f"Processing category: {category_data.get('name')}")
-                        # Create category data dict for serializer
+                        print(f"Processing category: {category_data.get('subject_area')}_{category_data.get('content_type')}")
+                        # Create category data dict for serializer with enum fields
                         category_dict = {
-                            'name': category_data.get('name'),
-                            'description': category_data.get('description')
+                            'subject_area': category_data.get('subject_area'),
+                            'content_type': category_data.get('content_type'),
+                            'description': category_data.get('description'),
+                            'library': library.id  # Set the library ID for validation
                         }
                         
                         # Use the CategorySerializer from videos app
                         category_serializer = CategorySerializer(data=category_dict)
                         if category_serializer.is_valid():
-                            print(f"Category {category_data.get('name')} validated successfully")
+                            print(f"Category {category_data.get('subject_area')}_{category_data.get('content_type')} validated successfully")
                             # Save the category
                             category = category_serializer.save()
                             
                             # Handle category image if provided as base64
                             if 'image' in category_data and category_data['image'].startswith('data:image'):
-                                print(f"Processing image for category {category_data.get('name')}")
+                                print(f"Processing image for category {category_data.get('subject_area')}_{category_data.get('content_type')}")
                                 try:
                                     # Convert base64 to file and save
                                     image_file = process_base64_image(
                                         category_data['image'], 
-                                        name=f"category_{category_data.get('name', 'unnamed')}"
+                                        name=f"category_{category_data.get('subject_area', 'unnamed')}_{category_data.get('content_type', 'unnamed')}"
                                     )
                                     category.image = image_file
                                     category.save()
-                                    print(f"Image saved for category {category_data.get('name')}")
+                                    print(f"Image saved for category {category_data.get('subject_area')}_{category_data.get('content_type')}")
                                 except Exception as e:
                                     print(f"Error saving category image: {e}")
                             else:
-                                print(f"No valid image found for category {category_data.get('name')}")
+                                print(f"No valid image found for category {category_data.get('subject_area')}_{category_data.get('content_type')}")
                             
                             categories.append(category)
                         else:
-                            print(f"Category validation errors for {category_data.get('name')}: {category_serializer.errors}")
+                            print(f"Category validation errors for {category_data.get('subject_area')}_{category_data.get('content_type')}: {category_serializer.errors}")
                             return JsonResponse({
                                 'status': 'error',
                                 'message': f"Category validation failed: {category_serializer.errors}"

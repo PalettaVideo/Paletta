@@ -78,33 +78,46 @@
 
                 <!-- Category section -->
                 <div class="category-container">
-                    <label class="category-label">Add Categories (Optional)</label>
-                    <button type="button" class="add-category-btn" onclick="openCategoryModal()">➕ add category</button>
+                    <label class="category-label">Enable Categories (Optional)</label>
+                    <button type="button" class="add-category-btn" onclick="openCategoryModal()">➕ enable categories</button>
                 </div>
 
                 <!-- Category display area -->
                 <div id="categoryList" class="category-list"></div>
-                <div id="category-status" class="status-message">No categories added yet.</div>
+                <div id="category-status" class="status-message">No categories enabled yet.</div>
                 <input type="hidden" id="categories-json" name="categories_json" value="[]">
                 
                 <!-- Category modal -->
                 <div id="categoryModal" class="modal">
                     <div class="modal-content">
                         <span class="close" onclick="closeCategoryModal()">&times;</span>
-                        <h2>Add a Category</h2>
+                        <h2>Enable Predefined Categories</h2>
 
-                        <label for="categoryName">Category Name</label>
-                        <input type="text" id="categoryName" placeholder="Enter category name">
+                        <label for="subjectArea">Subject Area</label>
+                        <select id="subjectArea" required>
+                            <option value="">Select subject area</option>
+                            <!-- Options will be loaded via JavaScript -->
+                        </select>
 
-                        <label for="categoryImage">Category Image</label>
+                        <label for="contentType">Content Type</label>
+                        <select id="contentType" required>
+                            <option value="">Select content type</option>
+                            <!-- Options will be loaded via JavaScript -->
+                        </select>
+
+                        <div class="preview-text">
+                            <strong>Category Preview:</strong> <span id="categoryPreview">Select both options to see preview</span>
+                        </div>
+
+                        <label for="categoryDescription">Category Description (Optional)</label>
+                        <textarea id="categoryDescription" placeholder="Enter custom description for this category"></textarea>
+
+                        <label for="categoryImage">Category Image (Optional)</label>
                         <input type="file" id="categoryImage" accept="image/*">
                         <img id="imagePreview" style="display: none; width: 100px; height: 100px;">
 
-                        <label for="categoryDescription">Category Description</label>
-                        <textarea id="categoryDescription" placeholder="Enter description"></textarea>
-
                         <p id="errorText" class="error-text"></p>
-                        <button type="button" class="add-btn" onclick="addCategory()">Add Category</button>
+                        <button type="button" class="add-btn" onclick="addCategory()">Enable Category</button>
                     </div>
                 </div>
 
