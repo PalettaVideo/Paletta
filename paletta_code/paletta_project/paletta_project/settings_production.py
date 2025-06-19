@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import sys
 from dotenv import load_dotenv
+import dj_database_url
 
 # Production settings file for AWS deployment
 # Import base settings from paletta_core
@@ -41,12 +42,17 @@ if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
 
 # Database settings - use environment variables for production
-if os.environ.get('DATABASE_URL'):
-    import dj_database_url
-    DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
-else:
-    # In production, we require the DATABASE_URL to be set.
-    raise ValueError("DATABASE_URL environment variable not set.")
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        ssl_require=True
+    )
+}
+
+# Ensure DATABASE_URL is set in production
+if not os.environ.get('DATABASE_URL'):
+    raise ValueError("DATABASE_URL environment variable not set in production.")
 
 # API Gateway Configuration
 API_GATEWAY_URL = os.environ.get('API_GATEWAY_URL')
