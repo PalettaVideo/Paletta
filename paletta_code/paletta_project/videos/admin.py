@@ -115,14 +115,14 @@ class VideoAdmin(admin.ModelAdmin):
     duration_display.short_description = 'Duration'
 
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'library', 'description', 'created_at', 'image_preview')
-    list_filter = ('library',)
-    search_fields = ('name', 'description')
-    readonly_fields = ('created_at', 'image_preview')
+    list_display = ('display_name', 'subject_area', 'content_type', 'library', 'is_active', 'created_at', 'image_preview')
+    list_filter = ('library', 'subject_area', 'content_type', 'is_active')
+    search_fields = ('subject_area', 'content_type', 'description')
+    readonly_fields = ('created_at', 'image_preview', 'display_name')
     
     fieldsets = (
         ('Category Information', {
-            'fields': ('name', 'description', 'library', 'created_at')
+            'fields': ('subject_area', 'content_type', 'display_name', 'description', 'library', 'is_active', 'created_at')
         }),
         ('Category Image', {
             'fields': ('image', 'image_preview'),
