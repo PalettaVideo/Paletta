@@ -33,7 +33,7 @@ class Command(BaseCommand):
             'people_community', 'buildings_architecture', 'classrooms_learning',
             'field_trips_outdoor', 'events_conferences', 'research_innovation_spaces',
             'technology_equipment', 'everyday_campus', 'urban_natural_environments',
-            'backgrounds_abstracts'
+            'backgrounds_abstracts', 'private'
         ]
         
         self.stdout.write('Creating Paletta categories...')

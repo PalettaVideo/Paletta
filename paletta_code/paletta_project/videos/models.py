@@ -62,6 +62,7 @@ class PalettaCategory(models.Model):
         ('everyday_campus', 'Everyday Campus Life'),
         ('urban_natural_environments', 'Urban & Natural Environments'),
         ('backgrounds_abstracts', 'Backgrounds & Abstracts'),
+        ('private', 'Private'),  # Private category for Paletta libraries
     ]
     
     code = models.CharField(max_length=50, choices=PALETTA_CATEGORY_CHOICES, unique=True)
@@ -99,6 +100,7 @@ class Category(models.Model):
         ('fine_art', 'Fine Art'),
         ('law', 'Law'),
         ('business', 'Business'),
+        ('private', 'Private'),  # Private category for custom libraries
     ]
     
     subject_area = models.CharField(max_length=50, choices=SUBJECT_AREA_CHOICES)
@@ -266,6 +268,15 @@ class Video(models.Model):
       if self.paletta_category:
           categories.append(f"Paletta: {self.paletta_category.display_name}")
       return " | ".join(categories)
+  
+  @property
+  def is_private(self):
+      """Check if this video is in a private category"""
+      if self.paletta_category and self.paletta_category.code == 'private':
+          return True
+      if self.subject_area and self.subject_area.subject_area == 'private':
+          return True
+      return False
     
   def delete(self, *args, **kwargs):
     """

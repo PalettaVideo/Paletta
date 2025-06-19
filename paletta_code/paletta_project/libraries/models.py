@@ -133,12 +133,12 @@ class Library(models.Model):
         for ct_code in content_types_data:
             ContentType.objects.get_or_create(code=ct_code)
         
-        # Create all Paletta categories (they're global)
+        # Create all Paletta categories (they're global) INCLUDING PRIVATE
         paletta_categories_data = [
             'people_community', 'buildings_architecture', 'classrooms_learning',
             'field_trips_outdoor', 'events_conferences', 'research_innovation_spaces',
             'technology_equipment', 'everyday_campus', 'urban_natural_environments',
-            'backgrounds_abstracts'
+            'backgrounds_abstracts', 'private'  # ALWAYS CREATE PRIVATE CATEGORY
         ]
         
         for pc_code in paletta_categories_data:
@@ -146,12 +146,12 @@ class Library(models.Model):
         
         # Create subject area categories for this library
         if self.category_source == 'custom':
-            # For custom libraries, create all subject areas by default
+            # For custom libraries, create all subject areas by default INCLUDING PRIVATE
             subject_areas = [
                 'engineering_sciences', 'mathematical_physical_sciences', 'medical_sciences',
                 'life_sciences', 'brain_sciences', 'built_environment', 'population_health',
                 'arts_humanities', 'social_historical_sciences', 'education', 'fine_art',
-                'law', 'business'
+                'law', 'business', 'private'  # ALWAYS CREATE PRIVATE CATEGORY
             ]
             
             for subject_code in subject_areas:
@@ -160,6 +160,13 @@ class Library(models.Model):
                     library=self,
                     defaults={'is_active': True}
                 )
+        else:
+            # Even for Paletta libraries, create a private subject area as backup
+            Category.objects.get_or_create(
+                subject_area='private',
+                library=self,
+                defaults={'is_active': True}
+            )
         
         # Paletta style libraries don't need subject area categories 
         # as they use PalettaCategory instead
@@ -170,6 +177,29 @@ class Library(models.Model):
             return f"{self.storage_size_tb:.2f} TB"
         else:
             return f"{self.storage_size_gb:.2f} GB"
+    
+    def get_private_category(self):
+        """Get the private category for this library"""
+        from videos.models import Category, PalettaCategory
+        
+        if self.uses_paletta_categories:
+            # For Paletta libraries, return the private PalettaCategory
+            try:
+                return PalettaCategory.objects.get(code='private')
+            except PalettaCategory.DoesNotExist:
+                # Create it if it doesn't exist
+                return PalettaCategory.objects.create(code='private')
+        else:
+            # For custom libraries, return the private Category
+            try:
+                return Category.objects.get(subject_area='private', library=self)
+            except Category.DoesNotExist:
+                # Create it if it doesn't exist
+                return Category.objects.create(
+                    subject_area='private',
+                    library=self,
+                    is_active=True
+                )
 
 
 class UserLibraryRole(models.Model):

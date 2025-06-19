@@ -1,6 +1,6 @@
 from rest_framework import viewsets, permissions, status
 from ..models import Category, Video
-from ..serializers import CategorySerializer, VideoSerializer, CategoryListSerializer
+from ..serializers import CategorySerializer, VideoSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from ..tasks import generate_and_send_download_link
@@ -145,11 +145,13 @@ class CategoryViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def available_combinations(self, request):
         """
-        Return all available subject area and content type combinations
+        Return all available subject area combinations
         """
-        combinations = Category.get_available_combinations()
-        serializer = CategoryListSerializer(combinations, many=True)
-        return Response(serializer.data)
+        subject_areas = [
+            {'code': code, 'display': display} 
+            for code, display in Category.SUBJECT_AREA_CHOICES
+        ]
+        return Response(subject_areas)
     
     @action(detail=False, methods=['get'])
     def subject_areas(self, request):
@@ -165,11 +167,12 @@ class CategoryViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def content_types(self, request):
         """
-        Return all available content types
+        Return all available content types from the ContentType model
         """
+        from ..models import ContentType
         content_types = [
-            {'code': code, 'display': display} 
-            for code, display in Category.CONTENT_TYPE_CHOICES
+            {'code': ct.code, 'display': ct.display_name} 
+            for ct in ContentType.objects.filter(is_active=True)
         ]
         return Response(content_types)
     
@@ -210,18 +213,27 @@ class VideoViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Filter videos based on query parameters and user permissions.
-        Hides videos in 'Private' categories from users who are not the library owner.
+        Hides private videos from users who are not the library owner.
         """
         queryset = Video.objects.all()
         user = self.request.user
 
-        # Exclude videos from 'Private' categories if the user is not the library owner
+        # Filter private videos based on user permissions
         if user.is_authenticated:
-            private_video_q = Q(category__name='Private') & ~Q(library__owner=user)
-            queryset = queryset.exclude(private_video_q)
+            # For authenticated users, exclude private videos unless they're the library owner
+            private_videos_q = Q(
+                # Private Paletta category videos
+                (Q(paletta_category__code='private') & ~Q(library__owner=user)) |
+                # Private subject area videos
+                (Q(subject_area__subject_area='private') & ~Q(library__owner=user))
+            )
+            queryset = queryset.exclude(private_videos_q)
         else:
-            # Exclude all private videos for anonymous users
-            queryset = queryset.exclude(category__name='Private')
+            # For anonymous users, exclude ALL private videos
+            queryset = queryset.exclude(
+                Q(paletta_category__code='private') | 
+                Q(subject_area__subject_area='private')
+            )
         
         # Apply filters from query parameters
         category_id = self.request.query_params.get('category', None)
@@ -229,7 +241,7 @@ class VideoViewSet(viewsets.ModelViewSet):
         search = self.request.query_params.get('search', None)
         
         if category_id:
-            queryset = queryset.filter(category_id=category_id)
+            queryset = queryset.filter(subject_area_id=category_id)
         if tag:
             queryset = queryset.filter(tags__name=tag)
         if search:
