@@ -309,33 +309,40 @@ document.addEventListener("DOMContentLoaded", function () {
       defaultOption.textContent = "Select a category";
       categorySelect.appendChild(defaultOption);
 
-      // Populate select with retrieved categories
-      if (categories.length > 0) {
-        categories.forEach((category) => {
-          const option = document.createElement("option");
-
-          // Handle both Paletta and custom categories
-          option.value = category.id;
-          option.textContent = category.display_name || category.name;
-          option.setAttribute("data-type", category.type || "unknown");
-
-          categorySelect.appendChild(option);
-        });
-        console.log(
-          `Added ${categories.length} categories to the select element`
-        );
-      } else {
-        console.warn("No categories found to display");
+      // Add categories to the select dropdown
+      categories.forEach((category) => {
         const option = document.createElement("option");
-        option.disabled = true;
-        option.textContent = "No categories available";
+        option.value = category.id;
+
+        // Handle both paletta and library categories
+        if (category.type === "paletta_category") {
+          option.textContent = `${category.display_name} (Paletta)`;
+        } else if (
+          category.type === "library_category" ||
+          category.type === "subject_area"
+        ) {
+          option.textContent = category.display_name || category.name;
+        } else {
+          option.textContent = category.display_name || category.name;
+        }
+
         categorySelect.appendChild(option);
-      }
+      });
+
+      console.log(`Added ${categories.length} categories to select dropdown`);
 
       // Also fetch and populate content types
       await fetchContentTypes();
     } catch (error) {
       console.error("Error fetching categories:", error);
+      const categorySelect = document.getElementById("category");
+      if (categorySelect) {
+        categorySelect.innerHTML = "";
+        const errorOption = document.createElement("option");
+        errorOption.value = "";
+        errorOption.textContent = "Error loading categories";
+        categorySelect.appendChild(errorOption);
+      }
     }
   }
 

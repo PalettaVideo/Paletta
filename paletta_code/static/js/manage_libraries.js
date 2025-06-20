@@ -189,12 +189,18 @@ document.addEventListener("DOMContentLoaded", function () {
         let html =
           "<h4>Current Categories</h4><div class='current-categories-list'>";
         data.forEach((category) => {
+          const isPrivate =
+            category.subject_area === "private" || category.code === "private";
+          const removeButton = isPrivate
+            ? `<span class="category-protected"><i class="fas fa-lock"></i> Protected</span>`
+            : `<button type='button' class='btn btn-sm btn-danger' onclick='removeCategory("${category.id}", "${category.display_name}")'>
+              <i class='fas fa-trash'></i> Remove
+            </button>`;
+
           html += `
-            <div class='category-item'>
+            <div class='category-item ${isPrivate ? "private-category" : ""}'>
               <span class='category-name'>${category.display_name}</span>
-              <button type='button' class='btn btn-sm btn-danger' onclick='removeCategory('${category.id}', '${category.display_name}')'>
-                <i class='fas fa-trash'></i> Remove
-              </button>
+              ${removeButton}
             </div>
           `;
         });

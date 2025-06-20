@@ -507,3 +507,22 @@
     white-space: nowrap;
 }
 
+/* Private Category Styling */
+.category-item.private-category {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+}
+
+.category-protected {
+    color: #856404;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.category-protected i {
+    color: #ffc107;
+}
+

@@ -468,34 +468,34 @@ class UnifiedCategoryViewSet(APIView):
                         'image_url': None,  # PalettaCategory doesn't have images yet
                     })
                 
-                logger.debug(f"Returned {len(categories_data)} Paletta categories for library {library.name}")
+                logger.debug(f"Added {len(categories_data)} Paletta categories for library {library.name}")
+            
+            # ALWAYS get library-specific categories (including Private) for ALL library types
+            library_categories = Category.objects.filter(library=library, is_active=True).order_by('subject_area')
+            
+            for category in library_categories:
+                image_url = None
+                if category.image:
+                    image_url = request.build_absolute_uri(category.image.url)
                 
-            else:
-                # For custom libraries, return Category objects (subject areas)
-                categories = Category.objects.filter(library=library, is_active=True).order_by('subject_area')
-                
-                for category in categories:
-                    image_url = None
-                    if category.image:
-                        image_url = request.build_absolute_uri(category.image.url)
-                    
-                    categories_data.append({
-                        'id': category.id,
-                        'name': category.display_name,
-                        'display_name': category.display_name,
-                        'subject_area': category.subject_area,
-                        'type': 'subject_area',
-                        'library': {
-                            'id': library.id,
-                            'name': library.name
-                        },
-                        'is_active': category.is_active,
-                        'description': category.description or '',
-                        'image_url': image_url,
-                        'created_at': category.created_at.isoformat() if category.created_at else None,
-                    })
-                
-                logger.debug(f"Returned {len(categories_data)} custom categories for library {library.name}")
+                categories_data.append({
+                    'id': category.id,
+                    'name': category.display_name,
+                    'display_name': category.display_name,
+                    'subject_area': category.subject_area,
+                    'type': 'library_category',
+                    'library': {
+                        'id': library.id,
+                        'name': library.name
+                    },
+                    'is_active': category.is_active,
+                    'description': category.description or '',
+                    'image_url': image_url,
+                    'created_at': category.created_at.isoformat() if category.created_at else None,
+                })
+            
+            logger.debug(f"Added {len(library_categories)} library-specific categories for library {library.name}")
+            logger.debug(f"Total categories returned: {len(categories_data)}")
             
             return Response(categories_data, status=status.HTTP_200_OK)
             

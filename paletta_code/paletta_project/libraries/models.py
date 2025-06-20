@@ -144,25 +144,19 @@ class Library(models.Model):
         for pc_code in paletta_categories_data:
             PalettaCategory.objects.get_or_create(code=pc_code)
         
-        # Create subject area categories for this library
-        if self.category_source == 'custom':
-            # For custom libraries, only create the private category by default
-            # Other categories will be created when the user selects them
-            Category.objects.get_or_create(
-                subject_area='private',
-                library=self,
-                defaults={'is_active': True}
-            )
-        else:
-            # Even for Paletta libraries, create a private subject area as backup
-            Category.objects.get_or_create(
-                subject_area='private',
-                library=self,
-                defaults={'is_active': True}
-            )
+        # ALWAYS create a Private category for this specific library (both types need this)
+        Category.objects.get_or_create(
+            subject_area='private',
+            library=self,
+            defaults={
+                'description': 'Private videos. Only you and library administrators can see these videos.',
+                'is_active': True
+            }
+        )
         
-        # Paletta style libraries don't need subject area categories 
-        # as they use PalettaCategory instead
+        # For custom libraries, only create the private category by default
+        # Other categories will be created when the user selects them during library creation
+        # For Paletta libraries, they will use PalettaCategory objects + the private Category as backup
         
     def get_storage_display(self):
         """Return a human-readable storage size string."""

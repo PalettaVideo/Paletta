@@ -46,30 +46,42 @@ class HomeView(TemplateView):
         if request.user.is_authenticated:
             try:
                 # Get categories based on library type
+                categories = []
+                
                 if current_library and current_library.uses_paletta_categories:
                     # For Paletta libraries, get PalettaCategory objects
                     paletta_categories = PalettaCategory.objects.filter(is_active=True).order_by('code')
-                    # Convert to a format the template can use
-                    categories = []
                     for pc in paletta_categories:
                         categories.append({
-                            'id': pc.id,
+                            'id': f'paletta_{pc.id}',
                             'name': pc.display_name,
                             'display_name': pc.display_name,
                             'code': pc.code,
-                            'image_url': None,  # PalettaCategory doesn't have images yet
+                            'image_url': None,
+                            'type': 'paletta_category'
                         })
                     logger.debug(f"[HomePage Debug] Found {len(categories)} Paletta categories")
-                else:
-                    # For custom libraries, get Category objects (subject areas)
-                    categories = Category.objects.filter(library=current_library).order_by('subject_area')
+                
+                if current_library:
+                    # ALWAYS get the library-specific categories (including Private)
+                    library_categories = Category.objects.filter(
+                        library=current_library, 
+                        is_active=True
+                    ).order_by('subject_area')
+                    
                     # Use the serializer to get proper image URLs
-                    serializer = CategorySerializer(categories, many=True, context={'request': request})
-                    categories = serializer.data
-                    logger.debug(f"[HomePage Debug] Found {len(categories)} custom categories for library {current_library.name if current_library else 'None'}")
+                    serializer = CategorySerializer(library_categories, many=True, context={'request': request})
+                    library_categories_data = serializer.data
+                    
+                    # Add library-specific categories to the list
+                    for cat_data in library_categories_data:
+                        cat_data['type'] = 'library_category'
+                        categories.append(cat_data)
+                    
+                    logger.debug(f"[HomePage Debug] Found {len(library_categories_data)} library-specific categories for {current_library.name}")
                 
                 # Log first few category names for debugging
-                category_names = [cat['name'] if isinstance(cat, dict) else cat.display_name for cat in categories[:5]]
+                category_names = [cat['name'] if isinstance(cat, dict) else str(cat) for cat in categories[:5]]
                 logger.debug(f"[HomePage Debug] First few categories: {category_names}")
                 
             except Exception as e:

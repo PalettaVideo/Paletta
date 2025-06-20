@@ -68,8 +68,11 @@ class VideoEditView(TemplateView):
             else:
                 video.duration_formatted = "Unknown"
             
-            # Get available categories for the library
-            categories = video.library.categories.all()
+            # Get available categories for the library - Include ALL categories
+            categories = Category.objects.filter(
+                library=video.library, 
+                is_active=True
+            ).order_by('subject_area')
             
             # Add to context
             context['video'] = video
@@ -117,7 +120,7 @@ class VideoEditView(TemplateView):
             # Handle category
             category_id = request.POST.get('category')
             if category_id:
-                video.category = get_object_or_404(Category, id=category_id)
+                video.subject_area = get_object_or_404(Category, id=category_id)
             
             # Update video fields
             video.title = title

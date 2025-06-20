@@ -344,8 +344,8 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                 return context
             
             context['library'] = library
-            # Get categories for this library
-            context['categories'] = Category.objects.filter(library=library)
+            # Get categories for this library - ALWAYS include all library categories
+            context['categories'] = Category.objects.filter(library=library, is_active=True).order_by('subject_area')
             
             # Get contributors for this library
             context['contributors'] = UserLibraryRole.objects.filter(
