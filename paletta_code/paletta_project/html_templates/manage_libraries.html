@@ -70,10 +70,6 @@
                             <i class="fas fa-tags"></i> Categories
                         </button>
                         {% endif %}
-                        <button class="btn btn-warning btn-sm" onclick="toggleLibraryStatus('{{ library.id }}', '{{ library.is_active|yesno:"true,false" }}')">
-                            <i class="fas fa-{{ library.is_active|yesno:'pause,play' }}"></i> 
-                            {{ library.is_active|yesno:"Stop,Start" }}
-                        </button>
                         <button class="btn btn-danger btn-sm" onclick="deleteLibrary('{{ library.id }}', '{{ library.name }}')">
                             <i class="fas fa-trash"></i> Delete
                         </button>
@@ -115,10 +111,29 @@
             </div>
             
             <div class="add-category-section">
-                <h4>Add New Subject Area</h4>
-                <div class="subject-areas-grid" id="available-subject-areas">
-                    <!-- Will be populated dynamically -->
+                <h4>Add New Categories</h4>
+                
+                <!-- Subject Areas Section -->
+                <div class="predefined-categories-section">
+                    <h5>Predefined Subject Areas</h5>
+                    <p>Select from our predefined academic subject areas:</p>
+                    <div class="subject-areas-grid" id="available-subject-areas">
+                        <!-- Will be populated dynamically -->
+                    </div>
                 </div>
+                
+                <!-- Custom Categories Section -->
+                <div class="custom-categories-section">
+                    <h5>Create Custom Category</h5>
+                    <p>Create a category with your own custom name:</p>
+                    <div class="custom-category-form">
+                        <input type="text" id="custom-category-name" placeholder="Enter custom category name" maxlength="100">
+                        <button type="button" class="btn btn-secondary" onclick="addCustomCategory()">
+                            <i class="fas fa-plus"></i> Add Custom Category
+                        </button>
+                    </div>
+                </div>
+                
                 <button type="button" class="btn btn-success" onclick="addSelectedCategories()">
                     <i class="fas fa-plus"></i> Add Selected Categories
                 </button>

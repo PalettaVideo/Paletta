@@ -146,20 +146,13 @@ class Library(models.Model):
         
         # Create subject area categories for this library
         if self.category_source == 'custom':
-            # For custom libraries, create all subject areas by default INCLUDING PRIVATE
-            subject_areas = [
-                'engineering_sciences', 'mathematical_physical_sciences', 'medical_sciences',
-                'life_sciences', 'brain_sciences', 'built_environment', 'population_health',
-                'arts_humanities', 'social_historical_sciences', 'education', 'fine_art',
-                'law', 'business', 'private'  # ALWAYS CREATE PRIVATE CATEGORY
-            ]
-            
-            for subject_code in subject_areas:
-                Category.objects.get_or_create(
-                    subject_area=subject_code,
-                    library=self,
-                    defaults={'is_active': True}
-                )
+            # For custom libraries, only create the private category by default
+            # Other categories will be created when the user selects them
+            Category.objects.get_or_create(
+                subject_area='private',
+                library=self,
+                defaults={'is_active': True}
+            )
         else:
             # Even for Paletta libraries, create a private subject area as backup
             Category.objects.get_or_create(

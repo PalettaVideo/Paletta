@@ -253,6 +253,8 @@
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
+    margin: auto;
+    position: relative;
 }
 
 .modal-header {
@@ -354,11 +356,8 @@
 }
 
 .subject-area-item label {
-    cursor: pointer;
     font-weight: 500;
     color: #333;
-    flex: 1;
-    font-size: 0.95em;
 }
 
 .subject-area-item input[type="checkbox"]:checked + label {
@@ -456,5 +455,55 @@
     .library-actions .btn {
         justify-content: center;
     }
+}
+
+/* Custom Categories Section Styles */
+.predefined-categories-section,
+.custom-categories-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.predefined-categories-section h5,
+.custom-categories-section h5 {
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 1.1em;
+}
+
+.predefined-categories-section p,
+.custom-categories-section p {
+    color: #666;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+}
+
+.custom-category-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.custom-category-form input[type="text"] {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.custom-category-form input[type="text"]:focus {
+    outline: none;
+    border-color: #80b824;
+    box-shadow: 0 0 0 2px rgba(128, 184, 36, 0.2);
+}
+
+.custom-category-form .btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    white-space: nowrap;
 }
 

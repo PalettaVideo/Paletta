@@ -101,9 +101,11 @@ class Category(models.Model):
         ('law', 'Law'),
         ('business', 'Business'),
         ('private', 'Private'),  # Private category for custom libraries
+        ('custom', 'Custom'),  # Custom category type
     ]
     
     subject_area = models.CharField(max_length=50, choices=SUBJECT_AREA_CHOICES)
+    custom_name = models.CharField(max_length=100, blank=True, null=True, help_text="Custom category name (used when subject_area is 'custom')")
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     image = models.ImageField(upload_to=category_image_path, blank=True, null=True, storage=get_media_storage)
@@ -112,18 +114,35 @@ class Category(models.Model):
     
     class Meta:
         verbose_name_plural = "Categories"
-        ordering = ['subject_area']
-        unique_together = ['subject_area', 'library']
+        ordering = ['subject_area', 'custom_name']
+        unique_together = [['subject_area', 'library'], ['custom_name', 'library']]
     
     @property
     def display_name(self):
-        """Generate display name from subject area"""
+        """Generate display name from subject area or custom name"""
+        if self.subject_area == 'custom' and self.custom_name:
+            return self.custom_name
         return dict(self.SUBJECT_AREA_CHOICES).get(self.subject_area, self.subject_area)
     
     @property
     def slug(self):
         """Generate URL-friendly slug"""
+        if self.subject_area == 'custom' and self.custom_name:
+            from django.utils.text import slugify
+            return slugify(self.custom_name)
         return self.subject_area
+    
+    def clean(self):
+        """Validate that custom categories have a custom_name"""
+        if self.subject_area == 'custom' and not self.custom_name:
+            raise ValidationError({'custom_name': 'Custom name is required when subject area is "custom".'})
+        if self.subject_area != 'custom' and self.custom_name:
+            # Clear custom_name if not using custom subject area
+            self.custom_name = None
+    
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"{self.display_name} ({self.library.name})"

@@ -39,17 +39,6 @@ document.addEventListener("DOMContentLoaded", function () {
     window.location.href = `/libraries/edit/?library_id=${libraryId}`;
   };
 
-  window.toggleLibraryStatus = function (libraryId, currentStatus) {
-    const action = currentStatus === "true" ? "stop" : "start";
-    const actionText = currentStatus === "true" ? "stop" : "start";
-
-    showConfirmModal(
-      `${actionText.charAt(0).toUpperCase() + actionText.slice(1)} Library`,
-      `Are you sure you want to ${actionText} this library?`,
-      () => executeLibraryAction(libraryId, "toggle_status")
-    );
-  };
-
   window.deleteLibrary = function (libraryId, libraryName) {
     showConfirmModal(
       "Delete Library",
@@ -68,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
       ".modal-header h3"
     ).textContent = `Manage Categories - ${libraryName}`;
 
-      // Show modal
+    // Show modal
     modal.style.display = "block";
 
     // Load current categories
@@ -101,15 +90,46 @@ document.addEventListener("DOMContentLoaded", function () {
     addCategoriesToLibrary(libraryId, categoriesData);
   };
 
+  // Add custom category function
+  window.addCustomCategory = function () {
+    const customNameInput = document.getElementById("custom-category-name");
+    const customName = customNameInput.value.trim();
+
+    if (!customName) {
+      alert("Please enter a custom category name.");
+      customNameInput.focus();
+      return;
+    }
+
+    if (customName.length > 100) {
+      alert("Category name must be 100 characters or less.");
+      customNameInput.focus();
+      return;
+    }
+
+    const libraryId =
+      document.getElementById("categoriesModal").dataset.libraryId;
+
+    const categoriesData = [
+      {
+        subject_area: "custom",
+        custom_name: customName,
+        description: `Custom category: ${customName}`,
+      },
+    ];
+
+    // Clear the input after adding
+    customNameInput.value = "";
+
+    addCategoriesToLibrary(libraryId, categoriesData);
+  };
+
   // Execute library actions
   function executeLibraryAction(libraryId, action) {
     let url;
     let method = "POST";
 
     switch (action) {
-      case "toggle_status":
-        url = `/api/libraries/libraries/${libraryId}/toggle_status/`;
-        break;
       case "delete":
         url = `/api/libraries/libraries/${libraryId}/`;
         method = "DELETE";
@@ -265,6 +285,12 @@ document.addEventListener("DOMContentLoaded", function () {
           alert("Categories added successfully");
           loadLibraryCategories(libraryId);
           loadAvailableSubjectAreas(libraryId);
+
+          // Clear any checked checkboxes
+          const checkboxes = document.querySelectorAll(
+            "#available-subject-areas input:checked"
+          );
+          checkboxes.forEach((checkbox) => (checkbox.checked = false));
         } else {
           alert("Error: " + (data.message || "Failed to add categories"));
         }

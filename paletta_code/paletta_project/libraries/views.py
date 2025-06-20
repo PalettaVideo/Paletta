@@ -141,12 +141,18 @@ class LibraryViewSet(viewsets.ModelViewSet):
             created_categories = []
             for category_data in categories_data:
                 # Create the category
-                category = Category.objects.create(
-                    subject_area=category_data.get('subject_area'),
-                    description=category_data.get('description', ''),
-                    library=library,
-                    is_active=True
-                )
+                category_kwargs = {
+                    'subject_area': category_data.get('subject_area'),
+                    'description': category_data.get('description', ''),
+                    'library': library,
+                    'is_active': True
+                }
+                
+                # Add custom_name if it's a custom category
+                if category_data.get('subject_area') == 'custom' and category_data.get('custom_name'):
+                    category_kwargs['custom_name'] = category_data.get('custom_name')
+                
+                category = Category.objects.create(**category_kwargs)
                 created_categories.append(category)
             
             return Response({
@@ -256,11 +262,13 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                             for category_data in custom_categories_data:
                                 # Create custom category
                                 from videos.models import Category
-                                Category.objects.create(
+                                Category.objects.get_or_create(
                                     subject_area=category_data.get('subject_area'),
-                                    description=category_data.get('description', ''),
                                     library=library,
-                                    is_active=True
+                                    defaults={
+                                        'description': category_data.get('description', ''),
+                                        'is_active': True
+                                    }
                                 )
                                 print(f"Created custom category: {category_data.get('subject_area')}")
                                 
