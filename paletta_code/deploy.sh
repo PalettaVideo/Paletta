@@ -98,6 +98,10 @@ if admin_user:
         paletta_lib.save()
         print("Updated Paletta library owner to superuser")
     
+    # ALWAYS ensure categories are set up for the Paletta library
+    paletta_lib.setup_default_categories()
+    print("Set up default categories for Paletta library")
+    
     if created:
         print("Created default Paletta library")
     else:

@@ -57,37 +57,51 @@ class HomeView(TemplateView):
                             'name': pc.display_name,
                             'display_name': pc.display_name,
                             'code': pc.code,
-                            'image_url': None,
-                            'type': 'paletta_category'
+                            'type': 'paletta_category',
+                            'image_url': pc.image_url() if hasattr(pc, 'image_url') else None,
                         })
-                    logger.debug(f"[HomePage Debug] Found {len(categories)} Paletta categories")
                 
+                # ALWAYS add library-specific categories (including Private) for ALL libraries
                 if current_library:
-                    # ALWAYS get the library-specific categories (including Private)
                     library_categories = Category.objects.filter(
                         library=current_library, 
                         is_active=True
                     ).order_by('subject_area')
                     
-                    # Use the serializer to get proper image URLs
-                    serializer = CategorySerializer(library_categories, many=True, context={'request': request})
-                    library_categories_data = serializer.data
+                    # Separate Private category to show it first
+                    private_category = None
+                    other_categories = []
                     
-                    # Add library-specific categories to the list
-                    for cat_data in library_categories_data:
-                        cat_data['type'] = 'library_category'
-                        categories.append(cat_data)
+                    for lc in library_categories:
+                        cat_data = {
+                            'id': lc.id,
+                            'name': lc.display_name,
+                            'display_name': lc.display_name,
+                            'code': lc.subject_area,
+                            'type': 'library_category',
+                            'image_url': lc.image.url if lc.image else None,
+                        }
+                        
+                        if lc.subject_area == 'private':
+                            private_category = cat_data
+                        else:
+                            other_categories.append(cat_data)
                     
-                    logger.debug(f"[HomePage Debug] Found {len(library_categories_data)} library-specific categories for {current_library.name}")
-                
-                # Log first few category names for debugging
-                category_names = [cat['name'] if isinstance(cat, dict) else str(cat) for cat in categories[:5]]
-                logger.debug(f"[HomePage Debug] First few categories: {category_names}")
+                    # Add Private category first (pinned), then other categories
+                    if private_category:
+                        categories.insert(0, private_category)  # Insert at beginning
+                    categories.extend(other_categories)
+                else:
+                    # For no library context, show default categories
+                    categories = []
+                    
+                print(f"Loaded {len(categories)} categories for homepage")
+                if categories:
+                    print(f"First category: {categories[0]['name']}")
                 
             except Exception as e:
+                print(f"Error loading categories: {str(e)}")
                 categories = []
-                messages.error(request, f'Error fetching categories: {str(e)}')
-                logger.error(f"[HomePage Debug] Error fetching categories: {str(e)}")
             
             # Get all libraries for the sidebar
             libraries = Library.objects.filter(is_active=True)

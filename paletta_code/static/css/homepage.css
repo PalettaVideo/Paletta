@@ -148,8 +148,30 @@ main {
   font-size: 22px;
 }
 
+/* Private category special styling */
+.category.private-category {
+    border: 2px solid #ffc107;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffffff 100%);
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+    position: relative;
+}
 
+.category.private-category::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #ffc107, #ffca2c);
+    border-radius: 8px;
+    z-index: -1;
+}
 
+.category.private-category span {
+    font-weight: 600;
+    color: #856404;
+}
 
 @media (max-width: 600px) {
   header {

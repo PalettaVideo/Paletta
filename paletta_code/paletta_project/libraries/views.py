@@ -245,12 +245,11 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                 
                 print(f"Library created: {library.name} with category_source: {library.category_source}")
                 
-                # Categories are automatically created by the Library.save() method
-                # via the setup_default_categories() method, so we don't need to do anything here
-                # for Paletta-style libraries
+                # ALWAYS set up default categories regardless of type
+                library.setup_default_categories()
+                print(f"Set up default categories for library: {library.name}")
                 
-                # For custom libraries, we can optionally handle initial custom categories
-                # if provided in the request (for future enhancement)
+                # For custom libraries, handle any additional selected categories
                 if category_source == 'custom':
                     # Handle any custom categories provided (for future implementation)
                     custom_categories_json = request.POST.get('custom_categories_json')
@@ -260,21 +259,15 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                             print(f"Creating {len(custom_categories_data)} custom categories")
                             
                             for category_data in custom_categories_data:
-                                # Create custom category
-                                from videos.models import Category
-                                Category.objects.get_or_create(
+                                Category.objects.create(
                                     subject_area=category_data.get('subject_area'),
+                                    description=category_data.get('description'),
                                     library=library,
-                                    defaults={
-                                        'description': category_data.get('description', ''),
-                                        'is_active': True
-                                    }
+                                    is_active=True
                                 )
                                 print(f"Created custom category: {category_data.get('subject_area')}")
-                                
-                        except json.JSONDecodeError as e:
-                            print(f"JSON decode error for custom categories: {str(e)}")
-                            # Don't fail the library creation for this
+                        except json.JSONDecodeError:
+                            print("Error parsing custom categories JSON")
                 
                 # Create an admin role for the creator automatically
                 UserLibraryRole.objects.create(
@@ -283,11 +276,8 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                     role='admin'
                 )
                 
-                return JsonResponse({
-                    'status': 'success',
-                    'message': 'Library created successfully.',
-                    'redirect_url': reverse('manage_libraries')
-                }, content_type='application/json')
+                messages.success(request, f'Library "{library.name}" created successfully!')
+                return redirect('manage_libraries')
             else:
                 print(f"Library validation errors: {serializer.errors}")
                 return JsonResponse({
@@ -336,16 +326,37 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
         try:
             library = Library.objects.get(id=library_id)
             
-            # Check if user can edit this library
-            if not (library.owner == self.request.user or 
-                    UserLibraryRole.objects.filter(library=library, user=self.request.user, role='admin').exists()):
+            # Check if the user has permission to edit this library
+            if library.owner != self.request.user and not self.request.user.is_superuser:
                 context['permission_error'] = True
                 context['library_name'] = library.name
                 return context
             
             context['library'] = library
-            # Get categories for this library - ALWAYS include all library categories
-            context['categories'] = Category.objects.filter(library=library, is_active=True).order_by('subject_area')
+            
+            # Get categories for this library - ALWAYS include all library categories (including Private)
+            categories = Category.objects.filter(library=library, is_active=True).order_by('subject_area')
+            
+            # Separate Private category to show it first
+            private_category = None
+            other_categories = []
+            
+            for category in categories:
+                if category.subject_area == 'private':
+                    private_category = category
+                else:
+                    other_categories.append(category)
+            
+            # Combine with Private first
+            ordered_categories = []
+            if private_category:
+                ordered_categories.append(private_category)
+            ordered_categories.extend(other_categories)
+            
+            context['categories'] = ordered_categories
+            print(f"Edit library: Loaded {len(ordered_categories)} categories for {library.name}")
+            if ordered_categories:
+                print(f"First category: {ordered_categories[0].display_name}")
             
             # Get contributors for this library
             context['contributors'] = UserLibraryRole.objects.filter(

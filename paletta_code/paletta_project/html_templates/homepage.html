@@ -114,25 +114,44 @@
       </div>
     </a>
     
-    <!-- Dynamic categories from database for authenticated users -->
+    <!-- Private category (pinned) - shown first among library categories -->
     {% for category in categories %}
-    {% if current_library %}
-    <a href="{% library_specific_url 'library_category' category_slug=category.name|library_slugify %}" style="text-decoration: none;">
-    {% else %}
-    <a href="{% url 'home' %}" style="text-decoration: none;">
-    {% endif %}
-      <div class="category">
-        <!-- Use the category image URL if available, otherwise use a default image -->
-        {% if category.image_url %}
-          <img src="{{ category.image_url }}" alt="{{ category.name }}" 
-              data-category="{{ category.name }}" class="category-image">
-        {% else %}
-          <img src="{% static 'picture/main_campus.png' %}" alt="{{ category.name }}" 
-              data-category="{{ category.name }}" class="category-image">
-        {% endif %}
-        <span>{{ category.name }}</span>
-      </div>
-    </a>
+      {% if category.code == 'private' or category.type == 'library_category' and category.name == 'Private' %}
+      {% if current_library %}
+      <a href="{% library_specific_url 'library_category' category_slug=category.name|library_slugify %}" style="text-decoration: none;">
+      {% else %}
+      <a href="{% url 'home' %}" style="text-decoration: none;">
+      {% endif %}
+        <div class="category private-category">
+          <img src="{% if category.image_url %}{{ category.image_url }}{% else %}{% static 'picture/main_campus.png' %}{% endif %}" 
+               alt="{{ category.name }}" data-category="{{ category.name }}" class="category-image">
+          <span>{{ category.name }}</span>
+        </div>
+      </a>
+      {% endif %}
+    {% endfor %}
+    
+    <!-- Other dynamic categories from database -->
+    {% for category in categories %}
+      {% if category.code != 'private' and category.name != 'Private' %}
+      {% if current_library %}
+      <a href="{% library_specific_url 'library_category' category_slug=category.name|library_slugify %}" style="text-decoration: none;">
+      {% else %}
+      <a href="{% url 'home' %}" style="text-decoration: none;">
+      {% endif %}
+        <div class="category">
+          <!-- Use the category image URL if available, otherwise use a default image -->
+          {% if category.image_url %}
+            <img src="{{ category.image_url }}" alt="{{ category.name }}" 
+                data-category="{{ category.name }}" class="category-image">
+          {% else %}
+            <img src="{% static 'picture/main_campus.png' %}" alt="{{ category.name }}" 
+                data-category="{{ category.name }}" class="category-image">
+          {% endif %}
+          <span>{{ category.name }}</span>
+        </div>
+      </a>
+      {% endif %}
     {% empty %}
     <!-- If no categories are found, show a message -->
     <p class="no-categories">No categories created yet. Reach out to Admin for more information.</p>
