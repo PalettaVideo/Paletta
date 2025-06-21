@@ -397,7 +397,7 @@ class VideoAPIUploadView(APIView):
             format_type = request.data.get('format')
             thumbnail = request.FILES.get('thumbnail')
             
-            # Get content types (required field)
+            # Get content types (required field) - frontend sends IDs
             content_type_ids = request.data.getlist('content_types')
             if not content_type_ids:
                 return Response({'message': 'At least one content type is required.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -416,7 +416,7 @@ class VideoAPIUploadView(APIView):
             except Category.DoesNotExist:
                 return Response({'message': f"Category with id {category_id} not found in this library"}, status=status.HTTP_404_NOT_FOUND)
             
-            # Validate content types
+            # Validate content types by IDs
             from ..models import ContentType
             content_types = []
             for ct_id in content_type_ids:
@@ -430,7 +430,7 @@ class VideoAPIUploadView(APIView):
             video = Video.objects.create(
                 title=title,
                 description=description,
-                subject_area=category,  # Fixed: use subject_area instead of category
+                subject_area=category,  # use subject_area instead of category
                 library=library,
                 uploader=request.user,
                 storage_reference_id=s3_key,
@@ -456,9 +456,6 @@ class VideoAPIUploadView(APIView):
                     tag, _ = Tag.objects.get_or_create(name=tag_name, library=library)
                     VideoTag.objects.create(video=video, tag=tag)
                     
-            # --- The Celery task for post-processing is no longer needed ---
-            # process_video_from_s3.delay(video.id)
-
             serializer = VideoSerializer(video, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
                 
