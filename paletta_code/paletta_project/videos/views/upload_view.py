@@ -11,6 +11,8 @@ class UploadHistoryView(TemplateView):
     def get(self, request, *args, **kwargs):
         """Serve the upload history page with the user's videos."""
         context = self.get_context_data(**kwargs)
-        # Use select_related to efficiently fetch library information
-        context['videos'] = Video.objects.filter(uploader=request.user).select_related('library').order_by('-upload_date')
+        # Use select_related and prefetch_related to efficiently fetch related information
+        context['videos'] = Video.objects.filter(uploader=request.user).select_related(
+            'library', 'subject_area'
+        ).prefetch_related('content_types').order_by('-upload_date')
         return self.render_to_response(context)

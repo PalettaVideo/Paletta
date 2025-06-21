@@ -123,6 +123,72 @@ main {
   font-size: 14px;
 }
 
+/* Subject Area Styling */
+.subject-area {
+  margin: 15px 0;
+}
+
+.subject-area-name {
+  display: inline-block;
+  background-color: #80B824;
+  color: white;
+  padding: 6px 15px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Content Types Styling */
+.content-types {
+  margin: 15px 0;
+}
+
+.content-types-list {
+  margin-top: 8px;
+}
+
+.content-type-badge {
+  display: inline-block;
+  background-color: #ff6b6b;
+  color: white;
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 8px;
+  margin-bottom: 5px;
+  text-transform: capitalize;
+}
+
+/* Paletta Category Styling */
+.paletta-category {
+  margin: 15px 0;
+}
+
+.paletta-category-name {
+  display: inline-block;
+  background-color: #4a90e2;
+  color: white;
+  padding: 6px 15px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Tag Badge Styling */
+.tag-badge {
+  display: inline-block;
+  background-color: #7fb82476;
+  padding: 5px 10px;
+  margin: 5px 5px 5px 0;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
 .attributes {
   width: 35%;
   height: 200px;

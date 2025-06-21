@@ -55,6 +55,25 @@
                                   <span class="library-badge">{{ video.library.name }}</span>
                               </div>
                               {% endif %}
+                              
+                              <!-- Subject Area Display -->
+                              {% if video.subject_area %}
+                              <div class="subject-area-tag">
+                                  <strong>Subject Area:</strong> 
+                                  <span class="subject-area-badge">{{ video.subject_area.display_name }}</span>
+                              </div>
+                              {% endif %}
+                              
+                              <!-- Content Types Display -->
+                              {% if video.content_types.exists %}
+                              <div class="content-types-tag">
+                                  <strong>Content Types:</strong>
+                                  {% for content_type in video.content_types.all %}
+                                      <span class="content-type-badge">{{ content_type.display_name }}</span>{% if not forloop.last %}, {% endif %}
+                                  {% endfor %}
+                              </div>
+                              {% endif %}
+                              
                               <div class="video-actions">
                                   <a href="#" class="button edit" data-id="{{ video.id }}">Edit</a>
                                   <a href="#" class="button delete" data-id="{{ video.id }}" data-title="{{ video.title }}">Delete</a>

@@ -430,9 +430,30 @@ document.addEventListener("DOMContentLoaded", function () {
     const videoObj = {
       id: videoId,
       title: document.querySelector("h1")?.textContent || "Untitled",
-      description:
-        document.querySelector(".video-description")?.textContent || "",
+      description: document.querySelector(".video-info p")?.textContent || "",
     };
+
+    // Get subject area
+    const subjectAreaElement = document.querySelector(".subject-area-name");
+    if (subjectAreaElement) {
+      videoObj.subject_area = subjectAreaElement.textContent.trim();
+    }
+
+    // Get content types
+    const contentTypeBadges = document.querySelectorAll(".content-type-badge");
+    if (contentTypeBadges.length > 0) {
+      videoObj.content_types = Array.from(contentTypeBadges).map((badge) =>
+        badge.textContent.trim()
+      );
+    }
+
+    // Get paletta category if exists
+    const palettaCategoryElement = document.querySelector(
+      ".paletta-category-name"
+    );
+    if (palettaCategoryElement) {
+      videoObj.paletta_category = palettaCategoryElement.textContent.trim();
+    }
 
     // Try to get thumbnail from various sources
     // 1. Check if there's a meta tag with the thumbnail URL
@@ -457,8 +478,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Get tags if available
     const tags = [];
-    document.querySelectorAll(".tag").forEach((tag) => {
-      tags.push(tag.textContent);
+    document.querySelectorAll(".tag-badge").forEach((tag) => {
+      tags.push(tag.textContent.trim());
     });
     videoObj.tags = tags;
 

@@ -104,6 +104,41 @@ h1 {
     letter-spacing: 0.5px;
 }
 
+/* Subject Area Badge */
+.subject-area-tag {
+    margin: 8px 0;
+}
+
+.subject-area-badge {
+    display: inline-block;
+    background-color: #80B824;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Content Types Badges */
+.content-types-tag {
+    margin: 8px 0;
+}
+
+.content-type-badge {
+    display: inline-block;
+    background-color: #ff6b6b;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-right: 5px;
+    margin-bottom: 3px;
+    text-transform: capitalize;
+}
+
 .video-meta {
     margin-top: 10px;
 }

@@ -41,9 +41,9 @@
     <div class="content">
       <div class="video-container">
           <div class="navigation-buttons">
-            {% if clip.category and current_library %}
-              <a href="{% library_specific_url 'library_category' category_slug=clip.category.name|library_slugify %}">
-                <button class="back-button">Back to all videos in Category -  '{{ clip.category.name }}'</button>
+            {% if clip.subject_area and current_library %}
+              <a href="{% library_specific_url 'library_category' category_slug=clip.subject_area.display_name|library_slugify %}">
+                <button class="back-button">Back to all videos in Category -  '{{ clip.subject_area.display_name }}'</button>
               </a>
             {% endif %}
             {% if current_library %}
@@ -85,14 +85,30 @@
       <div class="video-info">
         <h2>Description</h2>
         <p>{{ clip.description|default:"No description available." }}</p>
-        <div class="category">
-          <strong>Category:</strong>
-          <span>{{ clip.category.name|default:"Uncategorized" }}</span>
+        <!-- Subject Area Display -->
+        {% if clip.subject_area %}
+        <div class="subject-area">
+          <strong>Subject Area:</strong>
+          <span class="subject-area-name">{{ clip.subject_area.display_name }}</span>
         </div>
+        {% endif %}
+        
+        <!-- Content Types Display -->
+        {% if clip.content_types.exists %}
+        <div class="content-types">
+          <strong>Content Types:</strong>
+          <div class="content-types-list">
+            {% for content_type in clip.content_types.all %}
+              <span class="content-type-badge">{{ content_type.display_name }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+               
         <div class="tags">
           <strong>Tags:</strong>
-          {% for tag in clip.tags.all %}
-            <span>{{ tag.name }}</span>
+          {% for tag in tags %}
+            <span class="tag-badge">{{ tag.name }}</span>
           {% empty %}
             <span>No tags</span>
           {% endfor %}
