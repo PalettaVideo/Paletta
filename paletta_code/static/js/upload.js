@@ -383,9 +383,6 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       console.log(`Added ${categories.length} categories to select dropdown`);
-
-      // Also fetch and populate content types
-      await fetchContentTypes();
     } catch (error) {
       console.error("Error fetching categories:", error);
       const categorySelect = document.getElementById("category");
@@ -412,43 +409,73 @@ document.addEventListener("DOMContentLoaded", function () {
         },
       });
 
+      console.log("Content types response status:", response.status);
+      console.log("Content types response headers:", response.headers);
+
       if (!response.ok) {
         console.error(
           "Failed to fetch content types. Status:",
           response.status
         );
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
         return;
       }
 
       const contentTypes = await response.json();
-      console.log("Content types data:", contentTypes);
+      console.log("Content types data received:", contentTypes);
+      console.log("Number of content types:", contentTypes.length);
 
-      // Create content types selection UI if it doesn't exist
+      if (!contentTypes || contentTypes.length === 0) {
+        console.error("No content types received from API");
+        return;
+      }
+
+      // Create content types selection UI
       createContentTypesUI(contentTypes);
     } catch (error) {
       console.error("Error fetching content types:", error);
+      console.error("Error stack:", error.stack);
     }
   }
 
   function createContentTypesUI(contentTypes) {
+    console.log("Creating content types UI with data:", contentTypes);
+
     // Use existing content types grid from HTML template
     const contentTypesGrid = document.getElementById("content-types-grid");
     if (!contentTypesGrid) {
       console.error("Content types grid not found in HTML template");
+      console.error(
+        "Available elements with 'content' in ID:",
+        Array.from(document.querySelectorAll('[id*="content"]')).map(
+          (el) => el.id
+        )
+      );
       return;
     }
+
+    console.log("Found content types grid element:", contentTypesGrid);
 
     // Clear existing content types
     contentTypesGrid.innerHTML = "";
 
     // Add content types as checkboxes
-    contentTypes.forEach((contentType) => {
+    contentTypes.forEach((contentType, index) => {
+      console.log(`Creating checkbox for content type ${index}:`, contentType);
+
       const checkboxWrapper = document.createElement("div");
       checkboxWrapper.className = "content-type-item";
       checkboxWrapper.innerHTML = `
-        <input type="checkbox" id="content-type-${contentType.id}" name="content_types" value="${contentType.id}" class="content-type-checkbox">
+        <input type="checkbox" id="content-type-${
+          contentType.id
+        }" name="content_types" value="${
+        contentType.id
+      }" class="content-type-checkbox">
         <label for="content-type-${contentType.id}" class="content-type-label">
-          <span class="content-type-name">${contentType.display_name}</span>
+          <span class="content-type-name">${
+            contentType.display_name || contentType.name
+          }</span>
         </label>
       `;
       contentTypesGrid.appendChild(checkboxWrapper);
@@ -459,11 +486,16 @@ document.addEventListener("DOMContentLoaded", function () {
       ".content-type-checkbox"
     );
 
+    console.log(`Found ${checkboxes.length} checkboxes after creation`);
+
     checkboxes.forEach((checkbox) => {
       checkbox.addEventListener("change", handleContentTypeChange);
     });
 
-    console.log(`Added ${contentTypes.length} content types to the form`);
+    console.log(
+      `✓ Successfully added ${contentTypes.length} content types to the form`
+    );
+    console.log("Content types grid final HTML:", contentTypesGrid.innerHTML);
   }
 
   async function handleFormSubmit(e) {

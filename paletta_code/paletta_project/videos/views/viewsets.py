@@ -503,7 +503,6 @@ class ContentTypeViewSet(APIView):
                     'code': ct.code,
                     'name': ct.display_name,
                     'display_name': ct.display_name,
-                    'description': ct.description or '',
                     'is_active': ct.is_active,
                 })
             
