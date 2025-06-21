@@ -68,15 +68,29 @@ class ClipStoreView(TemplateView):
                 is_active=True
             ).order_by('subject_area')
             
-            categories = []
-            for category in library_categories:
-                categories.append({
-                    'id': category.id,
-                    'name': category.display_name,
-                    'display_name': category.display_name,
-                    'subject_area': category.subject_area,
+            # Separate Private category to show it first (same as homepage)
+            private_category = None
+            other_categories = []
+            
+            for lc in library_categories:
+                cat_data = {
+                    'id': lc.id,
+                    'name': lc.display_name,
+                    'display_name': lc.display_name,
+                    'subject_area': lc.subject_area,
                     'type': 'library_category',
-                })
+                }
+                
+                if lc.subject_area == 'private':
+                    private_category = cat_data
+                else:
+                    other_categories.append(cat_data)
+            
+            # Add Private category first (pinned), then other categories
+            categories = []
+            if private_category:
+                categories.append(private_category)
+            categories.extend(other_categories)
             
             context['categories'] = categories
         else:

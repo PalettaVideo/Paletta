@@ -87,6 +87,10 @@ class Category(models.Model):
     
     # Subject area choices (single selection)
     SUBJECT_AREA_CHOICES = [
+        # Special Categories
+        ('private', 'Private'),  # Private category for all libraries
+        ('custom', 'Custom'),  # Custom category type
+        # Academic Subject Areas
         ('engineering_sciences', 'Engineering Sciences'),
         ('mathematical_physical_sciences', 'Mathematical & Physical Sciences'),
         ('medical_sciences', 'Medical Sciences'),
@@ -100,8 +104,18 @@ class Category(models.Model):
         ('fine_art', 'Fine Art'),
         ('law', 'Law'),
         ('business', 'Business'),
-        ('private', 'Private'),  # Private category for custom libraries
-        ('custom', 'Custom'),  # Custom category type
+        
+        # Paletta Categories (for Paletta-style libraries)
+        ('people_community', 'People and Community'),
+        ('buildings_architecture', 'Buildings & Architecture'),
+        ('classrooms_learning', 'Classrooms & Learning Spaces'),
+        ('field_trips_outdoor', 'Field Trips & Outdoor Learning'),
+        ('events_conferences', 'Events & Conferences'),
+        ('research_innovation_spaces', 'Research & Innovation Spaces'),
+        ('technology_equipment', 'Technology & Equipment'),
+        ('everyday_campus', 'Everyday Campus Life'),
+        ('urban_natural_environments', 'Urban & Natural Environments'),
+        ('backgrounds_abstracts', 'Backgrounds & Abstracts'),
     ]
     
     subject_area = models.CharField(max_length=50, choices=SUBJECT_AREA_CHOICES)

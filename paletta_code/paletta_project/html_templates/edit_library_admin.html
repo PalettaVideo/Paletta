@@ -113,8 +113,8 @@
                     {% if categories %}
                         {% for category in categories %}
                         <div class="category-item" data-id="{{ category.id }}" onclick="editCategoryModal(event, this)">
-                            <img src="{% if category.image %}{{ category.image.url }}{% else %}{% static 'picture/default-category.jpg' %}{% endif %}" alt="{{ category.name }}">
-                            <div class="category-name">{{ category.name }}</div>
+                            <img src="{% if category.image %}{{ category.image.url }}{% else %}{% static 'picture/default-category.jpg' %}{% endif %}" alt="{{ category.display_name }}">
+                            <div class="category-name">{{ category.display_name }}</div>
                             <div class="category-desc" style="display: none;">{{ category.description }}</div>
                             <button type="button" class="delete-btn" onclick="event.stopPropagation(); this.parentElement.remove(); checkCategoriesEmpty();">✖️</button>
                         </div>

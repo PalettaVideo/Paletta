@@ -448,29 +448,7 @@ class UnifiedCategoryViewSet(APIView):
             
             categories_data = []
             
-            if library.uses_paletta_categories:
-                # For Paletta-style libraries, return PalettaCategory objects
-                paletta_categories = PalettaCategory.objects.filter(is_active=True).order_by('code')
-                
-                for pc in paletta_categories:
-                    categories_data.append({
-                        'id': f'paletta_{pc.id}',  # Prefix to distinguish from regular categories
-                        'name': pc.display_name,
-                        'display_name': pc.display_name,
-                        'code': pc.code,
-                        'type': 'paletta_category',
-                        'library': {
-                            'id': library.id,
-                            'name': library.name
-                        },
-                        'is_active': pc.is_active,
-                        'description': pc.description or '',
-                        'image_url': None,  # PalettaCategory doesn't have images yet
-                    })
-                
-                logger.debug(f"Added {len(categories_data)} Paletta categories for library {library.name}")
-            
-            # ALWAYS get library-specific categories (including Private) for ALL library types
+            # Get library-specific categories = all categories for this library
             library_categories = Category.objects.filter(library=library, is_active=True).order_by('subject_area')
             
             for category in library_categories:
@@ -494,8 +472,7 @@ class UnifiedCategoryViewSet(APIView):
                     'created_at': category.created_at.isoformat() if category.created_at else None,
                 })
             
-            logger.debug(f"Added {len(library_categories)} library-specific categories for library {library.name}")
-            logger.debug(f"Total categories returned: {len(categories_data)}")
+            logger.debug(f"Returned {len(categories_data)} categories for library {library.name}")
             
             return Response(categories_data, status=status.HTTP_200_OK)
             
