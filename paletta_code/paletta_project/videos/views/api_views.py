@@ -64,6 +64,17 @@ class VideoListAPIView(generics.ListAPIView):
             for tag in tags:
                 queryset = queryset.filter(tags__name__iexact=tag)
         
+        # Apply content type filter
+        content_types = self.request.query_params.getlist('content_types', [])
+        if content_types:
+            # Filter videos that have any of the specified content types
+            queryset = queryset.filter(content_types__code__in=content_types)
+            
+        # Apply content type ID filter (alternative approach)
+        content_type_ids = self.request.query_params.getlist('content_type_ids', [])
+        if content_type_ids:
+            queryset = queryset.filter(content_types__id__in=content_type_ids)
+        
         # Apply sorting
         sort_by = self.request.query_params.get('sort_by', 'newest')
         
@@ -184,6 +195,15 @@ class CategoryVideosAPIView(generics.ListAPIView):
             for tag in tags:
                 queryset = queryset.filter(tags__name__iexact=tag)
         
+        # Apply content type filter
+        content_types = self.request.query_params.getlist('content_types', [])
+        if content_types:
+            queryset = queryset.filter(content_types__code__in=content_types)
+            
+        content_type_ids = self.request.query_params.getlist('content_type_ids', [])
+        if content_type_ids:
+            queryset = queryset.filter(content_types__id__in=content_type_ids)
+        
         # Apply sorting
         sort_by = self.request.query_params.get('sort_by', 'newest')
         
@@ -289,6 +309,67 @@ class VideoMetadataAPIView(APIView):
             )
 
 
+class ContentTypeVideosAPIView(generics.ListAPIView):
+    """
+    API view to list videos filtered by content types.
+    
+    Query parameters:
+    - content_types: List of content type codes (e.g., ?content_types=campus_life&content_types=research_innovation)
+    - content_type_ids: List of content type IDs (e.g., ?content_type_ids=1&content_type_ids=3)
+    - match_all: If true, videos must have ALL specified content types (default: false - ANY match)
+    """
+    serializer_class = VideoSerializer
+    pagination_class = StandardResultsSetPagination
+    permission_classes = [permissions.AllowAny]
+    
+    def get_queryset(self):
+        queryset = Video.objects.all()
+        
+        # Get content type filters
+        content_types = self.request.query_params.getlist('content_types', [])
+        content_type_ids = self.request.query_params.getlist('content_type_ids', [])
+        match_all = self.request.query_params.get('match_all', 'false').lower() == 'true'
+        
+        if content_types or content_type_ids:
+            if match_all:
+                # Videos must have ALL specified content types
+                for ct_code in content_types:
+                    queryset = queryset.filter(content_types__code=ct_code)
+                for ct_id in content_type_ids:
+                    queryset = queryset.filter(content_types__id=ct_id)
+            else:
+                # Videos must have ANY of the specified content types
+                if content_types:
+                    queryset = queryset.filter(content_types__code__in=content_types)
+                if content_type_ids:
+                    queryset = queryset.filter(content_types__id__in=content_type_ids)
+        
+        # Apply other filters
+        search_query = self.request.query_params.get('search', None)
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) | 
+                Q(description__icontains=search_query)
+            )
+        
+        # Apply sorting
+        sort_by = self.request.query_params.get('sort_by', 'newest')
+        if sort_by == 'newest':
+            queryset = queryset.order_by('-upload_date')
+        elif sort_by == 'oldest':
+            queryset = queryset.order_by('upload_date')
+        elif sort_by == 'popular':
+            queryset = queryset.order_by('-views_count')
+        elif sort_by == 'az':
+            queryset = queryset.order_by('title')
+        elif sort_by == 'za':
+            queryset = queryset.order_by('-title')
+        else:
+            queryset = queryset.order_by('-upload_date')
+        
+        return queryset.distinct()
+
+
 class VideoAPIUploadView(APIView):
     """
     API view for direct video uploads.
@@ -316,23 +397,40 @@ class VideoAPIUploadView(APIView):
             format_type = request.data.get('format')
             thumbnail = request.FILES.get('thumbnail')
             
+            # Get content types (required field)
+            content_type_ids = request.data.getlist('content_types')
+            if not content_type_ids:
+                return Response({'message': 'At least one content type is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            if len(content_type_ids) > 3:
+                return Response({'message': 'Maximum of 3 content types allowed.'}, status=status.HTTP_400_BAD_REQUEST)
+            
             # Find the library
             try:
                 library = Library.objects.get(id=library_id)
             except Library.DoesNotExist:
                 return Response({'message': 'Library not found'}, status=status.HTTP_404_NOT_FOUND)
 
-            # Find the category
+            # Find the category (subject_area)
             try:
                 category = Category.objects.get(id=category_id, library=library)
             except Category.DoesNotExist:
                 return Response({'message': f"Category with id {category_id} not found in this library"}, status=status.HTTP_404_NOT_FOUND)
             
+            # Validate content types
+            from ..models import ContentType
+            content_types = []
+            for ct_id in content_type_ids:
+                try:
+                    ct = ContentType.objects.get(id=ct_id, is_active=True)
+                    content_types.append(ct)
+                except ContentType.DoesNotExist:
+                    return Response({'message': f"Content type with id {ct_id} not found"}, status=status.HTTP_404_NOT_FOUND)
+            
             # Create the video object
             video = Video.objects.create(
                 title=title,
                 description=description,
-                category=category,
+                subject_area=category,  # Fixed: use subject_area instead of category
                 library=library,
                 uploader=request.user,
                 storage_reference_id=s3_key,
@@ -343,12 +441,15 @@ class VideoAPIUploadView(APIView):
                 format=format_type
             )
             
+            # Add content types (many-to-many relationship)
+            video.content_types.set(content_types)
+            
             # Save the thumbnail if it was provided
             if thumbnail:
                 video.thumbnail = thumbnail
                 video.save(update_fields=['thumbnail'])
                 
-                # Handle tags
+            # Handle tags
             if tags_str:
                 tag_names = [name.strip() for name in tags_str.split(',') if name.strip()]
                 for tag_name in tag_names:

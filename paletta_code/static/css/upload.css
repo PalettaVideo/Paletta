@@ -503,10 +503,11 @@ input:invalid + .error-message {
 .content-type-item {
     border: 2px solid #e0e0e0;
     border-radius: 8px;
-    padding: 12px;
+    padding: 0; /* Remove padding from container */
     transition: all 0.3s ease;
     cursor: pointer;
     background-color: #fff;
+    position: relative;
 }
 
 .content-type-item:hover {
@@ -529,12 +530,14 @@ input:invalid + .error-message {
     display: none;
 }
 
+/* When checkbox is checked, style the entire item */
 .content-type-checkbox:checked + .content-type-label {
     background-color: #80B824;
     color: white;
-    border-radius: 6px;
-    padding: 8px;
-    margin: -8px;
+}
+
+.content-type-checkbox:checked + .content-type-label .content-type-name {
+    color: white;
 }
 
 .content-type-label {
@@ -542,11 +545,16 @@ input:invalid + .error-message {
     cursor: pointer;
     transition: all 0.3s ease;
     font-weight: 500;
+    padding: 12px; /* Move padding to label to make entire area clickable */
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .content-type-name {
     display: block;
     font-size: 0.95em;
+    color: inherit;
 }
 
 .error-message {

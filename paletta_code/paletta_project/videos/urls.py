@@ -5,7 +5,7 @@ from .views.viewsets import UnifiedCategoryViewSet, ContentTypeViewSet
 from .views.upload_view import UploadHistoryView
 from .views.download_view import DownloadRequestView
 from .views.clip_store_view import ClipStoreView, CategoryClipView
-from .views.api_views import VideoListAPIView, VideoDetailAPIView, CategoryVideosAPIView, PopularTagsAPIView, VideoAPIUploadView
+from .views.api_views import VideoListAPIView, VideoDetailAPIView, CategoryVideosAPIView, PopularTagsAPIView, VideoAPIUploadView, ContentTypeVideosAPIView
 from .views.tag_views import assign_tags, TagsAPIView
 from .views.video_management_views import VideoEditView, VideoDeleteView, TagSuggestionsAPIView
 from .views.thumbnail_view import VideoThumbnailAPIView
@@ -39,6 +39,7 @@ urlpatterns = [
     
     # API endpoints for video functionality
     path('api/upload/', VideoAPIUploadView.as_view(), name='api_upload'),
+    path('api/content-type-videos/', ContentTypeVideosAPIView.as_view(), name='api_content_type_videos'),
     path('download/request/<int:video_id>/', DownloadRequestView.as_view(), name='request_download'),
     
     # Video API endpoints
