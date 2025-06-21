@@ -68,6 +68,8 @@ class ClipStoreView(TemplateView):
                 is_active=True
             ).order_by('subject_area')
             
+            logger.debug(f"Found {library_categories.count()} categories for library {current_library.name}")
+            
             # Separate Private category to show it first (same as homepage)
             private_category = None
             other_categories = []
@@ -81,6 +83,8 @@ class ClipStoreView(TemplateView):
                     'type': 'library_category',
                 }
                 
+                logger.debug(f"Category: {lc.display_name} (subject_area: {lc.subject_area})")
+                
                 if lc.subject_area == 'private':
                     private_category = cat_data
                 else:
@@ -90,9 +94,11 @@ class ClipStoreView(TemplateView):
             categories = []
             if private_category:
                 categories.append(private_category)
+                logger.debug("Added Private category to sidebar")
             categories.extend(other_categories)
             
             context['categories'] = categories
+            logger.debug(f"Total categories in context: {len(categories)}")
         else:
             context['categories'] = []
             
@@ -136,19 +142,12 @@ class ClipStoreView(TemplateView):
         if user.is_authenticated:
             # For authenticated users, exclude private videos unless they're the library owner
             if library:
-                private_videos_q = Q(
-                    # Private Paletta category videos
-                    (Q(paletta_category__code='private') & ~Q(library__owner=user)) |
-                    # Private subject area videos
-                    (Q(subject_area__subject_area='private') & ~Q(library__owner=user))
-                )
+                # UNIFIED APPROACH: Only check subject_area for private videos
+                private_videos_q = Q(subject_area__subject_area='private') & ~Q(library__owner=user)
                 queryset = queryset.exclude(private_videos_q)
         else:
             # For anonymous users, exclude ALL private videos
-            queryset = queryset.exclude(
-                Q(paletta_category__code='private') | 
-                Q(subject_area__subject_area='private')
-            )
+            queryset = queryset.exclude(Q(subject_area__subject_area='private'))
         
         # Filter by library if specified
         if library:
@@ -156,45 +155,26 @@ class ClipStoreView(TemplateView):
         
         # Apply category filter if not 'all'
         if category_filter and category_filter.lower() != 'all':
-            if library and library.uses_paletta_categories:
-                # For Paletta libraries, we need to find the PalettaCategory by display_name
-                # and then filter by its code since display_name is a property
-                from videos.models import PalettaCategory
-                try:
-                    # Find the PalettaCategory that matches the display_name
-                    paletta_cat = None
-                    for pc in PalettaCategory.objects.filter(is_active=True):
-                        if pc.display_name.lower() == category_filter.lower():
-                            paletta_cat = pc
-                            break
-                    
-                    if paletta_cat:
-                        queryset = queryset.filter(paletta_category=paletta_cat)
-                    else:
-                        # If no matching category found, return empty queryset
-                        queryset = queryset.none()
-                except Exception as e:
-                    logger.error(f"Error filtering by Paletta category '{category_filter}': {e}")
+            # UNIFIED APPROACH: All videos now use subject_area field
+            # Whether it's Paletta-style or custom, we filter by subject_area (Category objects)
+            try:
+                # Find the Category that matches the display_name
+                matching_category = None
+                for cat in Category.objects.filter(library=library, is_active=True):
+                    if cat.display_name.lower() == category_filter.lower():
+                        matching_category = cat
+                        break
+                
+                if matching_category:
+                    queryset = queryset.filter(subject_area=matching_category)
+                    logger.debug(f"Filtering videos by subject_area: {matching_category.display_name} (ID: {matching_category.id})")
+                else:
+                    # If no matching category found, return empty queryset
+                    logger.warning(f"No matching category found for filter '{category_filter}' in library {library.name if library else 'None'}")
                     queryset = queryset.none()
-            else:
-                # For custom libraries, we need to find the Category by display_name
-                # and then filter by the actual object since display_name is a property
-                try:
-                    # Find the Category that matches the display_name
-                    matching_category = None
-                    for cat in Category.objects.filter(library=library, is_active=True):
-                        if cat.display_name.lower() == category_filter.lower():
-                            matching_category = cat
-                            break
-                    
-                    if matching_category:
-                        queryset = queryset.filter(subject_area=matching_category)
-                    else:
-                        # If no matching category found, return empty queryset
-                        queryset = queryset.none()
-                except Exception as e:
-                    logger.error(f"Error filtering by subject area category '{category_filter}': {e}")
-                    queryset = queryset.none()
+            except Exception as e:
+                logger.error(f"Error filtering by category '{category_filter}': {e}")
+                queryset = queryset.none()
         
         # Apply search filter
         if search_query:

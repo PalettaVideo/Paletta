@@ -263,19 +263,12 @@ class VideoViewSet(viewsets.ModelViewSet):
         # Filter private videos based on user permissions
         if user.is_authenticated:
             # For authenticated users, exclude private videos unless they're the library owner
-            private_videos_q = Q(
-                # Private Paletta category videos
-                (Q(paletta_category__code='private') & ~Q(library__owner=user)) |
-                # Private subject area videos
-                (Q(subject_area__subject_area='private') & ~Q(library__owner=user))
-            )
+            # UNIFIED APPROACH: Only check subject_area for private videos
+            private_videos_q = Q(subject_area__subject_area='private') & ~Q(library__owner=user)
             queryset = queryset.exclude(private_videos_q)
         else:
             # For anonymous users, exclude ALL private videos
-            queryset = queryset.exclude(
-                Q(paletta_category__code='private') | 
-                Q(subject_area__subject_area='private')
-            )
+            queryset = queryset.exclude(Q(subject_area__subject_area='private'))
         
         # Apply filters from query parameters
         category_id = self.request.query_params.get('category', None)
