@@ -103,12 +103,23 @@ document.addEventListener("DOMContentLoaded", function () {
   // Users can only select from existing categories
 
   // functions
-  function handleContentTypeChange() {
+  function handleContentTypeChange(event) {
     const selectedContentTypes = document.querySelectorAll(
       ".content-type-checkbox:checked"
     );
     const contentTypesError = document.getElementById("content-types-error");
     const allContentTypeItems = document.querySelectorAll(".content-type-item");
+
+    // If trying to select more than 3, prevent the selection
+    if (event && event.target.checked && selectedContentTypes.length > 3) {
+      event.target.checked = false;
+      if (contentTypesError) {
+        contentTypesError.textContent =
+          "You can select a maximum of 3 content types.";
+        contentTypesError.style.display = "block";
+      }
+      return;
+    }
 
     // Clear previous error messages
     if (contentTypesError) {
@@ -125,7 +136,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-    // If 3 content types are selected, disable the rest
+    // If exactly 3 content types are selected, disable the rest
     if (selectedContentTypes.length >= 3) {
       allContentTypeItems.forEach((item) => {
         const checkbox = item.querySelector(".content-type-checkbox");
@@ -490,37 +501,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const checkboxes = contentTypesGrid.querySelectorAll(
       ".content-type-checkbox"
     );
-    const errorDiv = document.getElementById("content-types-error");
 
     checkboxes.forEach((checkbox) => {
-      checkbox.addEventListener("change", function () {
-        const selectedCount = contentTypesGrid.querySelectorAll(
-          ".content-type-checkbox:checked"
-        ).length;
-
-        if (selectedCount > 3) {
-          // Uncheck this checkbox if more than 3 are selected
-          this.checked = false;
-          errorDiv.textContent = "You can select a maximum of 3 content types.";
-          errorDiv.style.display = "block";
-        } else if (selectedCount === 0) {
-          errorDiv.textContent = "Please select at least 1 content type.";
-          errorDiv.style.display = "block";
-        } else {
-          errorDiv.style.display = "none";
-        }
-
-        // Disable other checkboxes if 3 are selected
-        checkboxes.forEach((cb) => {
-          if (!cb.checked && selectedCount >= 3) {
-            cb.disabled = true;
-            cb.parentElement.classList.add("disabled");
-          } else {
-            cb.disabled = false;
-            cb.parentElement.classList.remove("disabled");
-          }
-        });
-      });
+      checkbox.addEventListener("change", handleContentTypeChange);
     });
 
     console.log(`Added ${contentTypes.length} content types to the form`);
