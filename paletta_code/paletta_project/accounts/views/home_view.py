@@ -45,23 +45,9 @@ class HomeView(TemplateView):
         
         if request.user.is_authenticated:
             try:
-                # Get categories based on library type
+                # Get categories - ONLY load library-specific Category objects
                 categories = []
                 
-                if current_library and current_library.uses_paletta_categories:
-                    # For Paletta libraries, get PalettaCategory objects
-                    paletta_categories = PalettaCategory.objects.filter(is_active=True).order_by('code')
-                    for pc in paletta_categories:
-                        categories.append({
-                            'id': f'paletta_{pc.id}',
-                            'name': pc.display_name,
-                            'display_name': pc.display_name,
-                            'code': pc.code,
-                            'type': 'paletta_category',
-                            'image_url': pc.image_url() if hasattr(pc, 'image_url') else None,
-                        })
-                
-                # ALWAYS add library-specific categories (including Private) for ALL libraries
                 if current_library:
                     library_categories = Category.objects.filter(
                         library=current_library, 
@@ -95,12 +81,8 @@ class HomeView(TemplateView):
                     # For no library context, show default categories
                     categories = []
                     
-                print(f"Loaded {len(categories)} categories for homepage")
-                if categories:
-                    print(f"First category: {categories[0]['name']}")
-                
             except Exception as e:
-                print(f"Error loading categories: {str(e)}")
+                logger.error(f"Error loading categories: {str(e)}")
                 categories = []
             
             # Get all libraries for the sidebar

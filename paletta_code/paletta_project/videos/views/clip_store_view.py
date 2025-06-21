@@ -61,28 +61,14 @@ class ClipStoreView(TemplateView):
         if current_library:
             context['current_library'] = current_library
         
-        # Get all categories for the sidebar, based on library type
+        # Get all categories for the sidebar - ONLY load library-specific Category objects
         if current_library:
-            categories = []
-            
-            if current_library.uses_paletta_categories:
-                # For Paletta libraries, get PalettaCategory objects
-                paletta_categories = PalettaCategory.objects.filter(is_active=True).order_by('code')
-                for pc in paletta_categories:
-                    categories.append({
-                        'id': f'paletta_{pc.id}',
-                        'name': pc.display_name,
-                        'display_name': pc.display_name,
-                        'code': pc.code,
-                        'type': 'paletta_category',
-                    })
-            
-            # ALWAYS get library-specific categories (including Private) for ALL library types
             library_categories = Category.objects.filter(
                 library=current_library, 
                 is_active=True
             ).order_by('subject_area')
             
+            categories = []
             for category in library_categories:
                 categories.append({
                     'id': category.id,
