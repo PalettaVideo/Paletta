@@ -91,10 +91,51 @@ document.addEventListener("DOMContentLoaded", function () {
     uploadForm.addEventListener("submit", handleFormSubmit);
   }
 
+  // Add event listeners for content type checkboxes
+  const contentTypeCheckboxes = document.querySelectorAll(
+    ".content-type-checkbox"
+  );
+  contentTypeCheckboxes.forEach((checkbox) => {
+    checkbox.addEventListener("change", handleContentTypeChange);
+  });
+
   // Category creation removed - categories are now predefined by administrators
   // Users can only select from existing categories
 
   // functions
+  function handleContentTypeChange() {
+    const selectedContentTypes = document.querySelectorAll(
+      ".content-type-checkbox:checked"
+    );
+    const contentTypesError = document.getElementById("content-types-error");
+    const allContentTypeItems = document.querySelectorAll(".content-type-item");
+
+    // Clear previous error messages
+    if (contentTypesError) {
+      contentTypesError.style.display = "none";
+      contentTypesError.textContent = "";
+    }
+
+    // Remove disabled class from all items
+    allContentTypeItems.forEach((item) => {
+      item.classList.remove("disabled");
+      const checkbox = item.querySelector(".content-type-checkbox");
+      if (checkbox && !checkbox.checked) {
+        checkbox.disabled = false;
+      }
+    });
+
+    // If 3 content types are selected, disable the rest
+    if (selectedContentTypes.length >= 3) {
+      allContentTypeItems.forEach((item) => {
+        const checkbox = item.querySelector(".content-type-checkbox");
+        if (checkbox && !checkbox.checked) {
+          item.classList.add("disabled");
+          checkbox.disabled = true;
+        }
+      });
+    }
+  }
   function handleVideoFileSelect(e) {
     const file = e.target.files[0];
     if (!file) return;

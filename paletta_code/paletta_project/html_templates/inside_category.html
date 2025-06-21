@@ -42,7 +42,7 @@
           <span>Back</span>
         </a>
       </li>
-      <li class="{% if category_filter == 'all' or not category_filter or is_clip_store %}active{% endif %}" data-category="all">
+      <li class="{% if category_filter == 'all' or is_clip_store %}active{% endif %}" data-category="all">
         {% if current_library %}
         <a href="{% library_specific_url 'library_clip_store' %}">All Clips</a>
         {% else %}
@@ -50,7 +50,7 @@
         {% endif %}
       </li>
       {% for category in categories %}
-      <li class="{% if category_filter|lower == category.display_name|lower or category_slug == category.display_name|library_slugify or current_category and current_category.id == category.id %}active{% endif %}" data-category="{{ category.display_name|lower }}">
+      <li class="{% if current_category and current_category.id == category.id %}active{% endif %}" data-category="{{ category.display_name|lower }}">
         <a href="{% library_specific_url 'library_category' category_slug=category.display_name|library_slugify %}">{{ category.display_name }}</a>
       </li>
       {% endfor %}
