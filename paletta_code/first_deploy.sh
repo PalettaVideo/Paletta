@@ -112,6 +112,28 @@ else:
 print("Initial data loaded successfully")
 EOF
 
+echo "Setting up categories for Paletta library..."
+python manage.py shell << 'EOF'
+from videos.models import Category
+from libraries.models import Library
+
+try:
+    paletta_lib = Library.objects.get(name='Paletta')
+    print("Setting up default categories...")
+    paletta_lib.setup_default_categories()
+    
+    category_count = Category.objects.filter(library=paletta_lib).count()
+    print(f"Paletta library now has {category_count} categories")
+    
+    if category_count >= 11:
+        print("✓ All categories created successfully!")
+    else:
+        print(f"⚠ Warning: Expected 11 categories, found {category_count}")
+        
+except Library.DoesNotExist:
+    print("✗ Error: Paletta library not found")
+EOF
+
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 

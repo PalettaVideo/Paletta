@@ -135,29 +135,40 @@ class Library(models.Model):
         
         # Create all Paletta categories (they're global) INCLUDING PRIVATE
         paletta_categories_data = [
+            'private',  # ALWAYS CREATE PRIVATE CATEGORY
             'people_community', 'buildings_architecture', 'classrooms_learning',
             'field_trips_outdoor', 'events_conferences', 'research_innovation_spaces',
             'technology_equipment', 'everyday_campus', 'urban_natural_environments',
-            'backgrounds_abstracts', 'private'  # ALWAYS CREATE PRIVATE CATEGORY
+            'backgrounds_abstracts'
         ]
         
         for pc_code in paletta_categories_data:
             PalettaCategory.objects.get_or_create(code=pc_code)
         
-        # ALWAYS create a Private category for this specific library (both types need this)
-        Category.objects.get_or_create(
-            subject_area='private',
-            library=self,
-            defaults={
-                'description': 'Private videos. Only you and library administrators can see these videos.',
-                'is_active': True
-            }
-        )
-        
-        # For custom libraries, only create the private category by default
-        # Other categories will be created when the user selects them during library creation
-        # For Paletta libraries, they will use PalettaCategory objects + the private Category as backup
-        
+        # Create Category objects for THIS specific library
+        if self.uses_paletta_categories:
+            # For Paletta-style libraries, create Category objects corresponding to PalettaCategories
+            for pc_code in paletta_categories_data:
+                paletta_cat = PalettaCategory.objects.get(code=pc_code)
+                Category.objects.get_or_create(
+                    subject_area=pc_code,
+                    library=self,
+                    defaults={
+                        'description': f'{paletta_cat.display_name} category for {self.name}',
+                        'is_active': True
+                    }
+                )
+        else:
+            # For custom libraries, only create the private category by default
+            Category.objects.get_or_create(
+                subject_area='private',
+                library=self,
+                defaults={
+                    'description': 'Private videos. Only you and library administrators can see these videos.',
+                    'is_active': True
+                }
+            )
+    
     def get_storage_display(self):
         """Return a human-readable storage size string."""
         if self.storage_size >= self.TB:
@@ -165,28 +176,7 @@ class Library(models.Model):
         else:
             return f"{self.storage_size_gb:.2f} GB"
     
-    def get_private_category(self):
-        """Get the private category for this library"""
-        from videos.models import Category, PalettaCategory
-        
-        if self.uses_paletta_categories:
-            # For Paletta libraries, return the private PalettaCategory
-            try:
-                return PalettaCategory.objects.get(code='private')
-            except PalettaCategory.DoesNotExist:
-                # Create it if it doesn't exist
-                return PalettaCategory.objects.create(code='private')
-        else:
-            # For custom libraries, return the private Category
-            try:
-                return Category.objects.get(subject_area='private', library=self)
-            except Category.DoesNotExist:
-                # Create it if it doesn't exist
-                return Category.objects.create(
-                    subject_area='private',
-                    library=self,
-                    is_active=True
-                )
+
 
 
 class UserLibraryRole(models.Model):

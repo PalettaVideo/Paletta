@@ -207,13 +207,8 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
     
     def post(self, request, *args, **kwargs):
         try:
-            # Log received data for debugging
-            print("POST data:", request.POST)
-            print("FILES:", request.FILES)
-            
             # Get category source selection
             category_source = request.POST.get('category_source', 'custom')
-            print(f"Category source: {category_source}")
             
             data = {
                 'name': request.POST.get('name'),
@@ -243,31 +238,29 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                     library.logo = logo
                     library.save()
                 
-                print(f"Library created: {library.name} with category_source: {library.category_source}")
+                # Categories are automatically set up by Library.save() method
                 
-                # ALWAYS set up default categories regardless of type
-                library.setup_default_categories()
-                print(f"Set up default categories for library: {library.name}")
-                
-                # For custom libraries, handle any additional selected categories
+                # For custom libraries, handle any additional selected subject areas
                 if category_source == 'custom':
-                    # Handle any custom categories provided (for future implementation)
-                    custom_categories_json = request.POST.get('custom_categories_json')
-                    if custom_categories_json and custom_categories_json != '[]':
-                        try:
-                            custom_categories_data = json.loads(custom_categories_json)
-                            print(f"Creating {len(custom_categories_data)} custom categories")
+                    # Get selected subject areas from checkboxes
+                    custom_subject_areas = request.POST.getlist('custom_subject_areas')
+                    
+                    if custom_subject_areas:
+                        from videos.models import Category
+                        
+                        # Create categories for each selected subject area
+                        for subject_area in custom_subject_areas:
+                            # Convert subject area code to display name
+                            display_name = subject_area.replace('_', ' ').title()
                             
-                            for category_data in custom_categories_data:
-                                Category.objects.create(
-                                    subject_area=category_data.get('subject_area'),
-                                    description=category_data.get('description'),
-                                    library=library,
-                                    is_active=True
-                                )
-                                print(f"Created custom category: {category_data.get('subject_area')}")
-                        except json.JSONDecodeError:
-                            print("Error parsing custom categories JSON")
+                            Category.objects.get_or_create(
+                                subject_area=subject_area,
+                                library=library,
+                                defaults={
+                                    'description': f'{display_name} category for {library.name}',
+                                    'is_active': True
+                                }
+                            )
                 
                 # Create an admin role for the creator automatically
                 UserLibraryRole.objects.create(
@@ -279,14 +272,12 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                 messages.success(request, f'Library "{library.name}" created successfully!')
                 return redirect('manage_libraries')
             else:
-                print(f"Library validation errors: {serializer.errors}")
                 return JsonResponse({
                     'status': 'error',
                     'message': f"Library validation failed: {serializer.errors}"
                 }, status=400, content_type='application/json')
                 
         except Exception as e:
-            print(f"Error creating library: {str(e)}")
             return JsonResponse({
                 'status': 'error',
                 'message': f"An error occurred: {str(e)}"
@@ -354,9 +345,6 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
             ordered_categories.extend(other_categories)
             
             context['categories'] = ordered_categories
-            print(f"Edit library: Loaded {len(ordered_categories)} categories for {library.name}")
-            if ordered_categories:
-                print(f"First category: {ordered_categories[0].display_name}")
             
             # Get contributors for this library
             context['contributors'] = UserLibraryRole.objects.filter(
@@ -514,7 +502,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                             except User.DoesNotExist:
                                 # User doesn't exist - we might want to invite them
                                 # For now, just log it
-                                print(f"User with email {contributor_data.get('email')} not found")
+                                pass  # User not found
                     
                     # Remove contributors that were removed
                     contributors_to_delete = current_contributors - processed_contributors
