@@ -56,14 +56,14 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-# Create content types
+# Create content types (GLOBAL - available for all libraries)
 content_types = ['campus_life', 'teaching_learning', 'research_innovation', 'city_environment', 'aerial_establishing', 'people_portraits', 'culture_events', 'workspaces_facilities', 'cutaways_abstracts', 'historical_archive']
 
-print("Creating content types...")
+print("Creating global content types...")
 for ct in content_types:
     obj, created = ContentType.objects.get_or_create(code=ct)
     if created:
-        print(f"Created ContentType: {ct}")
+        print(f"✓ Created ContentType: {ct} -> {obj.display_name}")
     else:
         print(f"ContentType already exists: {ct}")
 

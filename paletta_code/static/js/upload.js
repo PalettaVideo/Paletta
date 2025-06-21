@@ -24,8 +24,9 @@ document.addEventListener("DOMContentLoaded", function () {
   let selectedTags = [];
   let videoMetadata = {}; // Variable to store extracted metadata
 
-  // fetch categories from API
+  // fetch categories and content types from API
   fetchCategories();
+  fetchContentTypes();
 
   // event Listeners
   if (selectFileBtn) {
@@ -430,54 +431,10 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function createContentTypesUI(contentTypes) {
-    // Check if content types UI already exists
-    let contentTypesContainer = document.getElementById(
-      "content-types-container"
-    );
-
-    if (!contentTypesContainer) {
-      // Create the content types selection UI
-      const categoryFormGroup = document.querySelector(
-        ".form-group:has(#category)"
-      );
-      if (!categoryFormGroup) {
-        console.error(
-          "Could not find category form group to insert content types"
-        );
-        return;
-      }
-
-      // Create content types form group
-      const contentTypesFormGroup = document.createElement("div");
-      contentTypesFormGroup.className = "form-group";
-      contentTypesFormGroup.innerHTML = `
-        <label for="content-types">Content Types (Select 1-3)</label>
-        <div id="content-types-container" class="content-types-container">
-          <div class="content-types-info">
-            <small>Select 1 to 3 content types that best describe your video content.</small>
-          </div>
-          <div id="content-types-grid" class="content-types-grid">
-            <!-- Content types will be inserted here -->
-          </div>
-          <div id="content-types-error" class="error-message" style="display: none;">
-            Please select 1 to 3 content types.
-          </div>
-        </div>
-      `;
-
-      // Insert after the category form group
-      categoryFormGroup.parentNode.insertBefore(
-        contentTypesFormGroup,
-        categoryFormGroup.nextSibling
-      );
-      contentTypesContainer = document.getElementById(
-        "content-types-container"
-      );
-    }
-
+    // Use existing content types grid from HTML template
     const contentTypesGrid = document.getElementById("content-types-grid");
     if (!contentTypesGrid) {
-      console.error("Content types grid not found");
+      console.error("Content types grid not found in HTML template");
       return;
     }
 
