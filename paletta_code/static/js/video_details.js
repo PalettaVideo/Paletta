@@ -6,26 +6,117 @@ document.addEventListener("DOMContentLoaded", function () {
     "addToCollectionButton"
   );
 
-  // Use the same localStorage keys as inside_category.js
+  // Storage keys for cart and collection
   const COLLECTION_STORAGE_KEY = "userCollection";
   const CART_STORAGE_KEY = "userCart";
 
-  // Initialize UI and event listeners
-  initializeUI();
-  setupEventListeners();
+  // Get current library context for localStorage keys
+  function getCurrentLibrarySlug() {
+    // Try to get from meta tag first (most reliable)
+    const metaLibrarySlug = document.querySelector(
+      'meta[name="current-library-slug"]'
+    )?.content;
+    if (metaLibrarySlug) {
+      return metaLibrarySlug;
+    }
 
-  /**
-   * Initialize UI elements and storage
-   */
-  function initializeUI() {
-    // Initialize local storage if not present
-    if (!localStorage.getItem(COLLECTION_STORAGE_KEY)) {
-      localStorage.setItem(COLLECTION_STORAGE_KEY, JSON.stringify([]));
+    // Try to get from URL path as fallback
+    const pathParts = window.location.pathname.split("/");
+    const libraryIndex = pathParts.indexOf("library");
+    if (libraryIndex !== -1 && pathParts[libraryIndex + 1]) {
+      return pathParts[libraryIndex + 1];
     }
-    if (!localStorage.getItem(CART_STORAGE_KEY)) {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify([]));
-    }
+
+    // Fallback to 'paletta' if no library found
+    return "paletta";
   }
+
+  // Get library-specific localStorage keys
+  function getCartStorageKey() {
+    return `userCart_${getCurrentLibrarySlug()}`;
+  }
+
+  function getCollectionStorageKey() {
+    return `userCollection_${getCurrentLibrarySlug()}`;
+  }
+
+  // Clear stale localStorage data from other libraries
+  function clearStaleLibraryData() {
+    const currentLibrarySlug = getCurrentLibrarySlug();
+    const keysToRemove = [];
+
+    // Check all localStorage keys
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        (key.startsWith("userCart_") ||
+          key.startsWith("userCollection_") ||
+          key.startsWith("categoryCache_"))
+      ) {
+        // If it's not for the current library, mark for removal
+        if (!key.endsWith(`_${currentLibrarySlug}`)) {
+          keysToRemove.push(key);
+        }
+      }
+    }
+
+    // Remove stale keys
+    keysToRemove.forEach((key) => {
+      localStorage.removeItem(key);
+    });
+
+    // Also clear any general cache that might interfere
+    const generalCacheKeys = [
+      "lastLibrarySlug",
+      "cachedCategories",
+      "lastVisitedLibrary",
+    ];
+    generalCacheKeys.forEach((key) => {
+      if (
+        localStorage.getItem(key) &&
+        localStorage.getItem(key) !== currentLibrarySlug
+      ) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    if (keysToRemove.length > 0) {
+      console.log(
+        `Cleared ${keysToRemove.length} stale localStorage entries for library switch`
+      );
+    }
+
+    // Set current library slug to prevent future caching issues
+    localStorage.setItem("lastLibrarySlug", currentLibrarySlug);
+  }
+
+  // Clear stale data and initialize localStorage for cart and collection if not present
+  clearStaleLibraryData();
+
+  // Add debug logging for library context
+  const currentLibrarySlug = getCurrentLibrarySlug();
+  const currentLibraryName =
+    document.querySelector('meta[name="current-library-name"]')?.content ||
+    "Unknown";
+  const clipId =
+    document.querySelector('meta[name="clip-id"]')?.content || "Unknown";
+
+  console.log(`[VideoDetails Debug] Library context initialized:`);
+  console.log(
+    `[VideoDetails Debug] - Current library: ${currentLibraryName} (slug: ${currentLibrarySlug})`
+  );
+  console.log(`[VideoDetails Debug] - Clip ID: ${clipId}`);
+  console.log(`[VideoDetails Debug] - URL: ${window.location.pathname}`);
+
+  if (!localStorage.getItem(getCollectionStorageKey())) {
+    localStorage.setItem(getCollectionStorageKey(), JSON.stringify([]));
+  }
+  if (!localStorage.getItem(getCartStorageKey())) {
+    localStorage.setItem(getCartStorageKey(), JSON.stringify([]));
+  }
+
+  setupEventListeners();
 
   /**
    * Set up event listeners
@@ -240,7 +331,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function updateCartCache(videoId, resolution, price) {
     try {
       // Get current cart from localStorage
-      const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY)) || [];
+      const cart = JSON.parse(localStorage.getItem(getCartStorageKey())) || [];
 
       // Get video details from the page
       const videoDetails = getVideoDetailsFromPage();
@@ -273,7 +364,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       // Save back to localStorage
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      localStorage.setItem(getCartStorageKey(), JSON.stringify(cart));
 
       console.log("Cart updated in localStorage:", cart);
     } catch (error) {
@@ -296,7 +387,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Get current collection from localStorage
       const collection =
-        JSON.parse(localStorage.getItem(COLLECTION_STORAGE_KEY)) || [];
+        JSON.parse(localStorage.getItem(getCollectionStorageKey())) || [];
 
       // Get video details from the page - only if we have valid elements
       const videoDetails = getVideoDetailsFromPage();
@@ -317,7 +408,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Save back to localStorage
         localStorage.setItem(
-          COLLECTION_STORAGE_KEY,
+          getCollectionStorageKey(),
           JSON.stringify(collection)
         );
         console.log("Collection updated in localStorage:", collection);
@@ -339,9 +430,30 @@ document.addEventListener("DOMContentLoaded", function () {
     const videoObj = {
       id: videoId,
       title: document.querySelector("h1")?.textContent || "Untitled",
-      description:
-        document.querySelector(".video-description")?.textContent || "",
+      description: document.querySelector(".video-info p")?.textContent || "",
     };
+
+    // Get subject area
+    const subjectAreaElement = document.querySelector(".subject-area-name");
+    if (subjectAreaElement) {
+      videoObj.subject_area = subjectAreaElement.textContent.trim();
+    }
+
+    // Get content types
+    const contentTypeBadges = document.querySelectorAll(".content-type-badge");
+    if (contentTypeBadges.length > 0) {
+      videoObj.content_types = Array.from(contentTypeBadges).map((badge) =>
+        badge.textContent.trim()
+      );
+    }
+
+    // Get paletta category if exists
+    const palettaCategoryElement = document.querySelector(
+      ".paletta-category-name"
+    );
+    if (palettaCategoryElement) {
+      videoObj.paletta_category = palettaCategoryElement.textContent.trim();
+    }
 
     // Try to get thumbnail from various sources
     // 1. Check if there's a meta tag with the thumbnail URL
@@ -366,8 +478,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Get tags if available
     const tags = [];
-    document.querySelectorAll(".tag").forEach((tag) => {
-      tags.push(tag.textContent);
+    document.querySelectorAll(".tag-badge").forEach((tag) => {
+      tags.push(tag.textContent.trim());
     });
     videoObj.tags = tags;
 

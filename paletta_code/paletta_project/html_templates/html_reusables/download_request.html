@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load library_tags %}
+
+{% block title %}Request Download - {{ video.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-md-8 offset-md-2">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h2 class="mb-0">Request Download Link</h2>
+        </div>
+        <div class="card-body">
+          <div class="row mb-4">
+            <div class="col-md-4">
+              {% if video.thumbnail %}
+                <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" class="img-fluid rounded">
+              {% else %}
+                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;">
+                  <span class="text-muted">No thumbnail</span>
+                </div>
+              {% endif %}
+            </div>
+            <div class="col-md-8">
+              <h3>{{ video.title }}</h3>
+              <p class="text-muted">
+                Uploaded by {{ video.uploader.username }} on {{ video.upload_date|date:"F j, Y" }}
+              </p>
+              <p>{{ video.description }}</p>
+              <p>
+                <strong>Category:</strong> {{ video.category.name }}<br>
+                {% if video.duration %}
+                <strong>Duration:</strong> {{ video.duration|divisibleby:60 }}:{{ video.duration|modulo:60 }}<br>
+                {% endif %}
+                {% if video.file_size %}
+                <strong>File size:</strong> {{ video.file_size|filesizeformat }}<br>
+                {% endif %}
+                <strong>Storage status:</strong> {{ video.get_storage_status_display }}
+              </p>
+            </div>
+          </div>
+          
+          <form method="post">
+            {% csrf_token %}
+            <div class="form-group mb-3">
+              <label for="email">Email address to receive the download link:</label>
+              <input type="email" class="form-control" id="email" name="email" 
+                     value="{{ user.email }}" required>
+              <small class="form-text text-muted">
+                The download link will be sent to this email address.
+              </small>
+            </div>
+            
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle"></i> 
+              The download link will expire after 24 hours. Please download the video as soon as possible.
+            </div>
+            
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i> Send Download Link
+              </button>
+              <a href="{% library_specific_url 'library_upload_history' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Videos
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} 

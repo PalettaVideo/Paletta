@@ -6,8 +6,9 @@ from django.contrib import messages
 from django.http import HttpResponseForbidden
 from ..models import Video
 from ..tasks import generate_and_send_download_link
-from ..services import VideoLogService
+from ..services import VideoLogService, AWSCloudStorageService
 import logging
+from django.urls import reverse
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +33,10 @@ class DownloadRequestView(View):
         try:
             video = get_object_or_404(Video, id=video_id)
             
-            # Check if user has permission to download this video
-            if not video.is_published and video.uploader != request.user:
-                messages.error(request, "You don't have permission to download this video.")
-                return HttpResponseForbidden("You don't have permission to download this video.")
+            # Authorization check: only the uploader or staff can access non-published videos
+            if video.uploader != request.user and not request.user.is_staff:
+                messages.error(request, "You are not authorized to view this video.")
+                return redirect(reverse('video_detail', args=[video_id]))
             
             # Check if the video is stored in AWS S3 storage
             if video.storage_status != 'stored':
@@ -66,10 +67,10 @@ class DownloadRequestView(View):
         try:
             video = get_object_or_404(Video, id=video_id)
             
-            # Check if user has permission to download this video
-            if not video.is_published and video.uploader != request.user:
-                messages.error(request, "You don't have permission to download this video.")
-                return HttpResponseForbidden("You don't have permission to download this video.")
+            # Authorization check: only the uploader or staff can access non-published videos
+            if video.uploader != request.user and not request.user.is_staff:
+                messages.error(request, "You are not authorized to download this video.")
+                return redirect(reverse('video_detail', args=[video_id]))
             
             # Check if the video is stored in AWS S3 storage
             if video.storage_status != 'stored':

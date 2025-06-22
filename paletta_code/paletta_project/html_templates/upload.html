@@ -1,11 +1,15 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Upload Video</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - Upload</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
+  <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
+  <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
     <!-- Styles -->
     <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
@@ -13,7 +17,7 @@
     <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
     <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
     <link rel="stylesheet" href="{% static 'css/button_reusable.css' %}">
-    <link rel="stylesheet" href="{% static 'css/sidebar_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <!-- CSS -->
     <link rel="stylesheet" href="{% static 'css/upload.css' %}">
     <!-- JS -->
@@ -23,15 +27,15 @@
 
 <body>
     {% include "html_reusables/header_reusable.html" %}
-    <div class="container">
-        <div class="sidebar">
+    <div class="layout">
+        <aside class="sidebar">
             <ul>
-                <li><a href="{% url 'upload' %}" class="active">Upload</a></li>
-                <li><a href="{% url 'upload_history' %}">History</a></li>
+                <li><a href="{% library_specific_url 'library_upload' %}" class="active">Upload</a></li>
+                <li><a href="{% library_specific_url 'library_upload_history' %}">History</a></li>
             </ul>
-        </div>
-        <div class="main-content">
-          <form id="upload-form" method="post" enctype="multipart/form-data" novalidate>
+        </aside>
+        <main class="content">
+          <form id="upload-form" method="post" enctype="multipart/form-data" data-success-url="{% library_specific_url 'library_upload_history' %}" data-api-gateway-url="{{ API_GATEWAY_URL }}/getPresignedVideoUploadURL" data-library-id="{{ current_library.id }}" novalidate>
             {% csrf_token %}
             <h1>Upload your clip</h1>
             
@@ -43,7 +47,7 @@
             {% endif %}
             
             <div class="upload-box" id="upload-box">
-                <p>MPEG, MOV, MP4, AVI videos no larger than 5GB and no larger than 1920x1080px</p>
+                <p>MPEG, MOV, MP4, AVI videos no larger than 256GB and no larger than 1920x1080px</p>
                 <input type="file" id="file-input" name="video_file" accept="video/*" required style="display: none;">
                 <button type="button" class="button" id="select-file">Select Video</button>
                 <div class="preview-container" id="video-preview-container">
@@ -76,7 +80,22 @@
                             <!-- Categories will be loaded from API via JavaScript -->
                         </select>
                     </div>
-                    <button type="button" class="button add-btn" id="add-category-btn">+ Add Category</button>
+                    <div class="category-info">
+                        <small>Categories are predefined by library administrators.</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="content-types">Content Type</label>
+                <div class="content-types-container">
+                    <div class="content-types-info">
+                        <small>Select 1-3 content types that best describe your video.</small>
+                    </div>
+                    <div id="content-types-error" class="error-message" style="display: none;"></div>
+                    <div id="content-types-grid" class="content-types-grid">
+                        <!-- Content types will be loaded dynamically from API -->
+                    </div>
                 </div>
             </div>
             <div class="form-group">
@@ -100,64 +119,55 @@
             <div class="form-group">
                 <div class="recommended-title">Recommended Tags</div>
                 <div class="tags" id="tags-reference">
-                    <span class="tag">university</span>
-                        <span class="tag">buildings</span>
-                        <span class="tag">signs</span>
-                        <span class="tag">students</span>
-                        <span class="tag">campus</span>
-                        <span class="tag">library</span>
-                        <span class="tag">lab</span>
-                        <span class="tag">hall</span>
-                        <span class="tag">classroom</span>
-                        <span class="tag">lecture</span>
-                        <span class="tag">professor</span>
-                        <span class="tag">study</span>
-                        <span class="tag">books</span>
-                        <span class="tag">phd</span>
-                        <span class="tag">masters</span>
-                        <span class="tag">degree</span>
+                    <span class="tag">engineering</span>
+                        <span class="tag">mathematical</span>
+                        <span class="tag">medical</span>
+                        <span class="tag">life sciences</span>
+                        <span class="tag">brain research</span>
+                        <span class="tag">architecture</span>
+                        <span class="tag">health</span>
+                        <span class="tag">humanities</span>
+                        <span class="tag">social sciences</span>
+                        <span class="tag">education</span>
+                        <span class="tag">fine art</span>
+                        <span class="tag">legal</span>
+                        <span class="tag">business</span>
+                        <span class="tag">campus life</span>
+                        <span class="tag">teaching</span>
+                        <span class="tag">learning</span>
                         <span class="tag">research</span>
-                        <span class="tag">science</span>
-                        <span class="tag">school</span>
-                        <span class="tag">college</span>
-                        <span class="tag">graduate</span>
+                        <span class="tag">innovation</span>
+                        <span class="tag">urban</span>
+                        <span class="tag">environment</span>
                         <span class="tag">aerial</span>
-                        <span class="tag">drone</span>
-                        <span class="tag">map</span>
-                        <span class="tag">sign</span>
-                        <span class="tag">building</span>
-                        <span class="tag">stairs</span>
-                        <span class="tag">people</span>
-                        <span class="tag">group</span>
-                        <span class="tag">flag</span>
+                        <span class="tag">establishing</span>
+                        <span class="tag">portraits</span>
+                        <span class="tag">culture</span>
+                        <span class="tag">events</span>
+                        <span class="tag">workplace</span>
+                        <span class="tag">facilities</span>
+                        <span class="tag">abstract</span>
+                        <span class="tag">historical</span>
+                        <span class="tag">archive</span>
 
                 </div>
             </div>
-            <button type="submit" class="button" id="upload-button">Upload</button>
+            
+            <div class="form-actions">
+                <button type="submit" class="button">Upload Clip</button>
+            </div>
           </form>
-        </div>
+        </main>
     </div>
 
 </body>
 
-<!-- Category Modal -->
-<div id="category-modal" class="modal">
+<!-- Modal for upload limit warning -->
+<div id="upload-limit-modal" class="modal" style="display: none;">
     <div class="modal-content">
-        <span class="close" id="close-category-modal">&times;</span>
-        <h2>Add a Category</h2>
-
-        <label for="category-name">Category Name</label>
-        <input type="text" id="category-name" placeholder="Enter category name">
-
-        <label for="category-description">Category Description</label>
-        <textarea id="category-description" placeholder="Enter description"></textarea>
-
-        <label for="category-image">Category Image</label>
-        <input type="file" id="category-image" accept="image/*">
-        <div id="category-image-preview" style="display: none; margin-top: 10px;"></div>
-
-        <p id="error-text" class="error-text" style="color: #d9534f; display: none;"></p>
-        <button type="button" class="button" id="save-category-btn">Add Category</button>
+        <span class="close-button">&times;</span>
+        <h2>Upload Limit Exceeded</h2>
+        <p id="modal-message"></p>
     </div>
 </div>
 

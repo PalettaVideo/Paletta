@@ -1,0 +1,54 @@
+body {
+    font-family: 'Montserrat';
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+.roles{
+    text-align: left;
+}
+.content {
+    padding-left: 150px;
+    padding-right: 150px;
+    padding-top: 50px;
+    padding-bottom: 50px;
+    
+    text-align: center;
+}
+.content h1 {
+    color: #77a646;
+    font-weight: normal;
+    font-size: 25px;
+    margin: 40px 0;
+    
+    
+}
+.content h2 {
+    font-size: 20px;
+    margin: 10px 0 20px;
+}
+.content p {
+    font-size: 16px;
+    color: #333;
+    margin: 10px 0;
+    text-align:left;
+}
+
+a{
+    color: #77a646;
+}
+
+ul{
+    text-align: left;
+}
+.title-section .image-container .overlay {
+    position: absolute;
+    top: 0%;
+    left:40%;
+    background-color: #80B824;
+    padding: 20px 40px;
+    font-size: 35px;
+    font-weight: normal;
+    color: white;
+    text-align: center;
+}

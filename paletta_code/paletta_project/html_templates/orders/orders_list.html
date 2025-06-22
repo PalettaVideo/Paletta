@@ -1,12 +1,13 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Paletta - My Orders</title>
+    <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - My Orders</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="clip-store-url" content="{% url 'library_clip_store' library_slug='all' %}">
+    <meta name="clip-store-url" content="{% library_specific_url 'library_clip_store' %}">
     <!-- Styles -->
     <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
@@ -14,7 +15,7 @@
     <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
     <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
     <link rel="stylesheet" href="{% static 'css/button_reusable.css' %}">
-    <link rel="stylesheet" href="{% static 'css/sidebar_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <!-- CSS -->
     <link rel="stylesheet" href="{% static 'css/my_order.css' %}">
     <!-- JS -->
@@ -26,15 +27,15 @@
     <div class="layout">
         <aside class="sidebar">
             <ul>
-                <li><a href="{% url 'profile' %}">My profile</a></li>
-                <li><a href="{% url 'collection' %}">My collection</a></li>
-                <li><a href="{% url 'cart' %}">My cart</a></li>
-                <li><a href="{% url 'orders_list' %}" class="active">My orders</a></li>
+                <li><a href="{% library_specific_url 'library_profile' %}">My profile</a></li>
+                <li><a href="{% library_specific_url 'library_collection' %}">My collection</a></li>
+                <li><a href="{% library_specific_url 'library_cart' %}">My cart</a></li>
+                <li><a href="{% library_specific_url 'library_orders_list' %}" class="active">My orders</a></li>
             </ul>
         </aside>
         
-        <main class="main-content">
-            <div class="container">
+        <main class="content">
+            <div class="orders-container">
                 <h1>My Orders</h1>
                 
                 {% if orders %}
@@ -51,7 +52,7 @@
                                     <p>Total: £{{ order.total_price }}</p>
                                 </div>
                                 <div class="order-card-footer">
-                                    <a href="{% url 'order_detail' pk=order.id %}" class="view-details-button">View Details</a>
+                                    <a href="{% library_specific_url 'library_order_detail' pk=order.id %}" class="view-details-button">View Details</a>
                                 </div>
                             </div>
                         {% endfor %}
@@ -59,7 +60,7 @@
                 {% else %}
                     <div class="no-orders">
                         <p>You don't have any orders yet.</p>
-                        <a href="{% url 'library_clip_store' library_slug='all' %}" class="browse-button">Browse Clip Store</a>
+                        <a href="{% library_specific_url 'library_clip_store' %}" class="browse-button">Browse Clip Store</a>
                     </div>
                 {% endif %}
             </div>

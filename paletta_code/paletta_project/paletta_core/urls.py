@@ -21,12 +21,15 @@ def health_check(request):
 from accounts.views.login import CustomLoginView
 from accounts.views.signup import SignupView
 from accounts.views.forgot_password import ForgotPasswordView
-from accounts.views.home_view import HomeView, LogoutView
-from accounts.views.update_profile import ProfileView, ProfileUpdateView
+from accounts.views.home_view import HomeView, LogoutView, AboutUsView, ContactUsView, QAndAView, TermsConditionsView, PrivacyView
+from accounts.views.update_profile import ProfileView, ProfileUpdateView, CollectionView
 from accounts.views.admin_view import ManageAdministratorsView
 from videos.views.clip_store_view import CategoryClipView
 from videos.views.video_detail_view import VideoDetailView
 from videos.views.thumbnail_view import VideoThumbnailAPIView
+from videos.views.page_views import UploadPageView
+from videos.views.upload_view import UploadHistoryView
+from orders.views import CartView, CheckoutView, OrdersListView, OrderDetailView
 
 # Create a class for category views
 class CategoryView(TemplateView):
@@ -47,7 +50,6 @@ urlpatterns = [
     
     # Direct access to thumbnail API endpoint
     path('api/clip/<int:clip_id>/thumbnail/', VideoThumbnailAPIView.as_view(), name='api_clip_thumbnail_direct'),
-    
     path('api/libraries/', include('libraries.urls')),
     
     # HTML page routes
@@ -57,26 +59,29 @@ urlpatterns = [
     path('home/', HomeView.as_view(), name='home'),
     path('logout/', LogoutView.as_view(), name='logout'),
     
-    # New user-friendly URLs for libraries and categories
+    # Library-specific URLs (with library context)
     path('library/<str:library_slug>/', HomeView.as_view(), name='library_detail'),
     path('library/<str:library_slug>/category/clip-store/', CategoryClipView.as_view(), name='library_clip_store'),
     path('library/<str:library_slug>/category/<str:category_slug>/', CategoryClipView.as_view(), name='library_category'),
-    
-    # User profile and account pages
-    path('profile/', ProfileView.as_view(), name='profile'),
-    path('profile/update/', ProfileUpdateView.as_view(), name='profile_update'),
-    path('collection/', TemplateView.as_view(template_name='collection.html'), name='collection'),
+    path('library/<str:library_slug>/clip/<int:video_id>/', VideoDetailView.as_view(), name='library_clip_detail'),
+    path('library/<str:library_slug>/upload/', UploadPageView.as_view(), name='library_upload'),
+    path('library/<str:library_slug>/upload/history/', UploadHistoryView.as_view(), name='library_upload_history'),
+    path('library/<str:library_slug>/profile/', ProfileView.as_view(), name='library_profile'),
+    path('library/<str:library_slug>/collection/', CollectionView.as_view(), name='library_collection'),
+    path('library/<str:library_slug>/cart/', CartView.as_view(), name='library_cart'),
+    path('library/<str:library_slug>/checkout/', CheckoutView.as_view(), name='library_checkout'),
+    path('library/<str:library_slug>/orders/', OrdersListView.as_view(), name='library_orders_list'),
+    path('library/<str:library_slug>/orders/<int:pk>/', OrderDetailView.as_view(), name='library_order_detail'),
     
     # Order management routes - include the orders app URLs
     path('', include('orders.urls')),
     
     # Additional page routes
-    path('about/', TemplateView.as_view(template_name='about_us.html'), name='about_us'),
-    path('contact/', TemplateView.as_view(template_name='contact_us.html'), name='contact_us'),
-    path('help/', TemplateView.as_view(template_name='q_and_a.html'), name='q_and_a'),
-    
-    # Video detail route
-    path('clip/<int:video_id>/', VideoDetailView.as_view(), name='clip_detail'),
+    path('about/', AboutUsView.as_view(), name='about_us'),
+    path('contact/', ContactUsView.as_view(), name='contact_us'),
+    path('help/', QAndAView.as_view(), name='q_and_a'),
+    path('terms/', TermsConditionsView.as_view(), name='terms_conditions'),
+    path('privacy/', PrivacyView.as_view(), name='privacy'),
     
     # Library management routes
     path('libraries/create/', login_required(CreateLibraryView.as_view()), name='create_library'),
@@ -86,10 +91,8 @@ urlpatterns = [
     
     # Admin management routes
     path('admins/manage/', login_required(ManageAdministratorsView.as_view()), name='manage_administrators'),
-    
     # Contributor application route
     path('contributor/apply/', TemplateView.as_view(template_name='contributor_form.html'), name='contributor_apply'),
-    
     # Health check endpoint
     path('healthcheck/', health_check, name='health_check'),
 ]

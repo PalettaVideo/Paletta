@@ -1,17 +1,22 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Edit Video</title>
+    <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - Edit Video</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
+    <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
+    <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
     <!-- Styles -->
     <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <!-- CSS Reusables -->
     <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
     <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <!-- CSS -->
     <link rel="stylesheet" href="{% static 'css/edit_video.css' %}">
     <!-- JS -->
@@ -21,31 +26,31 @@
 <body>
     {% include "html_reusables/header_reusable.html" %}
 
-    <div class="container">
-        <div class="sidebar">
+    <div class="layout">
+        <aside class="sidebar">
             <ul>
-                <li><a href="{% url 'upload' %}">Upload</a></li>
-                <li><a href="{% url 'upload_history' %}">Your Uploads</a></li>
+                <li><a href="{% library_specific_url 'library_upload' %}">Upload</a></li>
+                <li><a href="{% library_specific_url 'library_upload_history' %}">Your Uploads</a></li>
                 <li><a href="#" class="active">Edit Video</a></li>
             </ul>
-        </div>
+        </aside>
 
-        <main>
+        <main class="content">
             {% if video_not_found %}
             <div class="error-message">
                 <h2>Video Not Found</h2>
-                <p>The requested video could not be found. <a href="{% url 'upload_history' %}">Return to upload history</a>.</p>
+                <p>The requested video could not be found. <a href="{% library_specific_url 'library_upload_history' %}">Return to upload history</a>.</p>
             </div>
             {% elif permission_error %}
             <div class="error-message">
                 <h2>Permission Denied</h2>
-                <p>You don't have permission to edit this video. <a href="{% url 'upload_history' %}">Return to upload history</a>.</p>
+                <p>You don't have permission to edit this video. <a href="{% library_specific_url 'library_upload_history' %}">Return to upload history</a>.</p>
             </div>
             {% elif error %}
             <div class="error-message">
                 <h2>Error</h2>
                 <p>{{ error }}</p>
-                <p><a href="{% url 'upload_history' %}">Return to upload history</a>.</p>
+                <p><a href="{% library_specific_url 'library_upload_history' %}">Return to upload history</a>.</p>
             </div>
             {% else %}
             <h2>Edit Video</h2>
@@ -88,8 +93,9 @@
                 <div class="form-group">
                     <label for="video-category">Category</label>
                     <select id="videoCategory" name="category">
+                        <option value="">Select a category</option>
                         {% for category in categories %}
-                            <option value="{{ category.id }}" {% if video.category.id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                            <option value="{{ category.id }}" {% if video.subject_area and video.subject_area.id == category.id %}selected{% endif %}>{{ category.display_name }}</option>
                         {% endfor %}
                     </select>
                     {% if form.category.errors %}
@@ -112,15 +118,6 @@
                             <input type="text" id="tagInput" placeholder="Add a tag and press Enter">
                             <button type="button" id="addTagBtn">Add</button>
                         </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="video-published">Published</label>
-                    <div class="toggle-container">
-                        <input type="checkbox" id="isPublished" name="is_published" {% if video.is_published %}checked{% endif %}>
-                        <label for="isPublished" class="toggle-label"></label>
-                        <span class="toggle-text">{% if video.is_published %}Published{% else %}Not Published{% endif %}</span>
                     </div>
                 </div>
 
@@ -156,7 +153,7 @@
 
                 <div class="form-actions">
                     <button type="submit" class="save-btn">Save Changes</button>
-                    <a href="{% url 'upload_history' %}" class="cancel-btn">Cancel</a>
+                    <a href="{% library_specific_url 'library_upload_history' %}" class="cancel-btn">Cancel</a>
                 </div>
             </form>
             {% endif %}

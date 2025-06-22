@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Manage Libraries</title>
+    <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - Manage Libraries</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Styles -->
@@ -12,9 +12,9 @@
     <!-- CSS Reusables -->
     <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
     <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <!-- CSS -->
     <link rel="stylesheet" href="{% static 'css/manage_libraries.css' %}">
-    <link rel="stylesheet" href="{% static 'css/sidebar_admin.css' %}">
     <!-- JS -->
     <script src="{% static 'js/manage_libraries.js' %}" defer></script>
 </head>
@@ -22,16 +22,14 @@
 <body>
 {% include "html_reusables/header_reusable.html" %}
 
-<div class="container">
+<div class="layout">
     <!-- Sidebar -->
-    <aside>
-        <div class="sidebar">
-            <ul>
-                <li><a href="{% url 'create_library' %}">Create a Library</a></li>
-                <li><a href="{% url 'manage_libraries' %}" class="active">Manage All Libraries</a></li>
-                <li><a href="{% url 'manage_administrators' %}">Manage Administrators</a></li>
-            </ul>
-        </div>
+    <aside class="sidebar">
+        <ul>
+            <li><a href="{% url 'create_library' %}">Create a Library</a></li>
+            <li><a href="{% url 'manage_libraries' %}" class="active">Manage All Libraries</a></li>
+            <li><a href="{% url 'manage_administrators' %}">Manage Administrators</a></li>
+        </ul>
     </aside>
 
     <!-- Main Content -->
@@ -46,11 +44,35 @@
                     <div class="library-logo">
                         <img src="{% if library.logo %}{{ library.logo.url }}{% else %}{% static 'images/default-logo.jpg' %}{% endif %}" alt="{{ library.name }}">
                     </div>
-                    <span>{{ library.name }}</span>
+                    <div class="library-details">
+                        <div class="library-name">{{ library.name }}</div>
+                        <div class="library-info">
+                            <span class="category-type">
+                                {% if library.category_source == 'paletta_style' %}
+                                    <i class="fas fa-palette"></i> Paletta Style Categories
+                                {% else %}
+                                    <i class="fas fa-graduation-cap"></i> Custom Academic Categories
+                                {% endif %}
+                            </span>
+                            <span class="storage-tier">{{ library.get_storage_tier_display }}</span>
+                            <span class="status {% if library.is_active %}active{% else %}inactive{% endif %}">
+                                {% if library.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </div>
+                        <div class="library-description">{{ library.description|truncatechars:80 }}</div>
+                    </div>
                     <div class="library-actions">
-                        <a href="{% url 'edit_library' %}?library_id={{ library.id }}"><button class="edit"><i class="fas fa-edit"></i> Edit</button></a>
-                        <button class="stop" data-library-id="{{ library.id }}"><i class="fas fa-pause"></i> {% if library.is_active %}Stop{% else %}Start{% endif %}</button>
-                        <button class="close" data-library-id="{{ library.id }}"><i class="fas fa-times"></i> Close</button>
+                        <button class="btn btn-primary btn-sm" onclick="editLibrary('{{ library.id }}')">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        {% if library.category_source == 'custom' %}
+                        <button class="btn btn-secondary btn-sm" onclick="manageCategoriesModal('{{ library.id }}', '{{ library.name }}')">
+                            <i class="fas fa-tags"></i> Categories
+                        </button>
+                        {% endif %}
+                        <button class="btn btn-danger btn-sm" onclick="deleteLibrary('{{ library.id }}', '{{ library.name }}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
                     </div>
                 </div>
                 {% endfor %}
@@ -60,7 +82,84 @@
                 </div>
             {% endif %}
         </div>
+
+        <!-- Legend -->
+        <div class="library-legend">
+            <h3>Category Types</h3>
+            <div class="legend-item">
+                <i class="fas fa-palette"></i>
+                <strong>Paletta Style:</strong> Uses predefined Paletta categories (People & Community, Buildings & Architecture, etc.) with content types
+            </div>
+            <div class="legend-item">
+                <i class="fas fa-graduation-cap"></i>
+                <strong>Custom Academic:</strong> Uses subject areas (Engineering Sciences, Medical Sciences, etc.) with content types
+            </div>
+        </div>
     </main>
+</div>
+
+<!-- Category Management Modal -->
+<div id="categoriesModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Manage Categories</h3>
+            <span class="close-modal" onclick="closeCategoriesModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="categories-content">
+                <p>Loading categories...</p>
+            </div>
+            
+            <div class="add-category-section">
+                <h4>Add New Categories</h4>
+                
+                <!-- Subject Areas Section -->
+                <div class="predefined-categories-section">
+                    <h5>Predefined Subject Areas</h5>
+                    <p>Select from our predefined academic subject areas:</p>
+                <div class="subject-areas-grid" id="available-subject-areas">
+                    <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Custom Categories Section -->
+                <div class="custom-categories-section">
+                    <h5>Create Custom Category</h5>
+                    <p>Create a category with your own custom name:</p>
+                    <div class="custom-category-form">
+                        <input type="text" id="custom-category-name" placeholder="Enter custom category name" maxlength="100">
+                        <button type="button" class="btn btn-secondary" onclick="addCustomCategory()">
+                            <i class="fas fa-plus"></i> Add Custom Category
+                        </button>
+                    </div>
+                </div>
+                
+                <button type="button" class="btn btn-success" onclick="addSelectedCategories()">
+                    <i class="fas fa-plus"></i> Add Selected Categories
+                </button>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeCategoriesModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="confirmTitle">Confirm Action</h3>
+            <span class="close-modal" onclick="closeConfirmModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMessage">Are you sure you want to proceed?</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirmBtn" onclick="executeConfirmedAction()">Confirm</button>
+        </div>
+    </div>
 </div>
 
 {% include "html_reusables/footer_reusable.html" %}

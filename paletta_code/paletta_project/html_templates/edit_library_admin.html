@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Edit Library</title>
+    <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - Edit Library</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Styles -->
@@ -113,8 +113,8 @@
                     {% if categories %}
                         {% for category in categories %}
                         <div class="category-item" data-id="{{ category.id }}" onclick="editCategoryModal(event, this)">
-                            <img src="{% if category.image %}{{ category.image.url }}{% else %}{% static 'picture/default-category.jpg' %}{% endif %}" alt="{{ category.name }}">
-                            <div class="category-name">{{ category.name }}</div>
+                            <img src="{% if category.image %}{{ category.image.url }}{% else %}{% static 'picture/All.png' %}{% endif %}" alt="{{ category.display_name }}">
+                            <div class="category-name">{{ category.display_name }}</div>
                             <div class="category-desc" style="display: none;">{{ category.description }}</div>
                             <button type="button" class="delete-btn" onclick="event.stopPropagation(); this.parentElement.remove(); checkCategoriesEmpty();">✖️</button>
                         </div>
@@ -126,7 +126,10 @@
 
             <div class="form-group">
                 <label>Theme Color</label>
-                <input type="color" id="themeColor" name="theme_color" value="{{ library.color_scheme.primary|default:'#86B049' }}">
+                <div class="color-input-container">
+                    <input type="color" id="themeColor" name="theme_color" value="{{ library.color_scheme.primary|default:'#86B049' }}">
+                    <div id="colorPreview" class="color-preview"></div>
+                </div>
             </div>
             <button href="{% url 'manage_libraries' %}" type="submit" class="finish-btn">Save Changes</button>
             </form>
@@ -134,6 +137,9 @@
         </main>
     </div>
 
+    <!-- Modal Overlay -->
+    <div id="modalOverlay" class="modal-overlay" style="display: none;"></div>
+    
     <!-- Category Modal -->
     <div id="categoryModal" class="modal">
         <div class="modal-content">

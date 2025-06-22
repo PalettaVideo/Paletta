@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Video, Category, Tag, VideoLog, VideoTag, Upload
+from .models import Video, Category, Tag, VideoLog, VideoTag, Upload, ContentType, PalettaCategory
 from django.urls import reverse
 
 class VideoLogInline(admin.TabularInline):
@@ -55,27 +55,45 @@ class VideoTagInline(admin.TabularInline):
     autocomplete_fields = ['tag']
 
 class VideoAdmin(admin.ModelAdmin):
-    list_display = ('title', 'uploader', 'category', 'library', 'upload_date', 'storage_status_display', 'file_size_display', 'duration_display', 'views_count', 'is_published')
-    list_filter = ('category', 'library', 'upload_date', 'is_published', 'storage_status')
     search_fields = ('title', 'description', 'uploader__username')
-    readonly_fields = ('upload_date', 'updated_at', 'views_count', 'file_size', 'duration', 'storage_status', 'storage_url', 'storage_reference_id')
+    ordering = ('-upload_date',)
+    list_display = ('title', 'uploader', 'subject_area_display', 'content_types_display', 'paletta_category', 'library', 'upload_date', 'file_size_display', 'duration_display', 'views_count', 'storage_status_display')
+    list_filter = ('subject_area', 'library', 'upload_date', 'storage_status', 'content_types', 'paletta_category')
+    readonly_fields = ('upload_date', 'updated_at', 'views_count', 'file_size', 'duration', 'storage_status', 'storage_url', 'storage_reference_id', 'display_categories')
     date_hierarchy = 'upload_date'
     inlines = [VideoLogInline, VideoTagInline]
+    filter_horizontal = ('content_types',)
     
     fieldsets = (
-        ('Basic Information', {
-            'fields': ('title', 'description', 'category', 'library', 'is_published')
+        (None, {
+            'fields': ('title', 'description', 'subject_area', 'content_types', 'paletta_category', 'library')
         }),
-        ('Upload Information', {
-            'fields': ('uploader', 'upload_date', 'updated_at', 'views_count')
+        ('Categories Summary', {
+            'fields': ('display_categories',),
+            'classes': ('collapse',)
         }),
         ('File Information', {
-            'fields': ('video_file', 'thumbnail', 'file_size', 'duration')
+            'fields': ('video_file', 'thumbnail', 'file_size', 'duration', 'views_count')
         }),
         ('Storage Information', {
             'fields': ('storage_status', 'storage_url', 'storage_reference_id', 'download_link', 'download_link_expiry')
         }),
     )
+    
+    def subject_area_display(self, obj):
+        """Display the subject area"""
+        if obj.subject_area:
+            return obj.subject_area.display_name
+        return '-'
+    subject_area_display.short_description = 'Subject Area'
+    
+    def content_types_display(self, obj):
+        """Display the content types as a comma-separated list"""
+        content_types = obj.content_types.all()
+        if content_types:
+            return ', '.join([ct.display_name for ct in content_types])
+        return '-'
+    content_types_display.short_description = 'Content Types'
     
     def storage_status_display(self, obj):
         """Display the storage status with appropriate styling."""
@@ -117,14 +135,14 @@ class VideoAdmin(admin.ModelAdmin):
     duration_display.short_description = 'Duration'
 
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'library', 'description', 'created_at', 'image_preview')
-    list_filter = ('library',)
-    search_fields = ('name', 'description')
-    readonly_fields = ('created_at', 'image_preview')
+    list_display = ('display_name', 'subject_area', 'library', 'is_active', 'created_at', 'image_preview')
+    list_filter = ('library', 'subject_area', 'is_active')
+    search_fields = ('subject_area', 'description')
+    readonly_fields = ('created_at', 'image_preview', 'display_name')
     
     fieldsets = (
         ('Category Information', {
-            'fields': ('name', 'description', 'library', 'created_at')
+            'fields': ('subject_area', 'display_name', 'description', 'library', 'is_active', 'created_at')
         }),
         ('Category Image', {
             'fields': ('image', 'image_preview'),
@@ -138,6 +156,30 @@ class CategoryAdmin(admin.ModelAdmin):
             return format_html('<img src="{}" width="100" height="auto" />', obj.image.url)
         return '-'
     image_preview.short_description = 'Image Preview'
+
+class ContentTypeAdmin(admin.ModelAdmin):
+    list_display = ('display_name', 'code', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('code',)
+    readonly_fields = ('display_name',)
+    
+    fieldsets = (
+        ('Content Type Information', {
+            'fields': ('code', 'display_name', 'is_active')
+        }),
+    )
+
+class PalettaCategoryAdmin(admin.ModelAdmin):
+    list_display = ('display_name', 'code', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('code', 'description')
+    readonly_fields = ('display_name',)
+    
+    fieldsets = (
+        ('Paletta Category Information', {
+            'fields': ('code', 'display_name', 'description', 'is_active')
+        }),
+    )
 
 class TagAdmin(admin.ModelAdmin):
     list_display = ('name', 'library')
@@ -209,9 +251,11 @@ class VideoLogAdmin(admin.ModelAdmin):
         return '-'
     file_size_display.short_description = 'File Size'
 
-# Register the models with the admin site
+# Register the models with admin
 admin.site.register(Video, VideoAdmin)
 admin.site.register(Category, CategoryAdmin)
+admin.site.register(ContentType, ContentTypeAdmin)
+admin.site.register(PalettaCategory, PalettaCategoryAdmin)
 admin.site.register(Tag, TagAdmin)
 admin.site.register(VideoTag, VideoTagAdmin)
 admin.site.register(Upload, UploadAdmin)

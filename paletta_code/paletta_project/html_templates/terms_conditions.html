@@ -1,0 +1,75 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Paletta - terms_conditions</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/button_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/terms_conditions.css' %}">
+    <link rel="stylesheet" href="{% static 'css/title_section_footer.css' %}">
+
+    <!-- JS -->
+
+</head>
+<body>
+{% include "html_reusables/header_reusable.html" %}
+
+  <div class="title-section">
+      <div class="image-container">
+          <img src="{% static 'picture/main_campus.png' %}">
+          <div class="overlay">Terms & Conditions</div>
+      </div>
+      
+  </div>
+
+  <div class="content">
+        <h1>User Content and Permissions</h1>
+        <p>
+          By uploading content to Paletta, you confirm that you possess all necessary rights, licenses, and permissions to share, store, and (if applicable) license the content.
+        </p>
+        <p>
+          You retain full ownership of your content. Paletta does not claim copyright over any media you upload.
+        </p>
+        <p>
+          You grant Paletta a non-exclusive, royalty-free licence to store and display your content within the platform for private library use unless you explicitly opt into public licensing.
+        </p>
+        <p>
+          If you choose to make your content available for licensing (e.g., via the Paletta Marketplace), you grant Paletta and third parties the right to reproduce, distribute, and publicly display the licensed content, subject to the licence terms you select.
+        </p>
+        <p>
+          You are responsible for ensuring that all individuals appearing in your uploaded content have provided appropriate consent. (See <a href="/privacy">Privacy Policy</a> for more information.)
+        </p>
+      
+        <h1>Institutional Access and Roles</h1>
+        <p>Paletta supports role-based access to manage content and user permissions effectively:</p>
+        <ul class="roles">
+          <li><strong>Owner:</strong> Holds full administrative control over the institutional account.</li>
+          <li><strong>Administrator (Library Owner):</strong> Can create, manage, and assign permissions to specific libraries.</li>
+          <li><strong>Sub-Administrator:</strong> Assists in organising and maintaining content within designated libraries.</li>
+        </ul>
+        <p>
+          Each user is accountable for all activity conducted under their account and must ensure that all uploaded content complies with relevant laws and institutional policies.
+        </p>
+      
+        <h1>Content Takedown and Reporting</h1>
+        <p>
+          If you believe that any content hosted on Paletta infringes intellectual property or privacy rights, please report it through our <a href="/contact">contact page</a> or support system.
+        </p>
+        <p>
+          Paletta reserves the right to remove or restrict access to any content in response to valid legal or policy violations.
+        </p>
+   
+      
+  </div>
+
+{% include "html_reusables/footer_reusable.html" %}
+</body>
+</html>

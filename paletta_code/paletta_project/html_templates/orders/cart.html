@@ -1,21 +1,25 @@
 {% load static %}
 {% load order_filters %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Paletta - Shopping Cart</title>
+  <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - Shopping Cart</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="clip-store-url" content="{% url 'library_clip_store' library_slug='all' %}">
+  <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
+  <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
+  <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
+  <meta name="clip-store-url" content="{% library_specific_url 'library_clip_store' %}">
   <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <!-- CSS Reusables -->
-  <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
   <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
   <link rel="stylesheet" href="{% static 'css/button_reusable.css' %}">
-  <link rel="stylesheet" href="{% static 'css/sidebar_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}">
   <!-- CSS -->
   <link rel="stylesheet" href="{% static 'css/cart.css' %}">
   <!-- JS -->
@@ -29,10 +33,10 @@
     <aside class="sidebar">
       <nav>
         <ul>
-          <li><a href="{% url 'profile' %}">My profile</a></li>
-          <li><a href="{% url 'collection' %}">My collection</a></li>
-          <li><a href="{% url 'cart' %}" class="active">My cart</a></li>
-          <li><a href="{% url 'orders_list' %}">My orders</a></li>
+          <li><a href="{% library_specific_url 'library_profile' %}">My profile</a></li>
+          <li><a href="{% library_specific_url 'library_collection' %}">My collection</a></li>
+          <li><a href="{% library_specific_url 'library_cart' %}" class="active">My cart</a></li>
+          <li><a href="{% library_specific_url 'library_orders_list' %}">My orders</a></li>
         </ul>
       </nav>
     </aside>
@@ -65,7 +69,7 @@
             {% endfor %}
           {% else %}
             <div class="empty-cart">
-              <p>Your cart is empty. <a href="{% url 'library_clip_store' library_slug='all' %}">Browse all clips</a> to add items.</p>
+              <p>Your cart is empty. <a href="{% library_specific_url 'library_clip_store' %}">Browse all clips</a> to add items.</p>
             </div>
           {% endif %}
         </div>
@@ -77,7 +81,7 @@
           <p>VAT (20%): <span id="vat">£{{ vat|default:'0.00' }}</span></p>
           <p class="total">Total: <span id="cart-total">£{{ total_price|default:0|add:vat|floatformat:2 }}</span></p>
           {% endwith %}
-          <a href="{% url 'checkout' %}">
+          <a href="{% library_specific_url 'library_checkout' %}">
             <button id="checkout-button" {% if not cart_items %}disabled{% endif %}>Proceed to Checkout</button>
           </a>
         </div>

@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Manage Administrators</title>
+    <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - Manage Administrators</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Styles -->
@@ -12,9 +12,9 @@
     <!-- CSS Reusables -->
     <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
     <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <!-- CSS -->
     <link rel="stylesheet" href="{% static 'css/manage_admin.css' %}">
-    <link rel="stylesheet" href="{% static 'css/sidebar_admin.css' %}">
     <link rel="stylesheet" href="{% static 'css/button_reusable.css' %}">
     <!-- JS -->
     <script defer src="{% static 'js/manage_admin.js' %}"></script>
@@ -23,17 +23,15 @@
 <body>
 {% include "html_reusables/header_reusable.html" %}
 
-<div class="container">
-    <aside>
-        <div class="sidebar">
-            <ul>
-                <li><a href="{% url 'create_library' %}">Create a Library</a></li>
-                <li><a href="{% url 'manage_libraries' %}">Manage All Libraries</a></li>
-                <li><a href="{% url 'manage_administrators' %}" class="active">Manage Administrators</a></li>
-            </ul>
-        </div>
+<div class="layout">
+    <aside class="sidebar">
+        <ul>
+            <li><a href="{% url 'create_library' %}">Create a Library</a></li>
+            <li><a href="{% url 'manage_libraries' %}">Manage All Libraries</a></li>
+            <li><a href="{% url 'manage_administrators' %}" class="active">Manage Administrators</a></li>
+        </ul>
     </aside>
-    <main>
+    <main class="content">
         <section>
             <h1>Manage Administrators <button id="addAdmin">Add</button></h1>
             <div id="adminList">

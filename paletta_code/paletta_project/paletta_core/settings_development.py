@@ -66,6 +66,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'libraries.middleware.LibraryContextMiddleware',  # Add library context middleware
 ]
 
 ROOT_URLCONF = 'paletta_core.urls'
@@ -85,6 +86,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.static',  # Add this for {% static %} tag
+                'libraries.context_processors.library_context',  # Add library context processor
             ],
         },
     },
@@ -152,10 +154,25 @@ STATICFILES_DIRS = [
     Path(__file__).resolve().parent.parent.parent / 'static',  # Absolute path to static
 ]
 
+# Static file versioning for cache busting
+# Change this value whenever you want to force cache invalidation
+STATIC_VERSION = '2.0.1'
+
+# Cache control settings
+# Prevent HTML caching but allow static file caching
+CACHE_MIDDLEWARE_ALIAS = 'default'
+CACHE_MIDDLEWARE_SECONDS = 0  # Don't cache HTML pages
+CACHE_MIDDLEWARE_KEY_PREFIX = ''
+
+# Add cache control headers for different content types
+USE_ETAGS = True
+
 # Media files (User uploaded files)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR.parent / 'media'
 
+# AWS Storage Configuration - Disabled in development
+AWS_STORAGE_ENABLED = False
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

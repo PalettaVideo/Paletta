@@ -6,33 +6,6 @@ body {
     
 }
 
-.container {
-    display: flex;
-    width: 100%;
-    margin-top: 100px;
-}
-
-nav button {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    margin: 5px 0;
-    border: none;
-    background: #ccc;
-    cursor: pointer;
-}
-
-nav .active {
-    background: #8bc34a;
-    color: white;
-}
-
-main {
-    flex: 1;
-    padding: 20px;
-    background-color: white;
-}
-
 header {
     display: flex;
     justify-content: space-between;

@@ -1,19 +1,23 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Paletta - Profile Page</title>
+  <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - My Profile</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
+  <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
+  <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
   <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <!-- CSS Reusables -->
   <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
   <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
-  <link rel="stylesheet" href="{% static 'css/sidebar_reusable.css' %}">
   <link rel="stylesheet" href="{% static 'css/button_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}">
   <!-- CSS -->
   <link rel="stylesheet" href="{% static 'css/my_profile.css' %}">
   <link rel="stylesheet" href="{% static 'css/password_message.css' %}">
@@ -25,16 +29,16 @@
 
 <body>
   {% include "html_reusables/header_reusable.html" %}
-    <div class="container">
-        <div class="sidebar">
+    <div class="layout">
+        <aside class="sidebar">
             <ul>
-                <li><a href="{% url 'profile' %}" class="active">My profile</a></li>
-                <li><a href="{% url 'collection' %}">My collection</a></li>
-                <li><a href="{% url 'cart' %}">My cart</a></li>
-                <li><a href="{% url 'orders_list' %}">My orders</a></li>
+                <li><a href="{% library_specific_url 'library_profile' %}" class="active">My profile</a></li>
+                <li><a href="{% library_specific_url 'library_collection' %}">My collection</a></li>
+                <li><a href="{% library_specific_url 'library_cart' %}">My cart</a></li>
+                <li><a href="{% library_specific_url 'library_orders_list' %}">My orders</a></li>
             </ul>
-        </div>
-        <div class="content">
+        </aside>
+        <main class="content">
           {% if messages %}
           <div class="messages">
               {% for message in messages %}
@@ -107,7 +111,7 @@
                     <button type="submit" class="btn">Confirm</button>
                 </form>
             </div>
-        </div>
+        </main>
     </div>
     {% include "html_reusables/footer_reusable.html" %}
 </body>

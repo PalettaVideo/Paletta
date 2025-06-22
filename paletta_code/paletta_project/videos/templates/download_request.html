@@ -60,7 +60,7 @@
               <button type="submit" class="btn btn-primary">
                 <i class="fas fa-paper-plane"></i> Send Download Link
               </button>
-              <a href="{% url 'upload_history' %}" class="btn btn-outline-secondary">
+              <a href="{% url 'library_upload_history' video.library.slug %}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left"></i> Back to Videos
               </a>
             </div>

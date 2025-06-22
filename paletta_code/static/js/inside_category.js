@@ -15,6 +15,48 @@ document.addEventListener("DOMContentLoaded", function () {
   let openPopup = null;
   let selectedTags = [];
 
+  // Get current library context for localStorage keys
+  function getCurrentLibrarySlug() {
+    // Try to get from meta tag first (most reliable)
+    const metaLibrarySlug = document.querySelector(
+      'meta[name="current-library-slug"]'
+    )?.content;
+    if (metaLibrarySlug) {
+      return metaLibrarySlug;
+    }
+
+    // Try to get from URL path as fallback
+    const pathParts = window.location.pathname.split("/");
+    const libraryIndex = pathParts.indexOf("library");
+    if (libraryIndex !== -1 && pathParts[libraryIndex + 1]) {
+      return pathParts[libraryIndex + 1];
+    }
+
+    // Fallback to 'paletta' if no library found
+    return "paletta";
+  }
+
+  // Get library-specific localStorage keys
+  function getCartStorageKey() {
+    return `userCart_${getCurrentLibrarySlug()}`;
+  }
+
+  function getCollectionStorageKey() {
+    return `userCollection_${getCurrentLibrarySlug()}`;
+  }
+
+  // Force clear all stale data on every page load to prevent caching issues
+  clearStaleLibraryData();
+
+  // Add debug logging to track library context
+  const currentLibrarySlug = getCurrentLibrarySlug();
+  const currentLibraryName =
+    document.querySelector('meta[name="current-library-name"]')?.content ||
+    "Unknown";
+  console.log(
+    `[Library Debug] Page loaded for library: ${currentLibraryName} (slug: ${currentLibrarySlug})`
+  );
+
   // Initialize UI
   initializeUI();
   setupEventListeners();
@@ -397,7 +439,7 @@ document.addEventListener("DOMContentLoaded", function () {
     videoObj.tags = tags;
 
     // Get existing cart or create new one
-    let cart = JSON.parse(localStorage.getItem("userCart")) || [];
+    let cart = JSON.parse(localStorage.getItem(getCartStorageKey())) || [];
 
     // Check if item already exists in cart
     const existingItemIndex = cart.findIndex((item) => item.id == videoId);
@@ -415,7 +457,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Save cart to localStorage
-    localStorage.setItem("userCart", JSON.stringify(cart));
+    localStorage.setItem(getCartStorageKey(), JSON.stringify(cart));
   }
 
   /**
@@ -456,12 +498,16 @@ document.addEventListener("DOMContentLoaded", function () {
     videoObj.tags = tags;
 
     // Get existing collection or create new one
-    let collection = JSON.parse(localStorage.getItem("userCollection")) || [];
+    let collection =
+      JSON.parse(localStorage.getItem(getCollectionStorageKey())) || [];
 
     // Only add if item doesn't exist already
     if (!collection.some((item) => item.id == videoId)) {
       collection.push(videoObj);
-      localStorage.setItem("userCollection", JSON.stringify(collection));
+      localStorage.setItem(
+        getCollectionStorageKey(),
+        JSON.stringify(collection)
+      );
     }
   }
 
@@ -469,8 +515,11 @@ document.addEventListener("DOMContentLoaded", function () {
    * Open video preview
    */
   function openVideoPreview(videoId) {
-    // Navigate to the video detail page
-    window.location.href = `/clip/${videoId}/`;
+    // Get current library slug for proper URL construction
+    const currentLibrarySlug = getCurrentLibrarySlug();
+
+    // Always use library-specific URL pattern
+    window.location.href = `/library/${currentLibrarySlug}/clip/${videoId}/`;
   }
 
   /**
@@ -544,13 +593,16 @@ document.addEventListener("DOMContentLoaded", function () {
    * Initialize the page
    */
   function initializePage() {
+    // Clear stale data from other libraries first
+    clearStaleLibraryData();
+
     // Setup localStorage if not already present
-    if (!localStorage.getItem("userCart")) {
-      localStorage.setItem("userCart", JSON.stringify([]));
+    if (!localStorage.getItem(getCartStorageKey())) {
+      localStorage.setItem(getCartStorageKey(), JSON.stringify([]));
     }
 
-    if (!localStorage.getItem("userCollection")) {
-      localStorage.setItem("userCollection", JSON.stringify([]));
+    if (!localStorage.getItem(getCollectionStorageKey())) {
+      localStorage.setItem(getCollectionStorageKey(), JSON.stringify([]));
     }
 
     // Attach event handlers to buttons if needed
@@ -559,4 +611,57 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Run initialization when DOM is loaded
   document.addEventListener("DOMContentLoaded", initializePage);
+
+  // Clear stale localStorage data from other libraries
+  function clearStaleLibraryData() {
+    const currentLibrarySlug = getCurrentLibrarySlug();
+    const currentLibraryName =
+      document.querySelector('meta[name="current-library-name"]')?.content ||
+      "Unknown";
+    const keysToRemove = [];
+
+    // Check all localStorage keys
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        (key.startsWith("userCart_") ||
+          key.startsWith("userCollection_") ||
+          key.startsWith("categoryCache_") ||
+          key.startsWith("libraryData_"))
+      ) {
+        // If it's not for the current library, mark for removal
+        if (!key.endsWith(`_${currentLibrarySlug}`)) {
+          keysToRemove.push(key);
+        }
+      }
+    }
+
+    // Remove stale keys
+    keysToRemove.forEach((key) => {
+      localStorage.removeItem(key);
+    });
+
+    // Also clear any general cache that might interfere
+    const generalCacheKeys = [
+      "lastLibrarySlug",
+      "cachedCategories",
+      "lastVisitedLibrary",
+      "categoryData",
+    ];
+    generalCacheKeys.forEach((key) => {
+      const storedValue = localStorage.getItem(key);
+      if (storedValue && storedValue !== currentLibrarySlug) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    // Force clear any cached DOM or JS state by triggering a more aggressive reset
+    if (typeof window.libraryCache !== "undefined") {
+      window.libraryCache = {};
+    }
+
+    // Set current library slug to prevent future caching issues
+    localStorage.setItem("lastLibrarySlug", currentLibrarySlug);
+  }
 });

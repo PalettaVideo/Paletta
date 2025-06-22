@@ -1,12 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, permissions, generics
+from rest_framework import status, permissions, generics, parsers
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Count, Q
-from ..models import Video, Category, Tag
+from ..models import Video, Category, Tag, VideoTag
 from ..serializers import VideoSerializer, CategorySerializer, TagSerializer
+from libraries.models import Library
 import logging
 import urllib.parse
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +38,7 @@ class VideoListAPIView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     
     def get_queryset(self):
-        queryset = Video.objects.filter(is_published=True)
+        queryset = Video.objects.all()
         
         # Apply search filter
         search_query = self.request.query_params.get('search', None)
@@ -49,7 +51,11 @@ class VideoListAPIView(generics.ListAPIView):
         # Apply category filter
         category = self.request.query_params.get('category', None)
         if category and category.lower() != 'all':
-            queryset = queryset.filter(category__name__iexact=category)
+            # Handle both subject_area and paletta_category filtering
+            queryset = queryset.filter(
+                Q(subject_area__subject_area__iexact=category) |
+                Q(paletta_category__code__iexact=category)
+            )
         
         # Apply tags filter
         tags = self.request.query_params.getlist('tags', [])
@@ -57,6 +63,17 @@ class VideoListAPIView(generics.ListAPIView):
             # Filter videos that have all the specified tags
             for tag in tags:
                 queryset = queryset.filter(tags__name__iexact=tag)
+        
+        # Apply content type filter
+        content_types = self.request.query_params.getlist('content_types', [])
+        if content_types:
+            # Filter videos that have any of the specified content types
+            queryset = queryset.filter(content_types__code__in=content_types)
+            
+        # Apply content type ID filter (alternative approach)
+        content_type_ids = self.request.query_params.getlist('content_type_ids', [])
+        if content_type_ids:
+            queryset = queryset.filter(content_types__id__in=content_type_ids)
         
         # Apply sorting
         sort_by = self.request.query_params.get('sort_by', 'newest')
@@ -147,18 +164,22 @@ class CategoryVideosAPIView(generics.ListAPIView):
         logger.info(f"Category lookup: encoded='{encoded_category_name}', decoded='{decoded_category_name}', db_lookup='{db_category_name}'")
         
         # Try to find the category first to confirm it exists
+        # Check both subject areas and paletta categories
         try:
-            category = Category.objects.get(name__iexact=db_category_name)
-            logger.info(f"Found category: '{category.name}' (id: {category.id})")
-        except Category.DoesNotExist:
+            # First try to find as a subject area
+            try:
+                category = Category.objects.get(subject_area__iexact=db_category_name)
+                logger.info(f"Found subject area category: '{category.display_name}' (id: {category.id})")
+                queryset = Video.objects.filter(subject_area=category)
+            except Category.DoesNotExist:
+                # Then try to find as a paletta category
+                from videos.models import PalettaCategory
+                paletta_category = PalettaCategory.objects.get(code__iexact=db_category_name)
+                logger.info(f"Found paletta category: '{paletta_category.display_name}' (id: {paletta_category.id})")
+                queryset = Video.objects.filter(paletta_category=paletta_category)
+        except (Category.DoesNotExist, PalettaCategory.DoesNotExist):
             logger.warning(f"Category '{db_category_name}' does not exist in database")
             return Video.objects.none()  # Return empty queryset if category doesn't exist
-        
-        # Continue with queryset filtering using the found category
-        queryset = Video.objects.filter(
-            is_published=True, 
-            category=category
-        )
         
         # Apply search filter
         search_query = self.request.query_params.get('search', None)
@@ -173,6 +194,15 @@ class CategoryVideosAPIView(generics.ListAPIView):
         if tags:
             for tag in tags:
                 queryset = queryset.filter(tags__name__iexact=tag)
+        
+        # Apply content type filter
+        content_types = self.request.query_params.getlist('content_types', [])
+        if content_types:
+            queryset = queryset.filter(content_types__code__in=content_types)
+            
+        content_type_ids = self.request.query_params.getlist('content_type_ids', [])
+        if content_type_ids:
+            queryset = queryset.filter(content_types__id__in=content_type_ids)
         
         # Apply sorting
         sort_by = self.request.query_params.get('sort_by', 'newest')
@@ -279,6 +309,67 @@ class VideoMetadataAPIView(APIView):
             )
 
 
+class ContentTypeVideosAPIView(generics.ListAPIView):
+    """
+    API view to list videos filtered by content types.
+    
+    Query parameters:
+    - content_types: List of content type codes (e.g., ?content_types=campus_life&content_types=research_innovation)
+    - content_type_ids: List of content type IDs (e.g., ?content_type_ids=1&content_type_ids=3)
+    - match_all: If true, videos must have ALL specified content types (default: false - ANY match)
+    """
+    serializer_class = VideoSerializer
+    pagination_class = StandardResultsSetPagination
+    permission_classes = [permissions.AllowAny]
+    
+    def get_queryset(self):
+        queryset = Video.objects.all()
+        
+        # Get content type filters
+        content_types = self.request.query_params.getlist('content_types', [])
+        content_type_ids = self.request.query_params.getlist('content_type_ids', [])
+        match_all = self.request.query_params.get('match_all', 'false').lower() == 'true'
+        
+        if content_types or content_type_ids:
+            if match_all:
+                # Videos must have ALL specified content types
+                for ct_code in content_types:
+                    queryset = queryset.filter(content_types__code=ct_code)
+                for ct_id in content_type_ids:
+                    queryset = queryset.filter(content_types__id=ct_id)
+            else:
+                # Videos must have ANY of the specified content types
+                if content_types:
+                    queryset = queryset.filter(content_types__code__in=content_types)
+                if content_type_ids:
+                    queryset = queryset.filter(content_types__id__in=content_type_ids)
+        
+        # Apply other filters
+        search_query = self.request.query_params.get('search', None)
+        if search_query:
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) | 
+                Q(description__icontains=search_query)
+            )
+        
+        # Apply sorting
+        sort_by = self.request.query_params.get('sort_by', 'newest')
+        if sort_by == 'newest':
+            queryset = queryset.order_by('-upload_date')
+        elif sort_by == 'oldest':
+            queryset = queryset.order_by('upload_date')
+        elif sort_by == 'popular':
+            queryset = queryset.order_by('-views_count')
+        elif sort_by == 'az':
+            queryset = queryset.order_by('title')
+        elif sort_by == 'za':
+            queryset = queryset.order_by('-title')
+        else:
+            queryset = queryset.order_by('-upload_date')
+        
+        return queryset.distinct()
+
+
 class VideoAPIUploadView(APIView):
     """
     API view for direct video uploads.
@@ -287,61 +378,87 @@ class VideoAPIUploadView(APIView):
     the standard form-based upload process.
     """
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
     
     def post(self, request, format=None):
+        s3_key = request.data.get('s3_key')
+        if not s3_key:
+            return Response({'message': 's3_key is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            
         try:
-            # Get the video file from the request
-            video_file = request.FILES.get('video_file')
+            # Get data from request
+            title = request.data.get('title', 'Untitled Video')
+            description = request.data.get('description', '')
+            category_id = request.data.get('category')
+            library_id = request.data.get('library_id')
+            tags_str = request.data.get('tags', '')
+            duration = request.data.get('duration')
+            file_size = request.data.get('file_size')
+            format_type = request.data.get('format')
+            thumbnail = request.FILES.get('thumbnail')
             
-            if not video_file:
-                return Response(
-                    {"error": "No video file provided"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            # Get content types (required field) - frontend sends IDs
+            content_type_ids = request.data.getlist('content_types')
+            if not content_type_ids:
+                return Response({'message': 'At least one content type is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            if len(content_type_ids) > 3:
+                return Response({'message': 'Maximum of 3 content types allowed.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Find the library
+            try:
+                library = Library.objects.get(id=library_id)
+            except Library.DoesNotExist:
+                return Response({'message': 'Library not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Find the category (subject_area)
+            try:
+                category = Category.objects.get(id=category_id, library=library)
+            except Category.DoesNotExist:
+                return Response({'message': f"Category with id {category_id} not found in this library"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Validate content types by IDs
+            from ..models import ContentType
+            content_types = []
+            for ct_id in content_type_ids:
+                try:
+                    ct = ContentType.objects.get(id=ct_id, is_active=True)
+                    content_types.append(ct)
+                except ContentType.DoesNotExist:
+                    return Response({'message': f"Content type with id {ct_id} not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Create the video object
+            video = Video.objects.create(
+                title=title,
+                description=description,
+                subject_area=category,  # use subject_area instead of category
+                library=library,
+                uploader=request.user,
+                storage_reference_id=s3_key,
+                storage_url=f"s3://{settings.AWS_STORAGE_BUCKET_NAME}/{s3_key}",
+                storage_status='stored',  # Set status to stored, no more processing needed
+                duration=duration,
+                file_size=file_size,
+                format=format_type
+            )
+            
+            # Add content types (many-to-many relationship)
+            video.content_types.set(content_types)
+            
+            # Save the thumbnail if it was provided
+            if thumbnail:
+                video.thumbnail = thumbnail
+                video.save(update_fields=['thumbnail'])
                 
-            # Create a new Video object with the provided data
-            data = request.data.copy()
-            data['video_file'] = video_file
-            
-            # Handle tags (convert from comma-separated string to list if needed)
-            tags_data = data.get('tags', [])
-            if isinstance(tags_data, str):
-                tags_data = [tag.strip() for tag in tags_data.split(',') if tag.strip()]
-                data.pop('tags', None)  # Remove tags from data as we'll handle them separately
-            
-            # Create and validate the serializer
-            serializer = VideoSerializer(data=data, context={'request': request})
-            
-            if serializer.is_valid():
-                # Save the video with the current user as uploader
-                video = serializer.save(uploader=request.user)
-                
-                # Handle tags
-                for tag_name in tags_data:
-                    tag, created = Tag.objects.get_or_create(
-                        name=tag_name,
-                        library=video.library  # Use the video's library for the tag
-                    )
-                    video.tags.add(tag)
+            # Handle tags
+            if tags_str:
+                tag_names = [name.strip() for name in tags_str.split(',') if name.strip()]
+                for tag_name in tag_names:
+                    tag, _ = Tag.objects.get_or_create(name=tag_name, library=library)
+                    VideoTag.objects.create(video=video, tag=tag)
                     
-                    # Log when new tags are created
-                    if created:
-                        logger.info(f"API: Created new tag '{tag_name}' in library '{video.library.name}'")
-                
-                # Return the serialized video data
-                return Response(
-                    VideoSerializer(video, context={'request': request}).data,
-                    status=status.HTTP_201_CREATED
-                )
-            else:
-                return Response(
-                    serializer.errors,
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            serializer = VideoSerializer(video, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
                 
         except Exception as e:
-            logger.error(f"Error in API video upload: {str(e)}")
-            return Response(
-                {"error": "Failed to upload video", "detail": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            ) 
+            logger.error(f"Error in VideoAPIUploadView: {e}")
+            return Response({'message': 'An unexpected error occurred.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 

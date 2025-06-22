@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function initPopupMenu() {
-  console.log("Initializing popup menu");
   const centerButton = document.getElementById("centerButton");
   const popupMenu = document.getElementById("popupMenu");
 
@@ -19,24 +18,20 @@ function initPopupMenu() {
     return;
   }
 
-  console.log("Header elements found and ready for event binding");
 
   centerButton.addEventListener("click", function (event) {
     event.stopPropagation();
-    console.log("Center button clicked");
     popupMenu.style.display =
       popupMenu.style.display === "block" ? "none" : "block";
   });
 
   // Close the popup when clicking outside
   document.addEventListener("click", function () {
-    console.log("Document clicked, closing popup");
     popupMenu.style.display = "none";
   });
 
   popupMenu.addEventListener("click", function (event) {
     event.stopPropagation();
-    console.log("Popup menu clicked, preventing close");
   });
 }
 

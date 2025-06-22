@@ -2,22 +2,83 @@
 const COLLECTION_STORAGE_KEY = "userCollection";
 const CART_STORAGE_KEY = "userCart";
 
+// Get current library context for localStorage keys
+function getCurrentLibrarySlug() {
+  // Try to get from meta tag first (most reliable)
+  const metaLibrarySlug = document.querySelector(
+    'meta[name="current-library-slug"]'
+  )?.content;
+  if (metaLibrarySlug) {
+    return metaLibrarySlug;
+  }
+
+  // Try to get from URL path as fallback
+  const pathParts = window.location.pathname.split("/");
+  const libraryIndex = pathParts.indexOf("library");
+  if (libraryIndex !== -1 && pathParts[libraryIndex + 1]) {
+    return pathParts[libraryIndex + 1];
+  }
+
+  // Fallback to 'paletta' if no library found
+  return "paletta";
+}
+
+// Get library-specific localStorage keys
+function getCartStorageKey() {
+  return `userCart_${getCurrentLibrarySlug()}`;
+}
+
+function getCollectionStorageKey() {
+  return `userCollection_${getCurrentLibrarySlug()}`;
+}
+
 // get data from collection and cart
 function getFavorites() {
-  return JSON.parse(localStorage.getItem(COLLECTION_STORAGE_KEY)) || [];
+  return JSON.parse(localStorage.getItem(getCollectionStorageKey())) || [];
 }
 
 function getCart() {
-  return JSON.parse(localStorage.getItem(CART_STORAGE_KEY)) || [];
+  return JSON.parse(localStorage.getItem(getCartStorageKey())) || [];
 }
 
 // save data from collection and cart
 function saveFavorites(favorites) {
-  localStorage.setItem(COLLECTION_STORAGE_KEY, JSON.stringify(favorites));
+  localStorage.setItem(getCollectionStorageKey(), JSON.stringify(favorites));
 }
 
 function saveCart(cart) {
-  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  localStorage.setItem(getCartStorageKey(), JSON.stringify(cart));
+}
+
+// Clear stale localStorage data from other libraries
+function clearStaleLibraryData() {
+  const currentLibrarySlug = getCurrentLibrarySlug();
+  const keysToRemove = [];
+
+  // Check all localStorage keys
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (
+      key &&
+      (key.startsWith("userCart_") || key.startsWith("userCollection_"))
+    ) {
+      // If it's not for the current library, mark for removal
+      if (!key.endsWith(`_${currentLibrarySlug}`)) {
+        keysToRemove.push(key);
+      }
+    }
+  }
+
+  // Remove stale keys
+  keysToRemove.forEach((key) => {
+    localStorage.removeItem(key);
+  });
+
+  if (keysToRemove.length > 0) {
+    console.log(
+      `Cleared ${keysToRemove.length} stale localStorage entries for library switch`
+    );
+  }
 }
 
 // Get default thumbnail path for missing thumbnails
@@ -276,5 +337,6 @@ function renderCollection() {
 
 // initialize
 document.addEventListener("DOMContentLoaded", () => {
+  clearStaleLibraryData();
   renderCollection();
 });
