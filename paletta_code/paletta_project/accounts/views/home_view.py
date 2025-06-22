@@ -126,6 +126,12 @@ class ContactUsView(StaticPageMixin, TemplateView):
 class QAndAView(StaticPageMixin, TemplateView):
     template_name = 'q_and_a.html'
 
+class TermsConditionsView(StaticPageMixin, TemplateView):
+    template_name = 'terms_conditions.html'
+
+class PrivacyView(StaticPageMixin, TemplateView):
+    template_name = 'privacy.html'
+
 class LogoutView(TemplateView):
     """View to handle user logout."""
     

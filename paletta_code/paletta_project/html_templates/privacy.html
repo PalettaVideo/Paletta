@@ -1,0 +1,72 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Paletta - About Us</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/button_reusable.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/privacy.css' %}">
+    <link rel="stylesheet" href="{% static 'css/title_section_footer.css' %}">
+
+    <!-- JS -->
+
+</head>
+<body>
+{% include "html_reusables/header_reusable.html" %}
+
+  <div class="title-section">
+      <div class="image-container">
+          <img src="{% static 'picture/main_campus.png' %}">
+          <div class="overlay">Privacy</div>
+      </div>
+      
+  </div>
+
+  <div class="content">
+    
+      
+        <h1>Data Collection</h1>
+        <p>We collect and store the following information to operate and improve the Paletta platform:</p>
+        <ul>
+          <li>Basic user data such as name, email address, and user role (e.g., teacher, student).</li>
+          <li>Metadata related to uploaded files (e.g., upload time, file type, storage usage).</li>
+          <li>Optional licensing data, including licensee details for publicly shared content.</li>
+        </ul>
+      
+        <h1>Consent and Releases</h1>
+        <p>
+          It is the responsibility of users to ensure that all individuals identifiable in uploaded content have signed appropriate release forms or have equivalent institutional permissions.
+        </p>
+        <p>
+          Paletta is developing tools that allow users to upload or link signed consent forms to specific files for improved record-keeping and compliance.
+        </p>
+      
+        <h1>Use of AI Tools</h1>
+        <p>Paletta may employ AI technologies to analyse and tag uploaded media to enhance search functions and user experience:</p>
+        <ul>
+          <li>No biometric or facial recognition data is used unless explicitly permitted and legally justified.</li>
+          <li>All AI-generated tags are used strictly for internal purposes and are never sold or shared with third parties.</li>
+        </ul>
+      
+        <h1>Data Storage and Security</h1>
+        <p>We take data security seriously and implement the following measures:</p>
+        <ul>
+          <li>All user data and uploaded content are securely stored with role-based access control.</li>
+          <li>Content is hosted on GDPR-compliant servers located in <em>[insert server region, e.g., the European Economic Area]</em>.</li>
+          <li>We apply encryption, regular security audits, and strong access protocols to ensure data integrity and prevent unauthorised access.</li>
+        </ul>
+     
+      
+  </div>
+
+{% include "html_reusables/footer_reusable.html" %}
+</body>
+</html>

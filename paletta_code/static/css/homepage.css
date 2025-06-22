@@ -57,15 +57,58 @@ main {
 }
 
 .title-section {
-      
-  align-items: center;
+
+  display: flex;
   justify-content: center;
-  margin-top:50px;
+  align-items: center;
+  margin-top: 50px;
   margin-bottom: 20px;
+  gap: 30px;
+
+}
+.title-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.title-left img {
+  object-fit: contain;
+  max-width: 300px;
+}
+
+.vertical-line {
+  width: 2px;
+  height: 60px;
+  background-color: #80B824;
 }
 
 .title-section img {
   max-width: 400px;
+}
+
+.title-section h1 {
+  text-align: center;
+  font-size: 25px;
+  line-height: 1.4;
+  font-weight: normal;
+}
+
+.title-right {
+  display: flex;
+  flex-direction: column;
+  
+  line-height: 1.1;
+  text-align: left;
+  
+}
+
+.clip-line1,
+.clip-line2 {
+  font-size: 30px;
+  font-weight: normal;
+  color: #555;
+  
 }
 
 .title-section h1 {
@@ -108,18 +151,80 @@ main {
   height: 20px;
   fill: #80B824;
 }
+
+
+.viewall {
+
+  margin-top: 40px;
+  justify-content: center;
+}
+
+.viewall {
+  position: relative;
+  width: 70%;
+ 
+  overflow: hidden;
+  cursor: pointer;
+
+  margin: 40px auto 0 auto; 
+  border: 2px solid #80B824;
+}
+
+.viewall img {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease;
+}
+
+.viewall:hover img {
+  transform: scale(1.1);
+}
+
+.viewall span {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 200px;
+  height: 50px;
+  background-color: #80B824;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.categoriestitle{
+  text-align: left;
+  font-weight: normal;
+  margin-top: 30px;
+  margin-left:215px;
+  font-size: 30px;
+}
+
+
+.categories-wrap{
+  padding: 15px;
+  margin-left:215px;
+  margin-right:215px;
+  margin-top: 10px;
+  background-color: rgb(234, 234, 234);
+  margin-bottom: 50px;
+}
+
 .categories {
   display: grid;
-  grid-template-columns: repeat(3, 327px);
-  gap: 15px;
-  margin-top: 20px;
+  grid-template-columns: repeat(3, 300px);
+  gap: 25px;
+  margin-top: 40px;
+  margin-bottom: 40px;
   justify-content: center;
 }
 
 .category {
   position: relative;
-  width: 327px;
-  height: 228px;
+  width: 300px;
+  height: 200px;
   overflow: hidden;
   cursor: pointer;
 }
@@ -138,7 +243,7 @@ main {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 130px;
+  width: 300px;
   height: 50px;
   background-color: #80B824;
   color: white;
@@ -171,6 +276,22 @@ main {
 .category.private-category span {
     font-weight: 600;
     color: #ffffff;
+}
+
+/* Alternative layout styles from homepage_library.css (if needed) */
+.categories.library-style {
+  grid-template-columns: repeat(3, 327px);
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.categories.library-style .category {
+  width: 327px;
+  height: 228px;
+}
+
+.categories.library-style .category span {
+  width: 130px;
 }
 
 @media (max-width: 600px) {

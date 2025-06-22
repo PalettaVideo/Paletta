@@ -21,7 +21,7 @@ def health_check(request):
 from accounts.views.login import CustomLoginView
 from accounts.views.signup import SignupView
 from accounts.views.forgot_password import ForgotPasswordView
-from accounts.views.home_view import HomeView, LogoutView, AboutUsView, ContactUsView, QAndAView
+from accounts.views.home_view import HomeView, LogoutView, AboutUsView, ContactUsView, QAndAView, TermsConditionsView, PrivacyView
 from accounts.views.update_profile import ProfileView, ProfileUpdateView, CollectionView
 from accounts.views.admin_view import ManageAdministratorsView
 from videos.views.clip_store_view import CategoryClipView
@@ -50,7 +50,6 @@ urlpatterns = [
     
     # Direct access to thumbnail API endpoint
     path('api/clip/<int:clip_id>/thumbnail/', VideoThumbnailAPIView.as_view(), name='api_clip_thumbnail_direct'),
-    
     path('api/libraries/', include('libraries.urls')),
     
     # HTML page routes
@@ -74,8 +73,6 @@ urlpatterns = [
     path('library/<str:library_slug>/orders/', OrdersListView.as_view(), name='library_orders_list'),
     path('library/<str:library_slug>/orders/<int:pk>/', OrderDetailView.as_view(), name='library_order_detail'),
     
-
-    
     # Order management routes - include the orders app URLs
     path('', include('orders.urls')),
     
@@ -83,8 +80,8 @@ urlpatterns = [
     path('about/', AboutUsView.as_view(), name='about_us'),
     path('contact/', ContactUsView.as_view(), name='contact_us'),
     path('help/', QAndAView.as_view(), name='q_and_a'),
-    
-
+    path('terms/', TermsConditionsView.as_view(), name='terms_conditions'),
+    path('privacy/', PrivacyView.as_view(), name='privacy'),
     
     # Library management routes
     path('libraries/create/', login_required(CreateLibraryView.as_view()), name='create_library'),
@@ -94,10 +91,8 @@ urlpatterns = [
     
     # Admin management routes
     path('admins/manage/', login_required(ManageAdministratorsView.as_view()), name='manage_administrators'),
-    
     # Contributor application route
     path('contributor/apply/', TemplateView.as_view(template_name='contributor_form.html'), name='contributor_apply'),
-    
     # Health check endpoint
     path('healthcheck/', health_check, name='health_check'),
 ]

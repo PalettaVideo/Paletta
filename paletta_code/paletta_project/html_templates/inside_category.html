@@ -49,6 +49,7 @@
         <a href="#">All Clips</a>
         {% endif %}
       </li>
+      
       {% for category in categories %}
       <li class="{% if current_category and current_category.display_name == category.display_name %}active{% endif %}" data-category="{{ category.display_name|lower }}">
         <a href="{% library_specific_url 'library_category' category_slug=category.display_name|library_slugify %}">{{ category.display_name }}</a>

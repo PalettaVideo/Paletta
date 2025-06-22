@@ -48,6 +48,35 @@ body {
   background-color: #f9f9f9;
 }
 
+.sidebar {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  height: calc(100% - 60px);
+  width: 220px;
+  background: white;
+  border-right: 1px solid #ddd;
+  padding: 20px;
+  box-sizing: border-box;
+  margin-top: 50px;
+  overflow-y: auto;
+}
+
+
+.backbutton svg{
+  width: 20px;
+  height: 20px;
+  fill: black;
+
+}
+.backbutton span{
+  color: #000;
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-family: "Montserrat";
+}
+
+
 .categorysearch {
   width: 400px;
   display: flex;
@@ -81,6 +110,43 @@ body {
   width: 15px;
   height: 15px;
   fill: #80B824;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 50px;
+}
+
+.sidebar ul li {
+  padding: 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  text-align: center;
+  font-family: "Montserrat";
+}
+
+.sidebar ul li.active, .sidebar ul li:hover {
+  background-color: #7bbd42;
+  color: white;
+}
+
+main {
+  margin-left: 220px;
+  padding: 20px;
+  margin-top: 10vh;
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 10vh);
+}
+
+.category-list a{
+  display: block; 
+  text-decoration: none; 
+  color: inherit;
 }
 
 .clips-grid {
