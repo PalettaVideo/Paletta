@@ -4,6 +4,13 @@ from django.utils.translation import gettext_lazy as _
 from .models import User
 
 class UserAdmin(BaseUserAdmin):
+    """
+    BACKEND-READY: Django admin interface for User management.
+    MAPPED TO: /admin/accounts/user/
+    USED BY: Django Admin panel
+    
+    Provides comprehensive user management with custom fields and role-based filtering.
+    """
     # the fields to be used in displaying the User model
     list_display = ('email', 'first_name', 'last_name', 'is_staff', 'role')
     list_filter = ('is_staff', 'is_superuser', 'is_active', 'role')

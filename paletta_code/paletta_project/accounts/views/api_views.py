@@ -12,18 +12,34 @@ from libraries.models import UserLibraryRole, Library
 
 class IsOwnerOrAdmin(permissions.BasePermission):
     """
-    Custom permission to only allow owners of an account or admins to edit it.
+    BACKEND-READY: Custom permission for user account access control.
+    MAPPED TO: User API endpoints
+    USED BY: UserViewSet permission checking
+    
+    Allows read access to all, write access only to account owner or admin users.
     """
     def has_object_permission(self, request, view, obj):
-        # read permissions are allowed to any request
         if request.method in permissions.SAFE_METHODS:
             return True
-        
-        # write permissions are only allowed to the owner or admin
         return obj == request.user or request.user.role in ['admin', 'owner']
 
 class CustomAuthToken(ObtainAuthToken):
+    """
+    BACKEND/FRONTEND-READY: Enhanced authentication token endpoint.
+    MAPPED TO: POST /api/accounts/token/
+    USED BY: login.js and authentication flows
+    
+    Provides token-based authentication with extended user data in response.
+    """
     def post(self, request, *args, **kwargs):
+        """
+        BACKEND/FRONTEND-READY: Authenticate user and return token with user data.
+        MAPPED TO: POST /api/accounts/token/
+        USED BY: Frontend login forms and API clients
+        
+        Returns authentication token plus user profile data for frontend state.
+        Required fields: email, password
+        """
         serializer = self.serializer_class(data=request.data,
                                            context={'request': request})
         serializer.is_valid(raise_exception=True)
@@ -39,25 +55,41 @@ class CustomAuthToken(ObtainAuthToken):
         })
 
 class UserViewSet(viewsets.ModelViewSet):
+    """
+    BACKEND/FRONTEND-READY: Complete CRUD operations for user management.
+    MAPPED TO: /api/users/ endpoints
+    USED BY: User registration, profile management, and admin operations
+    
+    Provides user account management with role-based permissions and profile actions.
+    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     
     def get_permissions(self):
         """
-        Instantiates and returns the list of permissions that this view requires.
+        BACKEND-READY: Dynamic permission assignment based on action.
+        MAPPED TO: DRF permission system
+        USED BY: All user API endpoints
+        
+        Sets appropriate permissions for different CRUD operations.
         """
-        if self.action == 'create':
-            permission_classes = [permissions.AllowAny]
-        elif self.action in ['update', 'partial_update', 'destroy']:
-            permission_classes = [IsOwnerOrAdmin]
-        else:
-            permission_classes = [permissions.IsAuthenticated]
+        permission_map = {
+            'create': [permissions.AllowAny],
+            'update': [IsOwnerOrAdmin],
+            'partial_update': [IsOwnerOrAdmin],
+            'destroy': [IsOwnerOrAdmin],
+        }
+        permission_classes = permission_map.get(self.action, [permissions.IsAuthenticated])
         return [permission() for permission in permission_classes]
     
     @action(detail=False, methods=['get'])
     def me(self, request):
         """
-        Get the current user's profile
+        BACKEND/FRONTEND-READY: Get current user's profile data.
+        MAPPED TO: GET /api/users/me/
+        USED BY: Profile pages and user context loading
+        
+        Returns authenticated user's complete profile information.
         """
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
@@ -65,7 +97,11 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['put'], url_path='me/update')
     def update_profile(self, request):
         """
-        Update the current user's profile
+        BACKEND/FRONTEND-READY: Update current user's profile.
+        MAPPED TO: PUT /api/users/me/update/
+        USED BY: Profile edit forms and settings pages
+        
+        Updates authenticated user's profile with validation.
         """
         user = request.user
         serializer = self.get_serializer(user, data=request.data, partial=True)
@@ -76,29 +112,30 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='me/change-password')
     def change_password(self, request):
         """
-        Change the current user's password
+        BACKEND/FRONTEND-READY: Change current user's password.
+        MAPPED TO: POST /api/users/me/change-password/
+        USED BY: Password change forms and security settings
+        
+        Validates old password and sets new password with token refresh.
+        Required fields: old_password, new_password
         """
         user = request.user
         old_password = request.data.get('old_password')
         new_password = request.data.get('new_password')
         
-        # check if the old password is correct
         if not user.check_password(old_password):
             return Response({'detail': 'Old password is incorrect.'}, 
                             status=status.HTTP_400_BAD_REQUEST)
         
-        # validate the new password
         try:
             validate_password(new_password, user)
         except ValidationError as e:
             return Response({'detail': e.messages}, 
                             status=status.HTTP_400_BAD_REQUEST)
         
-        # set the new password
         user.set_password(new_password)
         user.save()
         
-        # update the token
         Token.objects.filter(user=user).delete()
         token = Token.objects.create(user=user)
         
@@ -111,9 +148,13 @@ class UserViewSet(viewsets.ModelViewSet):
 @permission_classes([permissions.IsAuthenticated])
 def check_user(request):
     """
-    Check if a user exists and if they are already an admin or contributor.
+    BACKEND-READY: Check user existence and roles for admin operations.
+    MAPPED TO: POST /api/accounts/check-user/
+    USED BY: Admin management interfaces
+    
+    Validates user existence and current role status for admin operations.
+    Required fields: email
     """
-    # ONLY allow admin or owner users to access this endpoint
     if request.user.role not in ['admin', 'owner']:
         return Response(
             {"detail": "You don't have permission to check users."},
@@ -132,7 +173,6 @@ def check_user(request):
     try:
         user = User.objects.get(email=email)
         
-        # prepare response data
         user_data = {
             'id': user.id,
             'email': user.email,
@@ -146,7 +186,6 @@ def check_user(request):
             'is_admin': user.role in ['admin', 'owner'],
         }
         
-        # If library_id is provided, check if user is a contributor
         if library_id:
             try:
                 library = Library.objects.get(id=library_id)
@@ -170,9 +209,13 @@ def check_user(request):
 @permission_classes([permissions.IsAuthenticated])
 def make_admin(request):
     """
-    Promote a user to admin role.
+    BACKEND-READY: Promote user to administrator role.
+    MAPPED TO: POST /api/accounts/make-admin/
+    USED BY: Admin management interfaces
+    
+    Promotes contributor user to admin role with validation.
+    Required fields: user_id
     """
-    # ONLY allow admin or owner users to access this endpoint
     if request.user.role not in ['admin', 'owner']:
         return Response(
             {"detail": "You don't have permission to promote users to admin."},
@@ -190,18 +233,15 @@ def make_admin(request):
     try:
         user_to_promote = User.objects.get(id=user_id)
         
-        # Check if user is an admin
         if user_to_promote.role in ['admin', 'owner']:
             return Response(
                 {"success": False, "message": "User is already an administrator."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Promote user to admin
         user_to_promote.role = 'admin'
         user_to_promote.save()
         
-        # Prepare admin data for response
         libraries = []
         user_libraries = UserLibraryRole.objects.filter(user=user_to_promote)
         for user_library in user_libraries:
@@ -231,9 +271,12 @@ def make_admin(request):
 @permission_classes([permissions.IsAuthenticated])
 def revoke_admin(request, admin_id):
     """
-    Revoke admin privileges from a user.
+    BACKEND-READY: Revoke administrator privileges from user.
+    MAPPED TO: POST /api/accounts/revoke-administrator/{id}/
+    USED BY: Admin management interfaces
+    
+    Demotes admin user to contributor role with validation.
     """
-    # ONLY allow admin or owner users to access this endpoint
     if request.user.role not in ['admin', 'owner']:
         return Response(
             {"detail": "You don't have permission to revoke admin privileges."},
@@ -243,21 +286,18 @@ def revoke_admin(request, admin_id):
     try:
         user_to_demote = User.objects.get(id=admin_id)
         
-        # Check if user is an admin
         if user_to_demote.role != 'admin':
             return Response(
                 {"success": False, "message": "User is not an administrator."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Cannot demote yourself
         if user_to_demote == request.user:
             return Response(
                 {"success": False, "message": "You cannot revoke your own admin privileges."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Demote user from admin to contributor
         user_to_demote.role = 'contributor'
         user_to_demote.save()
         

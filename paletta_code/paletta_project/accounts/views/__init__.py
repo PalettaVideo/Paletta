@@ -1,3 +1,12 @@
+"""
+BACKEND/FRONTEND-READY: Views package for accounts app functionality.
+MAPPED TO: Django URL routing and template rendering
+USED BY: URL dispatcher and frontend templates
+
+Provides comprehensive user management views including authentication,
+registration, profile management, and admin operations.
+"""
+
 # Import views from individual files
 from .login import CustomLoginView
 from .signup import SignupView
