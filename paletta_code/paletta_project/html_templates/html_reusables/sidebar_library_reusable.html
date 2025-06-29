@@ -25,7 +25,7 @@
     <div class="more-libraries-nav" id="libraries-container">
       <!-- Paletta library is always pinned at the top -->
       <div class="library-button">
-        <a href="{% url 'library_detail' library_slug='paletta' %}" class="{% if current_library and current_library.name == 'Paletta' %}active{% endif %}">
+        <a href="{% url 'library_home' library_slug='paletta' %}" class="{% if current_library and current_library.name == 'Paletta' %}active{% endif %}">
             <img src="{% static 'picture/logoicon.jpg' %}" alt="Paletta">
             <span>Paletta</span>
         </a>
@@ -35,7 +35,7 @@
       {% for library in all_libraries %}
         {% if library.name != 'Paletta' %}
         <div class="library-button">
-            <a href="{% url 'library_detail' library_slug=library.name|library_slugify %}" class="{% if current_library and current_library.id == library.id %}active{% endif %}">
+            <a href="{% url 'library_home' library_slug=library.name|library_slugify %}" class="{% if current_library and current_library.id == library.id %}active{% endif %}">
                 {% if library.logo %}
                     <img src="{{ library.logo.url }}" alt="{{ library.name }}">
                 {% else %}
