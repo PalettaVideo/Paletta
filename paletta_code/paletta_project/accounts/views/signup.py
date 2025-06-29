@@ -5,16 +5,14 @@ from ..models import User
 
 class SignupView(TemplateView):
     """Custom signup view that serves the signup.html file."""
-    
     def get(self, request, *args, **kwargs):
-        """Serve the signup.html file."""
+        # serve the signup.html file
         if request.user.is_authenticated:
             return redirect('home')
         return render(request, 'signup.html')
     
     def post(self, request, *args, **kwargs):
-        """Handle signup form submission."""
-        # get form data
+        # handle signup form submission - get form data from the request
         email = request.POST.get('email')
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')

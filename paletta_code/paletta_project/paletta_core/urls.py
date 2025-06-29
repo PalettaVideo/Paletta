@@ -13,11 +13,11 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from libraries.views import CreateLibraryView, ManageLibrariesView, EditLibraryView
 
-# Health check view
+# health check view
 def health_check(request):
     return HttpResponse("OK", content_type="text/plain")
 
-# Import views directly from their modules to avoid circular imports
+# import views directly from their modules to avoid circular imports
 from accounts.views.login import CustomLoginView
 from accounts.views.signup import SignupView
 from accounts.views.forgot_password import ForgotPasswordView
@@ -26,30 +26,19 @@ from accounts.views.update_profile import ProfileView, ProfileUpdateView, Collec
 from accounts.views.admin_view import ManageAdministratorsView
 from videos.views.clip_store_view import CategoryClipView
 from videos.views.video_detail_view import VideoDetailView
-from videos.views.thumbnail_view import VideoThumbnailAPIView
+
 from videos.views.page_views import UploadPageView
 from videos.views.upload_view import UploadHistoryView
 from orders.views import CartView, CheckoutView, OrdersListView, OrderDetailView
-
-# Create a class for category views
-class CategoryView(TemplateView):
-    template_name = 'inside_category.html'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['category'] = kwargs.get('category', '')
-        return context
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/accounts/', include('accounts.urls')),
     
-    # Include videos app URLs at various paths
-    path('api/videos/', include('videos.urls')),
-    path('videos/', include('videos.urls')),  # Include without the api/ prefix
+    # Include videos app URLs with API prefix
+    path('api/', include('videos.urls')),
     
-    # Direct access to thumbnail API endpoint
-    path('api/clip/<int:clip_id>/thumbnail/', VideoThumbnailAPIView.as_view(), name='api_clip_thumbnail_direct'),
+    # Include libraries app URLs with API prefix
     path('api/libraries/', include('libraries.urls')),
     
     # HTML page routes
@@ -59,11 +48,12 @@ urlpatterns = [
     path('home/', HomeView.as_view(), name='home'),
     path('logout/', LogoutView.as_view(), name='logout'),
     
-    # Library-specific URLs (with library context)
-    path('library/<str:library_slug>/', HomeView.as_view(), name='library_detail'),
+    # LIBRARY-SCOPED FRONTEND ROUTES  
+    # Note: These create library context via middleware
+    path('library/<str:library_slug>/', HomeView.as_view(), name='library_home'),
     path('library/<str:library_slug>/category/clip-store/', CategoryClipView.as_view(), name='library_clip_store'),
     path('library/<str:library_slug>/category/<str:category_slug>/', CategoryClipView.as_view(), name='library_category'),
-    path('library/<str:library_slug>/clip/<int:video_id>/', VideoDetailView.as_view(), name='library_clip_detail'),
+    path('library/<str:library_slug>/video/<int:video_id>/', VideoDetailView.as_view(), name='library_video_detail'),
     path('library/<str:library_slug>/upload/', UploadPageView.as_view(), name='library_upload'),
     path('library/<str:library_slug>/upload/history/', UploadHistoryView.as_view(), name='library_upload_history'),
     path('library/<str:library_slug>/profile/', ProfileView.as_view(), name='library_profile'),
@@ -73,36 +63,35 @@ urlpatterns = [
     path('library/<str:library_slug>/orders/', OrdersListView.as_view(), name='library_orders_list'),
     path('library/<str:library_slug>/orders/<int:pk>/', OrderDetailView.as_view(), name='library_order_detail'),
     
-    # Order management routes - include the orders app URLs
+    # order management routes - include the orders app URLs
     path('', include('orders.urls')),
     
-    # Additional page routes
+    # additional page routes
     path('about/', AboutUsView.as_view(), name='about_us'),
     path('contact/', ContactUsView.as_view(), name='contact_us'),
     path('help/', QAndAView.as_view(), name='q_and_a'),
     path('terms/', TermsConditionsView.as_view(), name='terms_conditions'),
     path('privacy/', PrivacyView.as_view(), name='privacy'),
     
-    # Library management routes
+    # library management routes
     path('libraries/create/', login_required(CreateLibraryView.as_view()), name='create_library'),
     path('libraries/manage/', login_required(ManageLibrariesView.as_view()), name='manage_libraries'),
     path('libraries/edit/', login_required(EditLibraryView.as_view()), name='edit_library'),
-    path('libraries/<str:library_name>/view/', TemplateView.as_view(template_name='library_view.html'), name='library_view'),
-    
-    # Admin management routes
+   
+    # admin management routes
     path('admins/manage/', login_required(ManageAdministratorsView.as_view()), name='manage_administrators'),
-    # Contributor application route
+    # contributor application route - TODO: discuss with the team if we need this! - currently unused
     path('contributor/apply/', TemplateView.as_view(template_name='contributor_form.html'), name='contributor_apply'),
-    # Health check endpoint
+    # health check endpoint
     path('healthcheck/', health_check, name='health_check'),
 ]
 
-# Serve static files during development
+# serve static files during development
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     # Add this line to serve files from STATICFILES_DIRS as well
     for static_dir in settings.STATICFILES_DIRS:
         urlpatterns += static(settings.STATIC_URL, document_root=static_dir)
     
-    # Serve media files during development
+    # serve media files during development
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

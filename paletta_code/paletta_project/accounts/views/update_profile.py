@@ -13,17 +13,17 @@ class ProfileView(TemplateView):
     
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
-        """Render the profile page with user data and library context."""
+        # render the profile page with user data and library context
         user = request.user
 
-        # Get current library from session
+        # get current library from session
         current_library = None
         current_library_id = request.session.get('current_library_id')
         if current_library_id:
             try:
                 current_library = Library.objects.get(id=current_library_id)
             except Library.DoesNotExist:
-                pass  # Library not found, so no context will be passed
+                pass  # library not found, so no context will be passed
         
         context = {
             'user_data': {
@@ -39,14 +39,14 @@ class ProfileView(TemplateView):
         return render(request, self.template_name, context)
 
 class CollectionView(LoginRequiredMixin, TemplateView):
-    """View to handle user's collection page."""
+    # view to handle user's collection page
     template_name = 'collection.html'
 
     def get_context_data(self, **kwargs):
-        """Add library context to the collection page."""
+        # add library context to the collection page
         context = super().get_context_data(**kwargs)
         
-        # Get current library from session
+        # get current library from session
         current_library_id = self.request.session.get('current_library_id')
         if current_library_id:
             try:
@@ -59,11 +59,10 @@ class CollectionView(LoginRequiredMixin, TemplateView):
         return context
 
 class ProfileUpdateView(TemplateView):
-    """View to handle user profile updates."""
-    
+    # view to handle user profile updates
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        """Handle profile update form submission."""
+        # handle profile update form submission
         user = request.user
         email = request.POST.get('email')
         first_name = request.POST.get('first_name')
@@ -72,7 +71,7 @@ class ProfileUpdateView(TemplateView):
         institution = request.POST.get('institution')
         password = request.POST.get('password')
         
-        # update user fields
+        # update user fields if provided
         if email:
             user.email = email
         if first_name:
@@ -94,8 +93,8 @@ class ProfileUpdateView(TemplateView):
             messages.success(request, 'Profile updated successfully. Please log in with your new password.')
             return redirect('login')
         
-        # save the user
+        # save the user and show success message
         user.save()
-        
         messages.success(request, 'Profile updated successfully.')
+        # redirect to profile page
         return redirect('profile')

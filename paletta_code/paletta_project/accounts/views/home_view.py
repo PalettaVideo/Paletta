@@ -24,28 +24,20 @@ class HomeView(TemplateView):
         """Serve the home page with appropriate context."""
         context = {}
         
-        # Debug logging for library context
-        url_library_slug = getattr(request, 'url_library_slug', None)
-        logger.debug(f"[HomePage Debug] URL library slug: {url_library_slug}")
-        logger.debug(f"[HomePage Debug] Request path: {request.path}")
-        
-        # Use current library from middleware (this is already set by LibraryContextMiddleware)
+        # current library from middleware
         current_library = getattr(request, 'current_library', None)
-        logger.debug(f"[HomePage Debug] Current library from middleware: {current_library.name if current_library else 'None'}")
         
         # Fallback to Paletta if no current library
         if not current_library:
             try:
                 current_library = Library.objects.get(name='Paletta')
-                logger.debug("[HomePage Debug] Fallback to Paletta library")
             except Library.DoesNotExist:
                 current_library = None
                 messages.error(request, 'Default Paletta library not found. Please contact administrator.')
-                logger.error("[HomePage Debug] Paletta library not found!")
         
         if request.user.is_authenticated:
             try:
-                # Get categories - ONLY load library-specific Category objects
+                # get categories - ONLY load library-specific Category objects
                 categories = []
                 
                 if current_library:
@@ -54,7 +46,7 @@ class HomeView(TemplateView):
                         is_active=True
                     ).order_by('subject_area')
                     
-                    # Separate Private category to show it first
+                    # private category to show it first
                     private_category = None
                     other_categories = []
                     
@@ -73,34 +65,32 @@ class HomeView(TemplateView):
                         else:
                             other_categories.append(cat_data)
                     
-                    # Add Private category first (pinned), then other categories
+                    # add Private category first (pinned), then other categories
                     if private_category:
-                        categories.insert(0, private_category)  # Insert at beginning
+                        categories.insert(0, private_category)
                     categories.extend(other_categories)
                 else:
-                    # For no library context, show default categories
+                    # no library context, show default categories
                     categories = []
                     
             except Exception as e:
                 logger.error(f"Error loading categories: {str(e)}")
                 categories = []
             
-            # Get all libraries for the sidebar
+            # get all libraries for the sidebar
             libraries = Library.objects.filter(is_active=True)
-            
-            # CLEAN APPROACH: Let middleware handle library context
-            # No need to manually add library_slug to context
             context = {
                 'categories': categories,
                 'libraries': libraries,
                 'current_library': current_library,
             }
             
-            logger.debug(f"[HomePage Debug] Context categories count: {len(categories)}")
         else:
-            logger.debug("[HomePage Debug] User not authenticated")
+            # user not authenticated, force user to login
+            messages.info(request, 'Please login to access the homepage.')
+            return redirect('login')
         
-        # Return the single homepage template with the context
+        # return the single homepage template with the context
         return render(request, 'homepage.html', context)
 
 class StaticPageMixin:
@@ -133,8 +123,6 @@ class PrivacyView(StaticPageMixin, TemplateView):
     template_name = 'privacy.html'
 
 class LogoutView(TemplateView):
-    """View to handle user logout."""
-    
     def get(self, request, *args, **kwargs):
         """Log the user out and redirect to login page."""
         logout(request)

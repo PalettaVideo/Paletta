@@ -113,7 +113,7 @@ def check_user(request):
     """
     Check if a user exists and if they are already an admin or contributor.
     """
-    # Only allow admin or owner users to access this endpoint
+    # ONLY allow admin or owner users to access this endpoint
     if request.user.role not in ['admin', 'owner']:
         return Response(
             {"detail": "You don't have permission to check users."},
@@ -121,7 +121,7 @@ def check_user(request):
         )
         
     email = request.data.get('email')
-    library_id = request.data.get('library_id')  # Optional, for checking contributors
+    library_id = request.data.get('library_id')
     
     if not email:
         return Response(
@@ -132,7 +132,7 @@ def check_user(request):
     try:
         user = User.objects.get(email=email)
         
-        # Prepare response data
+        # prepare response data
         user_data = {
             'id': user.id,
             'email': user.email,
@@ -172,7 +172,7 @@ def make_admin(request):
     """
     Promote a user to admin role.
     """
-    # Only allow admin or owner users to access this endpoint
+    # ONLY allow admin or owner users to access this endpoint
     if request.user.role not in ['admin', 'owner']:
         return Response(
             {"detail": "You don't have permission to promote users to admin."},
@@ -190,7 +190,7 @@ def make_admin(request):
     try:
         user_to_promote = User.objects.get(id=user_id)
         
-        # Check if user is already an admin
+        # Check if user is an admin
         if user_to_promote.role in ['admin', 'owner']:
             return Response(
                 {"success": False, "message": "User is already an administrator."},
@@ -233,7 +233,7 @@ def revoke_admin(request, admin_id):
     """
     Revoke admin privileges from a user.
     """
-    # Only allow admin or owner users to access this endpoint
+    # ONLY allow admin or owner users to access this endpoint
     if request.user.role not in ['admin', 'owner']:
         return Response(
             {"detail": "You don't have permission to revoke admin privileges."},
@@ -257,7 +257,7 @@ def revoke_admin(request, admin_id):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Demote user from admin to customer
+        # Demote user from admin to contributor
         user_to_demote.role = 'contributor'
         user_to_demote.save()
         

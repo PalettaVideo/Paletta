@@ -10,7 +10,7 @@ class ManageAdministratorsView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Only allow admin or owner users to access this view
+        # ONLY allow admin or owner users to access this view
         if self.request.user.role not in ['admin', 'owner']:
             context['permission_error'] = True
             return context

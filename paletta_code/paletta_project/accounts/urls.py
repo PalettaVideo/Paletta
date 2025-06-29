@@ -1,6 +1,5 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework.authtoken.views import obtain_auth_token
 from .views.api_views import UserViewSet, CustomAuthToken, check_user, make_admin, revoke_admin
 
 router = DefaultRouter()

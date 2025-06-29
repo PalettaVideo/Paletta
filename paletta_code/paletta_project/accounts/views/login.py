@@ -26,15 +26,10 @@ class CustomLoginView(TemplateView):
         user = authenticate(request, email=email, password=password)
         
         if user is not None:
+            # render home page if user exists
             login(request, user)
-            
-            # redirect based on user role
-            if user.role in ['admin', 'owner']:
-                return redirect('home')  # TODO: create a specific admin home
-            elif user.role == 'contributor':
-                return redirect('home')  # TODO: create a specific contributor home
-            else:
-                return redirect('home')
+            return redirect('home')
         else:
+            # show error message if user does not exist + redirect to login page
             messages.error(request, 'Invalid email or password.')
             return render(request, 'login.html')
