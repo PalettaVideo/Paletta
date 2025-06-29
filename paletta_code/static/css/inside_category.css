@@ -48,20 +48,52 @@ body {
   background-color: #f9f9f9;
 }
 
+/* Sidebar styles matching layout.css but with fixed positioning for category page */
 .sidebar {
   position: fixed;
   top: 60px;
   left: 0;
   height: calc(100% - 60px);
   width: 220px;
-  background: white;
-  border-right: 1px solid #ddd;
+  background-color: #ffffff;
   padding: 20px;
-  box-sizing: border-box;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   margin-top: 50px;
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  margin-bottom: 50px;
+}
+
+.sidebar ul li a {
+  display: block;
+  padding: 12px 15px;
+  color: #333;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: 500;
+  transition: background-color 0.2s, color 0.2s;
+  font-family: "Montserrat";
+}
+
+.sidebar ul li a:hover, .sidebar ul li a:focus {
+  background-color: #f0f8e3;
+  color: #333;
+}
+
+/* Active link in the sidebar - matching layout.css exactly */
+.sidebar ul li a.active, 
+.sidebar ul li.active > a {
+  background-color: #80B824;
+  color: #fff;
+  font-weight: bold;
+}
 
 .backbutton svg{
   width: 20px;
@@ -76,7 +108,6 @@ body {
   font-family: "Montserrat";
 }
 
-
 .categorysearch {
   width: 400px;
   display: flex;
@@ -85,7 +116,6 @@ body {
   border-radius: 20px;
   overflow: hidden;
   background-color: white;
-  margin-left: 10px;
 }
 
 .categorysearch input {
@@ -104,31 +134,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-left: 10px;
 }
 
 .categorysearch button svg {
   width: 15px;
   height: 15px;
   fill: #80B824;
-}
-
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-  margin-bottom: 50px;
-}
-
-.sidebar ul li {
-  padding: 10px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  text-align: center;
-  font-family: "Montserrat";
-}
-
-.sidebar ul li.active, .sidebar ul li:hover {
-  background-color: #7bbd42;
-  color: white;
 }
 
 main {
