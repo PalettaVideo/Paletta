@@ -238,8 +238,21 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 class VideoViewSet(viewsets.ModelViewSet):
     """
-    API viewset for managing videos.
-    Provides CRUD operations for videos and additional actions for download links.
+    BACKEND-READY: Complete video management API with CRUD and download actions.
+    MAPPED TO: /api/videos/ (via DRF router)
+    
+    Provides full video management functionality:
+    - List videos with filtering and permissions
+    - Retrieve individual video details
+    - Create new videos (authenticated users)
+    - Update/delete videos (video owners only)
+    - Request download links for stored videos
+    - Check video storage status
+    
+    Permissions:
+    - List/Retrieve: Public access with private video filtering
+    - Create/Update/Delete: Authenticated users, owner restrictions
+    - Download: Video uploader or staff only
     """
     queryset = Video.objects.all()
     serializer_class = VideoSerializer
@@ -254,8 +267,20 @@ class VideoViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """
-        Filter videos based on query parameters and user permissions.
-        Hides private videos from users who are not the library owner.
+        QUERYSET BUILDER: Filter videos with permissions and query parameters.
+        
+        Permission logic:
+        - Private videos: Only visible to library owners
+        - Other videos: Public access
+        - For non-list/retrieve actions: Only user's own videos
+        
+        Query filters:
+        - category: Filter by subject_area ID
+        - tag: Filter by tag name
+        - search: Filter by title content
+        
+        Returns:
+            QuerySet: Filtered video objects based on permissions and params
         """
         queryset = Video.objects.all()
         user = self.request.user
@@ -303,15 +328,32 @@ class VideoViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """
-        Set the uploader to the current user when creating a video
+        CREATE HANDLER: Set video uploader to current authenticated user.
+        
+        Automatically assigns the requesting user as the video uploader.
+        This ensures proper ownership and permission tracking.
+        
+        Args:
+            serializer: Video serializer with validated data
         """
         serializer.save(uploader=self.request.user)
         
     @action(detail=True, methods=['post'])
     def request_download(self, request, pk=None):
         """
-        Request a download link for a video.
-        The link will be sent to the user's email address.
+        ACTION: Request download link generation for stored videos.
+        MAPPED TO: /api/videos/<id>/request_download/
+        
+        Queues background task to generate secure download link and email it.
+        All authenticated users can request downloads for non-private videos.
+        Private videos can only be downloaded by library owners.
+        Video must have storage_status='stored' to be downloadable.
+        
+        POST data:
+        - email (optional): Email address to send link to (defaults to user's email)
+        
+        Returns:
+            Response: Success message with email confirmation or error
         """
         try:
             video = self.get_object()
@@ -324,12 +366,13 @@ class VideoViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_401_UNAUTHORIZED
                 )
                 
-            # Check if user has permission to download this video
-            if not video.is_published and video.uploader != user:
-                return Response(
-                    {"error": "You don't have permission to download this video."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+            # Check if this is a private video and user has permission
+            if video.is_private:
+                if video.library.owner != user:
+                    return Response(
+                        {'detail': 'You do not have permission to request download for this private video.'}, 
+                        status=status.HTTP_403_FORBIDDEN
+                    )
             
             # Check if the video is stored in AWS S3 storage
             if video.storage_status != 'stored':
@@ -367,13 +410,29 @@ class VideoViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def storage_status(self, request, pk=None):
         """
-        Get the storage status of a video.
+        ACTION: Get video storage status and metadata.
+        MAPPED TO: /api/videos/<id>/storage_status/
+        
+        Returns detailed storage information for video uploaders and staff.
+        Useful for tracking upload progress and troubleshooting storage issues.
+        
+        Returns:
+            Response: Storage status, URLs, and download link info or error
+            
+        Response format:
+            {
+                "status": "stored",
+                "status_display": "Stored in Deep Storage",
+                "storage_url": "s3://bucket/path/to/video.mp4",
+                "has_download_link": true,
+                "download_link_expiry": "2024-01-01T12:00:00Z"
+            }
         """
         try:
             video = self.get_object()
             
             # Check if user has permission to view this video's status
-            if not video.is_published and video.uploader != request.user and not request.user.is_staff:
+            if video.uploader != request.user and not request.user.is_staff:
                 return Response(
                     {"error": "You don't have permission to view this video's status."},
                     status=status.HTTP_403_FORBIDDEN

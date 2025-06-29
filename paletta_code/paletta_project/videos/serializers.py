@@ -4,7 +4,12 @@ from .services import AWSCloudStorageService
 
 class CategorySerializer(serializers.ModelSerializer):
     """
-    Serializer for the Category model (subject areas only in new structure).
+    BACKEND/FRONTEND-READY: Serializer for Category model (subject areas).
+    MAPPED TO: /api/categories/ endpoint
+    USED BY: Category selection dropdowns, category listing pages
+    
+    Provides category data with video counts and image URLs for frontend display.
+    Includes computed fields: display_name, slug, video_count, image_url
     """
     video_count = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
@@ -32,7 +37,12 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class ContentTypeSerializer(serializers.ModelSerializer):
     """
-    Serializer for the ContentType model.
+    BACKEND/FRONTEND-READY: Serializer for ContentType model.
+    MAPPED TO: /api/content-types/ endpoint  
+    USED BY: Content type selection components, filtering systems
+    
+    Provides content type data for multi-select functionality.
+    Includes computed field: display_name
     """
     display_name = serializers.ReadOnlyField()
     
@@ -68,7 +78,12 @@ class TagSerializer(serializers.ModelSerializer):
 
 class VideoSerializer(serializers.ModelSerializer):
     """
-    Serializer for the Video model with dual-category structure.
+    BACKEND/FRONTEND-READY: Comprehensive video serializer with dual-category structure.
+    MAPPED TO: /api/videos/ endpoints
+    USED BY: Video listings, detail views, upload forms
+    
+    Handles video data with subject areas, content types, and streaming URLs.
+    Includes validation for title/description lengths and content type limits.
     """
     uploaded_by_username = serializers.ReadOnlyField(source='uploader.username')
     subject_area_name = serializers.ReadOnlyField(source='subject_area.display_name')
@@ -108,9 +123,13 @@ class VideoSerializer(serializers.ModelSerializer):
     
     def get_video_file_url(self, obj):
         """
-        Get the absolute URL for the video file.
-        If the video is stored in S3, a temporary streaming URL is generated.
-        Otherwise, the local file URL is returned.
+        BACKEND/FRONTEND-READY: Generate video streaming URL for playback.
+        MAPPED TO: Video player components
+        USED BY: Video detail pages, embedded players
+        
+        Returns S3 streaming URL for stored videos or local file URL for pending uploads.
+        Handles both S3-stored and locally-stored video files.
+        Required fields: obj.storage_status, obj.storage_reference_id or obj.video_file
         """
         if obj.storage_status == 'stored' and obj.storage_reference_id:
             storage_service = AWSCloudStorageService()
