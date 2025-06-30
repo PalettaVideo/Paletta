@@ -177,7 +177,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Store library ID for later use
     document.getElementById("categoriesModal").dataset.libraryId = libraryId;
 
-    fetch(`/videos/api/unified-categories/?library=${libraryId}`)
+    fetch(`/api/api/categories/?library=${libraryId}`)
       .then((response) => response.json())
       .then((data) => {
         if (data.length === 0) {
@@ -242,7 +242,7 @@ document.addEventListener("DOMContentLoaded", function () {
     ];
 
     // Get current categories to exclude them
-    fetch(`/videos/api/unified-categories/?library=${libraryId}`)
+    fetch(`/api/api/categories/?library=${libraryId}`)
       .then((response) => response.json())
       .then((currentCategories) => {
         const existingAreas = currentCategories.map(

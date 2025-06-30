@@ -325,7 +325,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       // Use the new unified category API
-      let apiUrl = `/videos/api/unified-categories/?library=${currentLibraryId}`;
+      let apiUrl = `/api/api/categories/?library=${currentLibraryId}`;
       console.log(`Using unified API URL: ${apiUrl}`);
 
       // fetch cache options
@@ -400,7 +400,7 @@ document.addEventListener("DOMContentLoaded", function () {
     try {
       console.log("Fetching content types...");
 
-      const response = await fetch("/videos/api/content-types/", {
+      const response = await fetch("/api/api/content-types/", {
         method: "GET",
         cache: "no-cache",
         headers: {
@@ -633,7 +633,7 @@ document.addEventListener("DOMContentLoaded", function () {
       formData.append("thumbnail", thumbnailFile);
     }
 
-    const response = await fetch("/videos/api/upload/", {
+    const response = await fetch("/api/api/upload/", {
       method: "POST",
       headers: {
         // 'Content-Type' is set automatically by the browser for FormData
