@@ -8,22 +8,34 @@ from django.utils.decorators import method_decorator
 from libraries.models import Library
 
 class ProfileView(TemplateView):
-    """View to handle user profile page."""
+    """
+    BACKEND/FRONTEND-READY: User profile display and management.
+    MAPPED TO: /profile/ URL
+    USED BY: my_profile.html template
+    
+    Shows user profile information with library context.
+    """
     template_name = 'my_profile.html'
     
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
-        """Render the profile page with user data and library context."""
+        """
+        BACKEND/FRONTEND-READY: Display user profile page.
+        MAPPED TO: GET /profile/
+        USED BY: Profile page access and navigation
+        
+        Renders profile page with user data and current library context.
+        """
         user = request.user
 
-        # Get current library from session
+        # get current library from session
         current_library = None
         current_library_id = request.session.get('current_library_id')
         if current_library_id:
             try:
                 current_library = Library.objects.get(id=current_library_id)
             except Library.DoesNotExist:
-                pass  # Library not found, so no context will be passed
+                pass  # library not found, so no context will be passed
         
         context = {
             'user_data': {
@@ -39,14 +51,26 @@ class ProfileView(TemplateView):
         return render(request, self.template_name, context)
 
 class CollectionView(LoginRequiredMixin, TemplateView):
-    """View to handle user's collection page."""
+    """
+    BACKEND/FRONTEND-READY: User's video collection display.
+    MAPPED TO: /collection/ URL
+    USED BY: collection.html template
+    
+    Shows user's uploaded videos with library context.
+    """
     template_name = 'collection.html'
 
     def get_context_data(self, **kwargs):
-        """Add library context to the collection page."""
+        """
+        BACKEND/FRONTEND-READY: Add library context to collection page.
+        MAPPED TO: Template context
+        USED BY: collection.html template
+        
+        Provides current library context for user's video collection.
+        """
         context = super().get_context_data(**kwargs)
         
-        # Get current library from session
+        # get current library from session
         current_library_id = self.request.session.get('current_library_id')
         if current_library_id:
             try:
@@ -59,11 +83,23 @@ class CollectionView(LoginRequiredMixin, TemplateView):
         return context
 
 class ProfileUpdateView(TemplateView):
-    """View to handle user profile updates."""
+    """
+    BACKEND/FRONTEND-READY: User profile update processing.
+    MAPPED TO: /profile/update/ URL
+    USED BY: Profile edit forms
     
+    Handles profile updates with password change and logout flow.
+    """
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        """Handle profile update form submission."""
+        """
+        BACKEND/FRONTEND-READY: Process profile update form submission.
+        MAPPED TO: POST /profile/update/
+        USED BY: my_profile.html form submission
+        
+        Updates user profile fields with password handling and session management.
+        Optional fields: email, first_name, last_name, company, institution, password
+        """
         user = request.user
         email = request.POST.get('email')
         first_name = request.POST.get('first_name')
@@ -72,7 +108,7 @@ class ProfileUpdateView(TemplateView):
         institution = request.POST.get('institution')
         password = request.POST.get('password')
         
-        # update user fields
+        # update user fields if provided
         if email:
             user.email = email
         if first_name:
@@ -94,8 +130,8 @@ class ProfileUpdateView(TemplateView):
             messages.success(request, 'Profile updated successfully. Please log in with your new password.')
             return redirect('login')
         
-        # save the user
+        # save the user and show success message
         user.save()
-        
         messages.success(request, 'Profile updated successfully.')
+        # redirect to profile page
         return redirect('profile')

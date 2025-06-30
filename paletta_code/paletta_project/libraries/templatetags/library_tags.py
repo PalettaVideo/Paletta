@@ -10,9 +10,11 @@ register = template.Library()
 @register.simple_tag(takes_context=True)
 def library_specific_url(context, url_name, **kwargs):
     """
-    Generate library-specific URLs with automatic library slug injection.
-    This is the main function for generating library-aware URLs.
+    FRONTEND-READY: Generate library-specific URLs with automatic slug injection.
+    MAPPED TO: Django template system
+    USED BY: All library templates for navigation links
     
+    Automatically injects current library slug into URL generation.
     Usage: {% library_specific_url 'library_upload' %}
     """
     request = context['request']
@@ -30,7 +32,11 @@ def library_specific_url(context, url_name, **kwargs):
 @register.simple_tag(takes_context=True)
 def current_library_slug(context):
     """
-    Get the slug for the current library on-demand.
+    FRONTEND-READY: Get current library slug for template usage.
+    MAPPED TO: Django template system
+    USED BY: Templates needing current library identification
+    
+    Returns URL-friendly slug of current library or 'paletta' as fallback.
     Usage: {% current_library_slug %}
     """
     request = context['request']
@@ -40,7 +46,11 @@ def current_library_slug(context):
 @register.filter
 def library_slugify(value):
     """
-    Convert a library name to a URL-friendly slug.
+    FRONTEND-READY: Convert library name to URL-friendly slug.
+    MAPPED TO: Django template filter system
+    USED BY: Templates for URL generation and CSS classes
+    
+    Converts any string to URL-safe format for library names.
     Usage: {{ library.name|library_slugify }}
     """
     return slugify(value)
@@ -48,7 +58,11 @@ def library_slugify(value):
 @register.simple_tag(takes_context=True)
 def library_title(context, page_title=""):
     """
-    Generate page title with library context.
+    FRONTEND-READY: Generate contextual page titles with library branding.
+    MAPPED TO: Django template system
+    USED BY: All library templates for <title> tags
+    
+    Creates branded page titles with library name prefix.
     Usage: {% library_title "Upload" %} -> "Paletta - Upload"
     """
     request = context['request']
@@ -63,18 +77,18 @@ def library_title(context, page_title=""):
 @register.simple_tag
 def versioned_static(path):
     """
-    Generate versioned static file URLs to force cache invalidation.
+    FRONTEND-READY: Generate cache-busting URLs for static files.
+    MAPPED TO: Django template system and static file handling
+    USED BY: All templates loading CSS/JS files
+    
+    Appends version parameter to static URLs to force cache invalidation.
     Usage: {% versioned_static 'js/homepage.js' %}
     """
-    # Get the static URL
     static_url = static(path)
     
-    # Add version parameter based on settings or current timestamp
     version = getattr(settings, 'STATIC_VERSION', None)
     if not version:
-        # Fallback to timestamp for development
         version = str(int(time.time()))
     
-    # Add version parameter
     separator = '&' if '?' in static_url else '?'
     return f"{static_url}{separator}v={version}" 

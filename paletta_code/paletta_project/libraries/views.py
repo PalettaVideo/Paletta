@@ -1,59 +1,83 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import TemplateView, ListView
+from django.shortcuts import redirect
+from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 import json
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action
 from .models import Library, UserLibraryRole
 from .serializers import LibrarySerializer, UserLibraryRoleSerializer
-from videos.serializers import CategorySerializer
 from videos.models import Category
 import base64
-import os
 from django.core.files.base import ContentFile
-from django.conf import settings
 from django.urls import reverse
 from django.contrib import messages
-from accounts.models import User
 
 # Create your views here.
 
 class IsLibraryAdminOrReadOnly(permissions.BasePermission):
     """
-    Custom permission to only allow library administrators to edit it.
+    BACKEND-READY: Custom permission for library administration.
+    MAPPED TO: Library API endpoints
+    USED BY: LibraryViewSet permission checking
+    
+    Allows read access to all, write access only to library owners.
     """
     def has_object_permission(self, request, view, obj):
-        # Read permissions are allowed to any request
         if request.method in permissions.SAFE_METHODS:
             return True
-        
-        # Write permissions are only allowed to the library administrator
         return obj.owner == request.user
 
 class LibraryViewSet(viewsets.ModelViewSet):
+    """
+    BACKEND/FRONTEND-READY: Complete CRUD operations for library management.
+    MAPPED TO: /api/libraries/ endpoints
+    USED BY: Frontend library management interface and admin tools
+    
+    Provides library creation, reading, updating, deletion, and custom actions.
+    """
     queryset = Library.objects.all()
     serializer_class = LibrarySerializer
     
     def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'destroy']:
-            permission_classes = [IsLibraryAdminOrReadOnly]
-        elif self.action == 'create':
-            permission_classes = [permissions.IsAuthenticated]
-        else:
-            permission_classes = [permissions.AllowAny]
+        """
+        BACKEND-READY: Dynamic permission assignment based on action.
+        MAPPED TO: DRF permission system
+        USED BY: All library API endpoints
+        
+        Sets appropriate permissions for different CRUD operations.
+        """
+        permission_map = {
+            'create': [permissions.IsAuthenticated],
+            'update': [IsLibraryAdminOrReadOnly],
+            'partial_update': [IsLibraryAdminOrReadOnly],
+            'destroy': [IsLibraryAdminOrReadOnly],
+        }
+        permission_classes = permission_map.get(self.action, [permissions.AllowAny])
         return [permission() for permission in permission_classes]
     
     def perform_create(self, serializer):
+        """
+        BACKEND-READY: Set library owner during creation.
+        MAPPED TO: POST /api/libraries/
+        USED BY: Library creation endpoint
+        
+        Automatically assigns current user as library owner.
+        """
         serializer.save(owner=self.request.user)
     
     def destroy(self, request, *args, **kwargs):
-        """Close (delete) a library"""
+        """
+        BACKEND-READY: Delete library with permission validation.
+        MAPPED TO: DELETE /api/libraries/{id}/
+        USED BY: Library management interface
+        
+        Removes library after validating user permissions.
+        """
         try:
             instance = self.get_object()
             
-            # Check if user has permission to delete this library
             if instance.owner != request.user and not UserLibraryRole.objects.filter(
                 library=instance, user=request.user, role='admin'
             ).exists():
@@ -69,18 +93,20 @@ class LibraryViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
-            return Response({
-                'status': 'error',
-                'message': str(e)
-            }, status=500)
+            return Response({'status': 'error', 'message': str(e)}, status=500)
         
     @action(detail=True, methods=['post'])
     def toggle_status(self, request, pk=None):
-        """Toggle library active/inactive status"""
+        """
+        BACKEND-READY: Toggle library active/inactive status.
+        MAPPED TO: POST /api/libraries/{id}/toggle_status/
+        USED BY: Library management interface
+        
+        Switches library between active and inactive states.
+        """
         try:
             library = self.get_object()
             
-            # Check if user has permission to modify this library
             if library.owner != request.user and not UserLibraryRole.objects.filter(
                 library=library, user=request.user, role='admin'
             ).exists():
@@ -89,7 +115,6 @@ class LibraryViewSet(viewsets.ModelViewSet):
                     'message': 'You do not have permission to modify this library.'
                 }, status=403)
             
-            # Toggle the status
             library.is_active = not library.is_active
             library.save()
             
@@ -101,10 +126,7 @@ class LibraryViewSet(viewsets.ModelViewSet):
             })
             
         except Exception as e:
-            return Response({
-                'status': 'error',
-                'message': str(e)
-            }, status=500)
+            return Response({'status': 'error', 'message': str(e)}, status=500)
 
     @action(detail=True, methods=['post'])
     def add_categories(self, request, pk=None):
@@ -168,41 +190,60 @@ class LibraryViewSet(viewsets.ModelViewSet):
             }, status=500)
 
 class UserLibraryRoleViewSet(viewsets.ModelViewSet):
+    """
+    BACKEND/FRONTEND-READY: CRUD operations for user library roles.
+    MAPPED TO: /api/roles/ endpoints
+    USED BY: Library member management interface
+    
+    Manages contributor and admin role assignments within libraries.
+    """
     queryset = UserLibraryRole.objects.all()
     serializer_class = UserLibraryRoleSerializer
     
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            permission_classes = [permissions.IsAuthenticated]
-        else:
-            permission_classes = [permissions.AllowAny]
+        """
+        BACKEND-READY: Permission control for role management.
+        MAPPED TO: DRF permission system
+        USED BY: Role management endpoints
+        
+        Requires authentication for write operations.
+        """
+        write_actions = ['create', 'update', 'partial_update', 'destroy']
+        permission_classes = [permissions.IsAuthenticated] if self.action in write_actions else [permissions.AllowAny]
         return [permission() for permission in permission_classes]
 
 def process_base64_image(base64_data, name=None):
     """
-    Process base64 image data and convert it to a Django ContentFile
+    BACKEND-READY: Convert base64 image data to Django ContentFile.
+    MAPPED TO: Image upload processing
+    USED BY: EditLibraryView.post() for category images
+    
+    Processes base64 encoded images and creates proper Django file objects.
     """
-    # Remove header if present
     if ',' in base64_data:
         format, imgstr = base64_data.split(';base64,')
         ext = format.split('/')[-1]
     else:
-        # Assume it's already properly formatted
         imgstr = base64_data
-        ext = 'png'  # Default extension
+        ext = 'png'
     
-    # Generate a random filename if none provided
     if not name:
         import uuid
         name = f"{uuid.uuid4()}.{ext}"
     elif not name.endswith(f'.{ext}'):
         name = f"{name}.{ext}"
     
-    # Decode base64 and create ContentFile
     data = base64.b64decode(imgstr)
     return ContentFile(data, name=name)
 
 class CreateLibraryView(LoginRequiredMixin, TemplateView):
+    """
+    BACKEND/FRONTEND-READY: Library creation interface.
+    MAPPED TO: /admin/create-library/ URL
+    USED BY: create_library_admin.html template
+    
+    Handles both GET (form display) and POST (form submission) for library creation.
+    """
     template_name = 'create_library_admin.html'
     
     def post(self, request, *args, **kwargs):
@@ -284,16 +325,28 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
             }, status=500, content_type='application/json')
 
 class ManageLibrariesView(LoginRequiredMixin, TemplateView):
+    """
+    BACKEND/FRONTEND-READY: Library management dashboard.
+    MAPPED TO: /admin/manage-libraries/ URL  
+    USED BY: manage_libraries.html template
+    
+    Displays user's owned libraries and libraries where they have contributor roles.
+    """
     template_name = 'manage_libraries.html'
     
     def get_context_data(self, **kwargs):
+        """
+        BACKEND/FRONTEND-READY: Prepare library data for dashboard display.
+        MAPPED TO: Template context
+        USED BY: manage_libraries.html template
+        
+        Provides owned and contributed libraries for current user.
+        """
         context = super().get_context_data(**kwargs)
         
-        # Get all libraries where the user is either the owner or has a role
         user_libraries = Library.objects.filter(owner=self.request.user)
         context['libraries'] = user_libraries
         
-        # Get libraries where the user is a contributor
         contributed_libraries = Library.objects.filter(
             user_roles__user=self.request.user
         ).exclude(owner=self.request.user)
@@ -302,6 +355,13 @@ class ManageLibrariesView(LoginRequiredMixin, TemplateView):
         return context
 
 class EditLibraryView(LoginRequiredMixin, TemplateView):
+    """
+    BACKEND/FRONTEND-READY: Library editing interface.
+    MAPPED TO: /admin/edit-library/ URL
+    USED BY: edit_library_admin.html template
+    
+    Comprehensive library editing with categories, contributors, and settings management.
+    """
     template_name = 'edit_library_admin.html'
     
     def get_context_data(self, **kwargs):

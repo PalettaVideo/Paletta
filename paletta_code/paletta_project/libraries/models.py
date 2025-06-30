@@ -7,7 +7,11 @@ from paletta_core.storage import get_media_storage
 
 class Library(models.Model):
     """
-    Model representing a video library with its own branding and storage settings.
+    BACKEND/FRONTEND-READY: Core library model for video collections.
+    MAPPED TO: /api/libraries/ endpoints
+    USED BY: All library-related views and templates
+    
+    Manages video libraries with storage tiers, categories, and user roles.
     """
     STORAGE_TIER_CHOICES = [
         ('basic', 'Basic'),
@@ -57,12 +61,24 @@ class Library(models.Model):
     
     @property
     def is_paletta_library(self):
-        """Check if this is the main Paletta library"""
+        """
+        BACKEND/FRONTEND-READY: Check if this is the main Paletta library.
+        MAPPED TO: Template context and API responses
+        USED BY: Category setup logic and template rendering
+        
+        Returns True for libraries named 'paletta' (case-insensitive).
+        """
         return self.name.lower() == 'paletta'
     
     @property
     def uses_paletta_categories(self):
-        """Check if this library uses Paletta style categories"""
+        """
+        BACKEND/FRONTEND-READY: Check if library uses Paletta-style categories.
+        MAPPED TO: Category management logic
+        USED BY: setup_default_categories() and admin interface
+        
+        Returns True if category_source is 'paletta_style' or is main Paletta library.
+        """
         return self.category_source == 'paletta_style' or self.is_paletta_library
     
     @property
@@ -78,25 +94,37 @@ class Library(models.Model):
     @property
     def tier_limit(self):
         """Return the maximum limit for the current tier in bytes."""
-        if self.storage_tier == 'basic':
-            return self.BASIC_LIMIT
-        elif self.storage_tier == 'pro':
-            return self.PRO_LIMIT
-        elif self.storage_tier == 'enterprise':
-            return self.ENTERPRISE_LIMIT
-        return self.BASIC_LIMIT  # Default to basic
+        limits = {
+            'basic': self.BASIC_LIMIT,
+            'pro': self.PRO_LIMIT,
+            'enterprise': self.ENTERPRISE_LIMIT
+        }
+        return limits.get(self.storage_tier, self.BASIC_LIMIT)
     
     def set_storage_size_display(self):
-        """Set the default storage size based on the selected tier."""
-        if self.storage_tier == 'basic':
-            self.storage_size = self.BASIC_LIMIT
-        elif self.storage_tier == 'pro':
-            self.storage_size = self.PRO_LIMIT
-        elif self.storage_tier == 'enterprise':
-            self.storage_size = self.ENTERPRISE_LIMIT
+        """
+        BACKEND-READY: Update storage size based on selected tier.
+        MAPPED TO: Admin interface save action
+        USED BY: LibraryAdmin.save_model()
+        
+        Automatically sets storage_size to tier default and saves model.
+        """
+        tier_sizes = {
+            'basic': self.BASIC_LIMIT,
+            'pro': self.PRO_LIMIT,
+            'enterprise': self.ENTERPRISE_LIMIT
+        }
+        self.storage_size = tier_sizes.get(self.storage_tier, self.BASIC_LIMIT)
         self.save(update_fields=['storage_size'])
 
     def clean(self):
+        """
+        BACKEND-READY: Model validation and default value setting.
+        MAPPED TO: Model save process
+        USED BY: Django model validation system
+        
+        Sets default color scheme and enforces Paletta library category rules.
+        """
         # Set default color scheme if not provided
         if not self.color_scheme:
             self.color_scheme = {
@@ -110,6 +138,13 @@ class Library(models.Model):
             self.category_source = 'paletta_style'
 
     def save(self, *args, **kwargs):
+        """
+        BACKEND-READY: Enhanced save method with automatic category setup.
+        MAPPED TO: Model creation/update process
+        USED BY: All library create/update operations
+        
+        Runs validation and sets up default categories for new libraries.
+        """
         self.clean()
         is_new = self.pk is None
         super().save(*args, **kwargs)
@@ -119,7 +154,13 @@ class Library(models.Model):
             self.setup_default_categories()
     
     def setup_default_categories(self):
-        """Set up default categories based on the library's category source"""
+        """
+        BACKEND-READY: Initialize default categories based on library type.
+        MAPPED TO: Library creation process
+        USED BY: save() method for new libraries
+        
+        Creates appropriate default categories and content types for the library.
+        """
         from videos.models import Category, PalettaCategory, ContentType
         
         # Always create all content types (they're global)
@@ -170,7 +211,13 @@ class Library(models.Model):
             )
     
     def get_storage_display(self):
-        """Return a human-readable storage size string."""
+        """
+        BACKEND/FRONTEND-READY: Get human-readable storage size string.
+        MAPPED TO: Admin interface and API responses
+        USED BY: Template rendering and serializers
+        
+        Returns formatted storage size (e.g., "1.5 TB" or "500.00 GB").
+        """
         if self.storage_size >= self.TB:
             return f"{self.storage_size_tb:.2f} TB"
         else:
@@ -181,7 +228,11 @@ class Library(models.Model):
 
 class UserLibraryRole(models.Model):
     """
-    Model representing a user's role within a specific library.
+    BACKEND/FRONTEND-READY: User role assignments within libraries.
+    MAPPED TO: /api/roles/ endpoints
+    USED BY: Permission checking and library management
+    
+    Manages administrator and contributor roles for library access control.
     """
     ROLE_CHOICES = [
         ('admin', 'Administrator'),

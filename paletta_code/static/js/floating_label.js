@@ -5,28 +5,28 @@ document.addEventListener("DOMContentLoaded", function () {
   const closeBtn = document.getElementById("close-sidebar-btn");
   const overlay = document.getElementById("sidebar-floating-overlay");
 
-  // Ensure all required elements are present on the page
+  // ensure all required elements are present on the page
   if (!floatingLabel || !sidebar || !closeBtn || !overlay) {
     return;
   }
 
-  // Function to open the sidebar
+  // open the sidebar
   const openSidebar = () => {
     sidebar.classList.add("active");
     overlay.classList.add("active");
     floatingLabel.style.display = "none";
   };
 
-  // Function to close the sidebar
+  // close the sidebar
   const closeSidebar = () => {
     sidebar.classList.remove("active");
     overlay.classList.remove("active");
     floatingLabel.style.display = "block";
   };
 
-  // Event listeners
+  // event listeners
   floatingLabel.addEventListener("click", (e) => {
-    e.stopPropagation(); // Prevent the click from bubbling up to the document
+    e.stopPropagation();
     openSidebar();
   });
 

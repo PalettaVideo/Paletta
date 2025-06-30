@@ -4,7 +4,7 @@
 <header>
   <div class="logo-container">
     {% if current_library %}
-    <a href="{% library_specific_url 'library_detail' %}" style="text-decoration: none;">
+    <a href="{% library_specific_url 'library_home' %}" style="text-decoration: none;">
     {% else %}
     <a href="{% url 'home' %}" style="text-decoration: none;">
     {% endif %}

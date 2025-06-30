@@ -15,7 +15,13 @@ logger = logging.getLogger(__name__)
 @shared_task
 def generate_and_send_download_link(video_id, user_email):
     """
-    Generate a download link for a video and send it to the user.
+    BACKEND-READY: Celery task for generating and emailing download links.
+    MAPPED TO: /download/request/<video_id>/ endpoint
+    USED BY: DownloadRequestView, async email processing
+    
+    Generates S3 presigned URL and sends email notification to user.
+    Creates download activity logs for admin tracking.
+    Required fields: video_id (int), user_email (str)
     """
     try:
         video = Video.objects.get(id=video_id)
@@ -61,8 +67,13 @@ def generate_and_send_download_link(video_id, user_email):
 @shared_task
 def cleanup_expired_download_links():
     """
-    Task to clean up expired download links from the database.
-    This should be scheduled to run periodically.
+    BACKEND-READY: Celery task for cleaning expired download links.
+    MAPPED TO: Scheduled task (cron/periodic)
+    USED BY: Celery beat scheduler for maintenance
+    
+    Removes expired download links from database to prevent stale data.
+    Should be scheduled to run periodically (e.g., daily).
+    Required fields: None (operates on all expired links)
     """
     try:
         # Find videos with expired download links
@@ -89,7 +100,13 @@ def cleanup_expired_download_links():
 @shared_task
 def retry_failed_uploads():
     """
-    Task to retry uploading videos that previously failed.
+    BACKEND-READY: Celery task for retrying failed S3 uploads.
+    MAPPED TO: Scheduled task (cron/periodic)
+    USED BY: Celery beat scheduler for recovery operations
+    
+    Identifies and retries videos that failed S3 upload process.
+    Resets status to pending before retry to ensure clean state.
+    Required fields: None (operates on all failed uploads)
     """
     try:
         # Find videos that failed to upload

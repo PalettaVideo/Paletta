@@ -10,13 +10,23 @@ logger = logging.getLogger(__name__)
 
 class AWSCloudStorageService:
     """
-    Service for handling storage operations with AWS S3.
-    Provides methods for uploading videos to S3, generating temporary download links,
-    and managing video storage lifecycle.
+    BACKEND-READY: AWS S3 storage service for video file management.
+    MAPPED TO: Internal service class
+    USED BY: Video upload/download workflows, admin operations
+    
+    Handles S3 operations: upload, download link generation, streaming URLs, deletion.
+    Required config: AWS_STORAGE_ENABLED, AWS credentials, bucket settings
     """
     
     def __init__(self):
-        """Initialize the storage service with AWS S3 configuration."""
+        """
+        BACKEND-READY: Initialize AWS S3 service with configuration validation.
+        MAPPED TO: Service instantiation
+        USED BY: All S3 operations throughout the system
+        
+        Validates AWS credentials and establishes S3 client connection.
+        Auto-disables if credentials missing or connection fails.
+        """
         # Get configuration from Django settings
         self.storage_enabled = getattr(settings, 'AWS_STORAGE_ENABLED', False)
         
@@ -48,13 +58,12 @@ class AWSCloudStorageService:
     
     def upload_to_storage(self, video):
         """
-        Upload a video file to AWS S3 storage.
+        BACKEND-READY: Upload video file to AWS S3 with status tracking.
+        MAPPED TO: Internal S3 upload operation
+        USED BY: Video upload workflow, retry mechanisms
         
-        Args:
-            video: The Video model instance
-            
-        Returns:
-            bool: True if successful, False otherwise
+        Uploads video to S3, updates status, logs activities, optionally deletes local file.
+        Required fields: video.video_file, video.uploader, video.id
         """
         if not self.storage_enabled:
             logger.warning("AWS S3 storage is not enabled")
@@ -180,13 +189,13 @@ class AWSCloudStorageService:
     
     def generate_download_link(self, video):
         """
-        Generate a temporary download link for a video stored in S3.
+        BACKEND-READY: Generate temporary S3 download link with expiry.
+        MAPPED TO: Download request functionality
+        USED BY: Download views, email notifications
         
-        Args:
-            video: The Video model instance
-            
-        Returns:
-            str: The download URL or None if failed
+        Creates presigned S3 URL for video download (24h default expiry).
+        Updates video model with link and expiry timestamp.
+        Required fields: video.storage_reference_id, storage_status='stored'
         """
         if not self.storage_enabled:
             logger.warning("Deep storage is not enabled")
@@ -228,13 +237,13 @@ class AWSCloudStorageService:
     
     def generate_streaming_url(self, video):
         """
-        Generate a temporary streaming URL for a video stored in S3.
+        BACKEND/FRONTEND-READY: Generate temporary S3 streaming URL.
+        MAPPED TO: Video playback functionality
+        USED BY: Video templates, API responses, serializers
         
-        Args:
-            video: The Video model instance
-            
-        Returns:
-            str: The streaming URL or None if failed
+        Creates presigned S3 URL for video streaming (1h expiry).
+        Used for in-browser video playback without downloads.
+        Required fields: video.storage_reference_id, storage_status='stored'
         """
         if not self.storage_enabled:
             logger.warning("Deep storage is not enabled")
@@ -269,13 +278,13 @@ class AWSCloudStorageService:
     
     def delete_from_storage(self, video):
         """
-        Delete a video from S3 storage.
+        BACKEND-READY: Delete video and thumbnail from S3 storage.
+        MAPPED TO: Video deletion operations
+        USED BY: Admin interface, cleanup operations
         
-        Args:
-            video: The Video model instance
-            
-        Returns:
-            bool: True if successful, False otherwise
+        Removes video from S3, clears storage metadata, resets status to pending.
+        Handles both video files and associated thumbnails.
+        Required fields: video.storage_reference_id
         """
         if not self.storage_enabled:
             logger.warning("Deep storage is not enabled")
@@ -335,25 +344,24 @@ class AWSCloudStorageService:
 
 class VideoLogService:
     """
-    Service for logging video-related activities.
-    Provides methods for creating log entries for different types of activities.
+    BACKEND-READY: Comprehensive video activity logging service.
+    MAPPED TO: Internal logging system
+    USED BY: All video operations for audit trail
+    
+    Creates structured logs for uploads, downloads, errors, status changes.
+    Captures IP addresses, user agents, and metadata for admin tracking.
     """
     
     @staticmethod
     def log_activity(video, user, log_type, message, request=None, **kwargs):
         """
-        Create a log entry for a video activity.
+        BACKEND-READY: Core logging method for all video activities.
+        MAPPED TO: Internal logging function
+        USED BY: All specific log methods (upload, download, error, etc.)
         
-        Args:
-            video: The Video model instance
-            user: The User model instance
-            log_type: The type of log entry (from VideoLog.LOG_TYPE_CHOICES)
-            message: The log message
-            request: Optional HTTP request object to extract IP and user agent
-            **kwargs: Additional metadata to store in the log
-            
-        Returns:
-            VideoLog: The created log entry
+        Creates VideoLog entries with metadata extraction from requests.
+        Supports IP tracking and user agent capture for security auditing.
+        Required fields: video, user, log_type, message
         """
         from .models import VideoLog
         
@@ -441,7 +449,15 @@ class VideoLogService:
     
     @staticmethod
     def get_client_ip(request):
-        """Extract the client IP address from the request."""
+        """
+        BACKEND-READY: Extract client IP from HTTP request headers.
+        MAPPED TO: Internal utility function
+        USED BY: log_activity method for IP tracking
+        
+        Handles X-Forwarded-For headers for proxy/load balancer setups.
+        Falls back to REMOTE_ADDR if forwarded headers unavailable.
+        Required fields: request (HttpRequest object)
+        """
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
             ip = x_forwarded_for.split(',')[0]

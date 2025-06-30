@@ -1,10 +1,17 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Video, Category, Tag, VideoLog, VideoTag, Upload, ContentType, PalettaCategory
+from .models import Video, Category, Tag, VideoLog, VideoTag, ContentType, PalettaCategory
 from django.urls import reverse
 
 class VideoLogInline(admin.TabularInline):
-    """Inline admin interface for VideoLog model."""
+    """
+    BACKEND-READY: Inline admin interface for VideoLog model.
+    MAPPED TO: Django admin video detail pages
+    USED BY: Admin users viewing video activity logs
+    
+    Displays video activity logs within video detail admin page.
+    Read-only interface with styled log types and formatted file sizes.
+    """
     model = VideoLog
     extra = 0
     readonly_fields = ('log_type_display', 'timestamp', 'user_username', 'message', 'storage_status', 'file_size_display')
@@ -13,7 +20,14 @@ class VideoLogInline(admin.TabularInline):
     max_num = 0  # Don't allow adding new logs
     
     def log_type_display(self, obj):
-        """Display the log type with appropriate styling."""
+        """
+        BACKEND-READY: Display log type with color-coded styling.
+        MAPPED TO: Django admin log display
+        USED BY: Admin interface for visual log type identification
+        
+        Applies color coding to different log types for better readability.
+        Required fields: obj.log_type
+        """
         log_type_colors = {
             'upload': 'blue',
             'process': 'orange',
@@ -55,6 +69,14 @@ class VideoTagInline(admin.TabularInline):
     autocomplete_fields = ['tag']
 
 class VideoAdmin(admin.ModelAdmin):
+    """
+    BACKEND-READY: Comprehensive admin interface for Video model.
+    MAPPED TO: Django admin /admin/videos/video/
+    USED BY: Admin users for video management and monitoring
+    
+    Provides video listing, editing, and monitoring with S3 status tracking.
+    Includes file size formatting, duration display, and activity logging.
+    """
     search_fields = ('title', 'description', 'uploader__username')
     ordering = ('-upload_date',)
     list_display = ('title', 'uploader', 'subject_area_display', 'content_types_display', 'paletta_category', 'library', 'upload_date', 'file_size_display', 'duration_display', 'views_count', 'storage_status_display')
@@ -96,7 +118,14 @@ class VideoAdmin(admin.ModelAdmin):
     content_types_display.short_description = 'Content Types'
     
     def storage_status_display(self, obj):
-        """Display the storage status with appropriate styling."""
+        """
+        BACKEND-READY: Display storage status with color-coded styling.
+        MAPPED TO: Django admin video list view
+        USED BY: Admin interface for visual status identification
+        
+        Applies color coding to storage statuses for quick visual assessment.
+        Required fields: obj.storage_status
+        """
         status_colors = {
             'pending': 'orange',
             'uploading': 'blue',
@@ -109,7 +138,14 @@ class VideoAdmin(admin.ModelAdmin):
     storage_status_display.short_description = 'Storage Status'
     
     def file_size_display(self, obj):
-        """Display the file size in a human-readable format."""
+        """
+        BACKEND-READY: Display file size in human-readable format.
+        MAPPED TO: Django admin file size display
+        USED BY: Admin interface for storage monitoring
+        
+        Converts bytes to appropriate units (B, KB, MB, GB, TB).
+        Required fields: obj.file_size
+        """
         if obj.file_size:
             # Convert bytes to appropriate unit
             units = ['B', 'KB', 'MB', 'GB', 'TB']
@@ -191,13 +227,6 @@ class VideoTagAdmin(admin.ModelAdmin):
     list_filter = ('tag',)
     search_fields = ('video__title', 'tag__name')
 
-class UploadAdmin(admin.ModelAdmin):
-    list_display = ('video', 'uploader', 'upload_date', 'status')
-    list_filter = ('status', 'upload_date')
-    search_fields = ('video__title', 'uploader__username')
-    readonly_fields = ('upload_date',)
-    date_hierarchy = 'upload_date'
-
 class VideoLogAdmin(admin.ModelAdmin):
     """Admin interface for VideoLog model."""
     list_display = ('log_type_display', 'video_title', 'user_username', 'timestamp', 'storage_status', 'file_size_display', 'ip_address')
@@ -258,5 +287,5 @@ admin.site.register(ContentType, ContentTypeAdmin)
 admin.site.register(PalettaCategory, PalettaCategoryAdmin)
 admin.site.register(Tag, TagAdmin)
 admin.site.register(VideoTag, VideoTagAdmin)
-admin.site.register(Upload, UploadAdmin)
+
 admin.site.register(VideoLog, VideoLogAdmin)

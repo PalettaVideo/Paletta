@@ -4,13 +4,26 @@ from django.shortcuts import render
 from ..models import User
 
 class ManageAdministratorsView(LoginRequiredMixin, TemplateView):
-    """View for managing administrators."""
+    """
+    BACKEND/FRONTEND-READY: Administrator management interface.
+    MAPPED TO: /admin/manage-administrators/ URL
+    USED BY: manage_admin.html template
+    
+    Displays administrator list with role-based access control.
+    """
     template_name = 'manage_admin.html'
     
     def get_context_data(self, **kwargs):
+        """
+        BACKEND/FRONTEND-READY: Prepare administrator data for template.
+        MAPPED TO: Template context
+        USED BY: manage_admin.html template
+        
+        Provides admin list with permission validation for admin/owner users only.
+        """
         context = super().get_context_data(**kwargs)
         
-        # Only allow admin or owner users to access this view
+        # ONLY allow admin or owner users to access this view
         if self.request.user.role not in ['admin', 'owner']:
             context['permission_error'] = True
             return context

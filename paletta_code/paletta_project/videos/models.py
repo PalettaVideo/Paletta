@@ -9,7 +9,12 @@ from django.core.exceptions import ValidationError
 
 def category_image_path(instance, filename):
     """
-    File will be uploaded to MEDIA_ROOT/category_images/<library_name>/<subject_area>_<content_type>/<filename>
+    BACKEND-READY: Generates upload path for category images.
+    MAPPED TO: Internal storage function
+    USED BY: Category.image field
+    
+    Creates organized file paths: category_images/<library_name>/<category_slug>/<filename>
+    Required fields: instance (Category), filename (str)
     """
     if hasattr(instance, 'subject_area'):
         category_name = f"{instance.subject_area}"
@@ -176,10 +181,26 @@ class Tag(models.Model):
         return f"{self.name} ({self.library.name})"
 
 def video_upload_path(instance, filename):
+    """
+    BACKEND-READY: Generates upload path for video files.
+    MAPPED TO: Internal storage function  
+    USED BY: Video.video_file field
+    
+    Creates organized file paths: videos/library_<id>/user_<id>/<filename>
+    Required fields: instance (Video), filename (str)
+    """
     # File will be uploaded to MEDIA_ROOT/videos/library_<id>/user_<id>/<filename>
     return f'videos/library_{instance.library.id}/user_{instance.uploader.id}/{filename}'
 
 def thumbnail_upload_path(instance, filename):
+    """
+    BACKEND-READY: Generates upload path for video thumbnails.
+    MAPPED TO: Internal storage function
+    USED BY: Video.thumbnail field
+    
+    Creates organized file paths: thumbnails/library_<id>/user_<id>/<filename>
+    Required fields: instance (Video), filename (str)
+    """
     # File will be uploaded to MEDIA_ROOT/thumbnails/library_<id>/user_<id>/<filename>
     return f'thumbnails/library_{instance.library.id}/user_{instance.uploader.id}/{filename}'
 
@@ -280,8 +301,12 @@ class Video(models.Model):
     
   def get_streaming_url(self):
       """
-      Generates a temporary streaming URL for a video stored in S3.
-      This is intended for use in Django templates.
+      BACKEND/FRONTEND-READY: Generates temporary streaming URL for S3-stored videos.
+      MAPPED TO: Internal method called by templates
+      USED BY: Video detail templates and API responses
+      
+      Creates temporary S3 presigned URL for video streaming (1 hour expiry).
+      Required fields: storage_status='stored', storage_reference_id
       """
       if self.storage_status == 'stored' and self.storage_reference_id:
           from .services import AWSCloudStorageService
@@ -313,7 +338,12 @@ class Video(models.Model):
     
   def delete(self, *args, **kwargs):
     """
-    Override delete method to also remove physical files from the filesystem.
+    BACKEND-READY: Enhanced delete method with file cleanup.
+    MAPPED TO: Model deletion cascade
+    USED BY: Admin interface and programmatic deletions
+    
+    Removes video files from filesystem when model is deleted.
+    Handles missing files gracefully with proper logging.
     """
     import logging
     logger = logging.getLogger(__name__)
@@ -359,22 +389,6 @@ class VideoTag(models.Model):
 
     def __str__(self):
         return f"{self.video.title} - {self.tag.name}"
-
-class Upload(models.Model):
-    """Model representing the upload process for a video."""
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-    ]
-    
-    video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name='uploads')
-    uploader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='uploads')
-    upload_date = models.DateTimeField(default=timezone.now)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-
-    def __str__(self):
-        return f"{self.video.title} - {self.get_status_display()}"
 
 
 class VideoLog(models.Model):

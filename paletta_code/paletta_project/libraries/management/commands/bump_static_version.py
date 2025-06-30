@@ -5,9 +5,23 @@ from django.conf import settings
 
 
 class Command(BaseCommand):
+    """
+    BACKEND-READY: Django management command for static file cache invalidation.
+    MAPPED TO: python manage.py bump_static_version
+    USED BY: Deployment scripts and version management
+    
+    Updates STATIC_VERSION in settings files to force browser cache refresh.
+    """
     help = 'Bump the static version to force cache invalidation'
 
     def add_arguments(self, parser):
+        """
+        BACKEND-READY: Command argument configuration.
+        MAPPED TO: Django management command system
+        USED BY: Command line interface
+        
+        Adds optional --set-version argument for manual version specification.
+        """
         parser.add_argument(
             '--set-version',
             type=str,
@@ -15,6 +29,13 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        """
+        BACKEND-READY: Main command execution logic.
+        MAPPED TO: Django management command system
+        USED BY: python manage.py bump_static_version
+        
+        Increments or sets static version across all settings files.
+        """
         # Find the settings files relative to the Django project directory
         settings_files = [
             'paletta_core/settings_development.py',

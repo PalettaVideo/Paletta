@@ -11,41 +11,48 @@ import logging
 logger = logging.getLogger(__name__)
 
 def get_library_by_slug(slug):
-    """Get a library by its slug."""
+    """
+    BACKEND/FRONTEND-READY: Find library by URL slug.
+    MAPPED TO: URL routing and library context
+    USED BY: Middleware and URL processing
+    
+    Converts URL slug back to library object for context.
+    """
     for library in Library.objects.all():
         if slugify(library.name) == slug:
             return library
     return None
 
 class HomeView(TemplateView):
-    """Home view that serves the unified home page with conditional content based on authentication."""
+    """
+    BACKEND/FRONTEND-READY: Main homepage with library-specific content.
+    MAPPED TO: / and /home/ URLs
+    USED BY: homepage.html template
+    
+    Displays library categories and content with authentication-based rendering.
+    """
     
     def get(self, request, *args, **kwargs):
-        """Serve the home page with appropriate context."""
+        """
+        BACKEND/FRONTEND-READY: Render homepage with library context.
+        MAPPED TO: GET / and GET /home/
+        USED BY: Main site navigation and homepage access
+        
+        Provides categorized content view with library-specific categories.
+        """
         context = {}
         
-        # Debug logging for library context
-        url_library_slug = getattr(request, 'url_library_slug', None)
-        logger.debug(f"[HomePage Debug] URL library slug: {url_library_slug}")
-        logger.debug(f"[HomePage Debug] Request path: {request.path}")
-        
-        # Use current library from middleware (this is already set by LibraryContextMiddleware)
         current_library = getattr(request, 'current_library', None)
-        logger.debug(f"[HomePage Debug] Current library from middleware: {current_library.name if current_library else 'None'}")
         
-        # Fallback to Paletta if no current library
         if not current_library:
             try:
                 current_library = Library.objects.get(name='Paletta')
-                logger.debug("[HomePage Debug] Fallback to Paletta library")
             except Library.DoesNotExist:
                 current_library = None
                 messages.error(request, 'Default Paletta library not found. Please contact administrator.')
-                logger.error("[HomePage Debug] Paletta library not found!")
         
         if request.user.is_authenticated:
             try:
-                # Get categories - ONLY load library-specific Category objects
                 categories = []
                 
                 if current_library:
@@ -54,7 +61,6 @@ class HomeView(TemplateView):
                         is_active=True
                     ).order_by('subject_area')
                     
-                    # Separate Private category to show it first
                     private_category = None
                     other_categories = []
                     
@@ -73,39 +79,45 @@ class HomeView(TemplateView):
                         else:
                             other_categories.append(cat_data)
                     
-                    # Add Private category first (pinned), then other categories
                     if private_category:
-                        categories.insert(0, private_category)  # Insert at beginning
+                        categories.insert(0, private_category)
                     categories.extend(other_categories)
                 else:
-                    # For no library context, show default categories
                     categories = []
                     
             except Exception as e:
                 logger.error(f"Error loading categories: {str(e)}")
                 categories = []
             
-            # Get all libraries for the sidebar
             libraries = Library.objects.filter(is_active=True)
-            
-            # CLEAN APPROACH: Let middleware handle library context
-            # No need to manually add library_slug to context
             context = {
                 'categories': categories,
                 'libraries': libraries,
                 'current_library': current_library,
             }
             
-            logger.debug(f"[HomePage Debug] Context categories count: {len(categories)}")
         else:
-            logger.debug("[HomePage Debug] User not authenticated")
+            messages.info(request, 'Please login to access the homepage.')
+            return redirect('login')
         
-        # Return the single homepage template with the context
         return render(request, 'homepage.html', context)
 
 class StaticPageMixin:
-    """A mixin to add the current library context to a static page view."""
+    """
+    BACKEND/FRONTEND-READY: Mixin for adding library context to static pages.
+    MAPPED TO: Static page templates
+    USED BY: About, Contact, Terms, Privacy, Q&A views
+    
+    Provides consistent library context across all static pages.
+    """
     def get_context_data(self, **kwargs):
+        """
+        BACKEND/FRONTEND-READY: Add library context to static pages.
+        MAPPED TO: Template context
+        USED BY: All static page templates
+        
+        Ensures library branding consistency across static content.
+        """
         context = super().get_context_data(**kwargs)
         library_id = self.request.session.get('current_library_id')
         if library_id:
@@ -118,25 +130,71 @@ class StaticPageMixin:
         return context
 
 class AboutUsView(StaticPageMixin, TemplateView):
+    """
+    BACKEND/FRONTEND-READY: About us page with library context.
+    MAPPED TO: /about/ URL
+    USED BY: about_us.html template
+    
+    Static page displaying company information with library branding.
+    """
     template_name = 'about_us.html'
 
 class ContactUsView(StaticPageMixin, TemplateView):
+    """
+    BACKEND/FRONTEND-READY: Contact information page.
+    MAPPED TO: /contact/ URL
+    USED BY: contact_us.html template
+    
+    Static page with contact details and library context.
+    """
     template_name = 'contact_us.html'
 
 class QAndAView(StaticPageMixin, TemplateView):
+    """
+    BACKEND/FRONTEND-READY: Questions and answers page.
+    MAPPED TO: /qa/ URL
+    USED BY: q_and_a.html template
+    
+    FAQ page with library-specific context and branding.
+    """
     template_name = 'q_and_a.html'
 
 class TermsConditionsView(StaticPageMixin, TemplateView):
+    """
+    BACKEND/FRONTEND-READY: Terms and conditions page.
+    MAPPED TO: /terms/ URL
+    USED BY: terms_conditions.html template
+    
+    Legal terms page with library context.
+    """
     template_name = 'terms_conditions.html'
 
 class PrivacyView(StaticPageMixin, TemplateView):
+    """
+    BACKEND/FRONTEND-READY: Privacy policy page.
+    MAPPED TO: /privacy/ URL
+    USED BY: privacy.html template
+    
+    Privacy policy with library-specific context.
+    """
     template_name = 'privacy.html'
 
 class LogoutView(TemplateView):
-    """View to handle user logout."""
+    """
+    BACKEND/FRONTEND-READY: User logout functionality.
+    MAPPED TO: /logout/ URL
+    USED BY: Navigation logout links
     
+    Handles user logout and redirects to login page.
+    """
     def get(self, request, *args, **kwargs):
-        """Log the user out and redirect to login page."""
+        """
+        BACKEND/FRONTEND-READY: Process user logout.
+        MAPPED TO: GET /logout/
+        USED BY: Logout navigation and session termination
+        
+        Terminates user session and redirects to login page.
+        """
         logout(request)
         messages.success(request, 'You have been successfully logged out.')
         return redirect('login')
