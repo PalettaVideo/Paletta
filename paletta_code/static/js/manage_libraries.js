@@ -40,6 +40,37 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   window.deleteLibrary = function (libraryId, libraryName) {
+    // Check if this is the Paletta library
+    const isPalettaLibrary = libraryName.toLowerCase() === "paletta";
+
+    // Get current user info from meta tags or data attributes
+    const currentUserRole = document.querySelector(
+      'meta[name="user-role"]'
+    )?.content;
+    const currentUserId = document.querySelector(
+      'meta[name="user-id"]'
+    )?.content;
+    const libraryOwnerId = document
+      .querySelector(`[data-library-id="${libraryId}"]`)
+      ?.getAttribute("data-owner-id");
+    const isLibraryOwner = currentUserId === libraryOwnerId;
+
+    // Permission check: Paletta library can only be deleted by owners
+    if (isPalettaLibrary && currentUserRole !== "owner") {
+      alert(
+        "Only users with owner-level access can delete the Paletta library."
+      );
+      return;
+    }
+
+    // Permission check: Other libraries can be deleted by owners or the library creator
+    if (!isPalettaLibrary && currentUserRole !== "owner" && !isLibraryOwner) {
+      alert(
+        "Only users with owner-level access or the library creator can delete this library."
+      );
+      return;
+    }
+
     showConfirmModal(
       "Delete Library",
       `Are you sure you want to delete "${libraryName}"? This action cannot be undone.`,

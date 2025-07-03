@@ -30,10 +30,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // event Listeners
   if (selectFileBtn) {
-    console.log("Select file button found, attaching event listener");
     selectFileBtn.addEventListener("click", function (e) {
       e.preventDefault();
-      console.log("Select file button clicked");
       fileInput.click();
     });
   } else {
@@ -41,7 +39,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   if (fileInput) {
-    console.log("File input found, attaching change event listener");
     fileInput.addEventListener("change", handleVideoFileSelect);
   } else {
     console.error("File input not found in DOM");
@@ -152,8 +149,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const file = e.target.files[0];
     if (!file) return;
 
-    console.log("Video file selected:", file.name, "Size:", file.size);
-
     // check file size
     if (file.size > MAX_FILE_SIZE) {
       showUploadLimitModal();
@@ -178,8 +173,6 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    console.log("Video file validation passed");
-
     // create video preview
     videoPreviewContainer.innerHTML = "";
     const video = document.createElement("video");
@@ -198,8 +191,6 @@ document.addEventListener("DOMContentLoaded", function () {
     loadingIndicator.className = "loading-indicator";
     loadingIndicator.textContent = "Extracting video information...";
     videoPreviewContainer.appendChild(loadingIndicator);
-
-    console.log("Video preview created, extracting metadata");
 
     // Use fast, client-side extraction. Server-side is no longer needed.
     extractVideoMetadata(file);
@@ -381,8 +372,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         categorySelect.appendChild(option);
       });
-
-      console.log(`Added ${categories.length} categories to select dropdown`);
     } catch (error) {
       console.error("Error fetching categories:", error);
       const categorySelect = document.getElementById("category");
@@ -398,8 +387,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function fetchContentTypes() {
     try {
-      console.log("Fetching content types...");
-
       const response = await fetch("/api/api/content-types/", {
         method: "GET",
         cache: "no-cache",
@@ -408,9 +395,6 @@ document.addEventListener("DOMContentLoaded", function () {
           Pragma: "no-cache",
         },
       });
-
-      console.log("Content types response status:", response.status);
-      console.log("Content types response headers:", response.headers);
 
       if (!response.ok) {
         console.error(
@@ -423,8 +407,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       const contentTypes = await response.json();
-      console.log("Content types data received:", contentTypes);
-      console.log("Number of content types:", contentTypes.length);
 
       if (!contentTypes || contentTypes.length === 0) {
         console.error("No content types received from API");
@@ -435,35 +417,22 @@ document.addEventListener("DOMContentLoaded", function () {
       createContentTypesUI(contentTypes);
     } catch (error) {
       console.error("Error fetching content types:", error);
-      console.error("Error stack:", error.stack);
     }
   }
 
   function createContentTypesUI(contentTypes) {
-    console.log("Creating content types UI with data:", contentTypes);
-
     // Use existing content types grid from HTML template
     const contentTypesGrid = document.getElementById("content-types-grid");
     if (!contentTypesGrid) {
       console.error("Content types grid not found in HTML template");
-      console.error(
-        "Available elements with 'content' in ID:",
-        Array.from(document.querySelectorAll('[id*="content"]')).map(
-          (el) => el.id
-        )
-      );
       return;
     }
-
-    console.log("Found content types grid element:", contentTypesGrid);
 
     // Clear existing content types
     contentTypesGrid.innerHTML = "";
 
     // Add content types as checkboxes
-    contentTypes.forEach((contentType, index) => {
-      console.log(`Creating checkbox for content type ${index}:`, contentType);
-
+    contentTypes.forEach((contentType) => {
       const checkboxWrapper = document.createElement("div");
       checkboxWrapper.className = "content-type-item";
       checkboxWrapper.innerHTML = `
@@ -486,16 +455,9 @@ document.addEventListener("DOMContentLoaded", function () {
       ".content-type-checkbox"
     );
 
-    console.log(`Found ${checkboxes.length} checkboxes after creation`);
-
     checkboxes.forEach((checkbox) => {
       checkbox.addEventListener("change", handleContentTypeChange);
     });
-
-    console.log(
-      `✓ Successfully added ${contentTypes.length} content types to the form`
-    );
-    console.log("Content types grid final HTML:", contentTypesGrid.innerHTML);
   }
 
   async function handleFormSubmit(e) {
@@ -534,22 +496,28 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       const { uploadURL, key } = await response.json();
-      console.log("Received presigned URL and key:", uploadURL, key);
 
       // 2. Upload the file directly to S3 using the presigned URL
-      uploadButton.textContent = "Uploading... (0%)";
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      uploadButton.textContent = `Uploading... (0%) - ${fileSizeMB}MB`;
       const s3UploadResponse = await uploadFileToS3(
         uploadURL,
         file,
         (progress) => {
-          uploadButton.textContent = `Uploading... (${progress.toFixed(0)}%)`;
+          const uploadedMB = (
+            (file.size * progress) /
+            100 /
+            (1024 * 1024)
+          ).toFixed(1);
+          uploadButton.textContent = `Uploading... (${progress.toFixed(
+            0
+          )}%) - ${uploadedMB}MB/${fileSizeMB}MB`;
         }
       );
 
       if (s3UploadResponse.status !== 200) {
         throw new Error("S3 upload failed. Please try again.");
       }
-      console.log("File successfully uploaded to S3.");
 
       // 3. Notify the backend that the upload is complete
       uploadButton.textContent = "Finalizing...";
@@ -580,6 +548,12 @@ document.addEventListener("DOMContentLoaded", function () {
       const xhr = new XMLHttpRequest();
       xhr.open("PUT", uploadURL);
 
+      // Set timeout for large files (5 minutes)
+      xhr.timeout = 300000;
+
+      // Add content type header for better S3 handling
+      xhr.setRequestHeader("Content-Type", file.type);
+
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
           const progress = (event.loaded / event.total) * 100;
@@ -588,11 +562,19 @@ document.addEventListener("DOMContentLoaded", function () {
       };
 
       xhr.onload = () => {
-        resolve(xhr);
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(xhr);
+        } else {
+          reject(new Error(`Upload failed with status: ${xhr.status}`));
+        }
       };
 
       xhr.onerror = () => {
         reject(new Error("Network error during S3 upload."));
+      };
+
+      xhr.ontimeout = () => {
+        reject(new Error("Upload timed out. Please try again."));
       };
 
       xhr.send(file);

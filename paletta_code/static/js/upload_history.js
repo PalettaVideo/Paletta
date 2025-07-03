@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   setupSearch();
-  setupDeleteButtons();
+  setupDeleteFunctionality();
 });
 
 /**
@@ -81,7 +81,10 @@ function formatDate(isoString) {
   return date.toLocaleDateString(undefined, options);
 }
 
-document.addEventListener("DOMContentLoaded", function () {
+/**
+ * Set up delete functionality for videos
+ */
+function setupDeleteFunctionality() {
   // Handle edit video buttons
   const editButtons = document.querySelectorAll(".video-actions .edit");
   editButtons.forEach((button) => {
@@ -217,4 +220,4 @@ document.addEventListener("DOMContentLoaded", function () {
     if (modal) modal.style.display = "none";
     if (overlay) overlay.style.display = "none";
   }
-});
+}
