@@ -126,15 +126,24 @@ function setupDeleteFunctionality() {
         "[name=csrfmiddlewaretoken]"
       ).value;
 
+      // Use the standard video delete URL since videos always have a library
+      const deleteUrl = `/videos/delete/${videoId}/`;
+
+      console.log("Attempting to delete video:", videoId, "at URL:", deleteUrl);
+
       // Send AJAX request to delete the video
-      fetch(`/videos/delete/${videoId}/`, {
+      fetch(deleteUrl, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           "X-CSRFToken": csrfToken,
         },
       })
-        .then((response) => response.json())
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          return response.json();
+        })
         .then((data) => {
           if (data.success) {
             // Remove the video item from the DOM
@@ -173,7 +182,19 @@ function setupDeleteFunctionality() {
         })
         .catch((error) => {
           console.error("Error:", error);
-          showToast("An error occurred while deleting the video");
+          let errorMessage = "An error occurred while deleting the video";
+
+          // Try to provide more specific error messages
+          if (error.message.includes("404")) {
+            errorMessage = "Video not found or delete endpoint not available";
+          } else if (error.message.includes("403")) {
+            errorMessage =
+              "Permission denied - only the video uploader can delete this video";
+          } else if (error.message.includes("JSON")) {
+            errorMessage = "Server returned an invalid response";
+          }
+
+          showToast(errorMessage);
           closeDeleteModal();
         });
     });

@@ -216,19 +216,12 @@ class VideoDeleteView(View):
             video = get_object_or_404(Video, id=video_id)
             
             # Check if the user has permission to delete this video
+            # Only the video uploader can delete videos from upload history
             if video.uploader != request.user:
-                # Check if the user has admin role for the library
-                has_permission = UserLibraryRole.objects.filter(
-                    user=request.user,
-                    library=video.library,
-                    role='admin'  # Only admins can delete videos
-                ).exists()
-                
-                if not has_permission:
-                    return JsonResponse({
-                        'success': False,
-                        'message': 'Permission denied'
-                    }, status=403)
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Only the video uploader can delete this video'
+                }, status=403)
             
             # Store video details for logging
             video_title = video.title

@@ -26,6 +26,7 @@ from accounts.views.update_profile import ProfileView, ProfileUpdateView, Collec
 from accounts.views.admin_view import ManageAdministratorsView
 from videos.views.clip_store_view import CategoryClipView
 from videos.views.video_detail_view import VideoDetailView
+from videos.views.video_management_views import VideoEditView, VideoDeleteView
 
 from videos.views.page_views import UploadPageView
 from videos.views.upload_view import UploadHistoryView
@@ -38,8 +39,14 @@ urlpatterns = [
     # Include videos app URLs with API prefix
     path('api/', include('videos.urls')),
     
+    # Include videos app URLs without API prefix for frontend pages
+    path('videos/', include('videos.urls')),
+    
     # Include libraries app URLs with API prefix
     path('api/libraries/', include('libraries.urls')),
+    
+    # Include orders app URLs with API prefix for download requests
+    path('api/orders/', include('orders.urls')),
     
     # HTML page routes
     path('', CustomLoginView.as_view(), name='login'),
@@ -54,6 +61,8 @@ urlpatterns = [
     path('library/<str:library_slug>/category/clip-store/', CategoryClipView.as_view(), name='library_clip_store'),
     path('library/<str:library_slug>/category/<str:category_slug>/', CategoryClipView.as_view(), name='library_category'),
     path('library/<str:library_slug>/video/<int:video_id>/', VideoDetailView.as_view(), name='library_video_detail'),
+    path('library/<str:library_slug>/videos/edit/<int:video_id>/', VideoEditView.as_view(), name='library_video_edit'),
+    path('library/<str:library_slug>/videos/delete/<int:video_id>/', VideoDeleteView.as_view(), name='library_video_delete'),
     path('library/<str:library_slug>/upload/', UploadPageView.as_view(), name='library_upload'),
     path('library/<str:library_slug>/upload/history/', UploadHistoryView.as_view(), name='library_upload_history'),
     path('library/<str:library_slug>/profile/', ProfileView.as_view(), name='library_profile'),
