@@ -104,6 +104,22 @@ class LibrarySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Library name cannot exceed 100 characters.")
         return value
         
+    def validate_description(self, value):
+        """
+        BACKEND-READY: Validate library description word count.
+        MAPPED TO: API validation process
+        USED BY: Library creation and update endpoints
+        
+        Ensures description is between 10-200 words for adequate context.
+        """
+        if value:
+            word_count = len(value.strip().split())
+            if word_count < 10:
+                raise serializers.ValidationError("Description should be at least 10 words to provide adequate context.")
+            if word_count > 200:
+                raise serializers.ValidationError("Description cannot exceed 200 words. Please shorten your description.")
+        return value
+        
     def validate_color_scheme(self, value):
         """
         BACKEND-READY: Validate color scheme JSON structure.

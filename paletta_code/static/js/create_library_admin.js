@@ -162,6 +162,33 @@ document.addEventListener("DOMContentLoaded", function () {
   // Initialize preview
   updateCategoryPreview();
 
+  // Word count functionality for description
+  const descriptionField = document.getElementById("id_description");
+  const wordCountDisplay = document.getElementById("description-word-count");
+
+  if (descriptionField && wordCountDisplay) {
+    function updateWordCount() {
+      const text = descriptionField.value;
+      const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+      wordCountDisplay.textContent = `${wordCount}/200 words`;
+
+      // Change color based on word count
+      if (wordCount > 200) {
+        wordCountDisplay.style.color = "#f44336"; // Red for over limit
+      } else if (wordCount >= 100) {
+        wordCountDisplay.style.color = "#4caf50"; // Green for good length
+      } else if (wordCount >= 50) {
+        wordCountDisplay.style.color = "#ff9800"; // Orange for getting there
+      } else {
+        wordCountDisplay.style.color = "#666"; // Default gray
+      }
+    }
+
+    descriptionField.addEventListener("input", updateWordCount);
+    descriptionField.addEventListener("paste", updateWordCount);
+    updateWordCount(); // Initialize count
+  }
+
   // Form submission handling
   const libraryForm = document.getElementById("library-form");
   if (libraryForm) {
@@ -276,6 +303,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!descriptionField.value.trim()) {
       alert("Please enter a library description");
+      descriptionField.focus();
+      return false;
+    }
+
+    // Validate description word count
+    const descriptionWordCount = descriptionField.value
+      .trim()
+      .split(/\s+/).length;
+    if (descriptionWordCount > 200) {
+      alert(
+        "Description cannot exceed 200 words. Please shorten your description."
+      );
+      descriptionField.focus();
+      return false;
+    }
+    if (descriptionWordCount < 10) {
+      alert(
+        "Description should be at least 10 words to provide adequate context."
+      );
       descriptionField.focus();
       return false;
     }
