@@ -342,42 +342,43 @@ class Video(models.Model):
     MAPPED TO: Model deletion cascade
     USED BY: Admin interface and programmatic deletions
     
-    Removes video files from filesystem when model is deleted.
+    Removes video files from filesystem and S3 storage when model is deleted.
     Handles missing files gracefully with proper logging.
     """
     import logging
     logger = logging.getLogger(__name__)
     
-    # Store file paths before deletion
-    video_path = None
-    thumbnail_path = None
-    
-    try:
-        if self.video_file:
-            video_path = self.video_file.path
-        if self.thumbnail:
-            thumbnail_path = self.thumbnail.path
-    except ValueError:
-        # Files might not exist on filesystem
-        pass
+    # Delete S3 files first if they exist
+    if self.storage_status == 'stored' and self.storage_reference_id:
+        try:
+            from .services import AWSCloudStorageService
+            storage_service = AWSCloudStorageService()
+            # Just delete the S3 object, don't try to update the model
+            storage_service.s3_client.delete_object(
+                Bucket=storage_service.bucket_name,
+                Key=self.storage_reference_id
+            )
+            logger.info(f"Deleted video from S3: {self.storage_reference_id}")
+        except Exception as e:
+            logger.error(f"Error deleting video from S3 {self.storage_reference_id}: {e}")
     
     # Delete the model instance first
     super().delete(*args, **kwargs)
     
-    # Then try to delete physical files
-    if video_path and os.path.isfile(video_path):
+    # Delete files using Django's storage backend (works with both local and S3)
+    if self.video_file:
         try:
-            os.remove(video_path)
-            logger.info(f"Deleted video file: {video_path}")
-        except OSError as e:
-            logger.error(f"Error deleting video file {video_path}: {e}")
+            self.video_file.delete(save=False)
+            logger.info(f"Deleted video file: {self.video_file.name}")
+        except Exception as e:
+            logger.error(f"Error deleting video file {self.video_file.name}: {e}")
     
-    if thumbnail_path and os.path.isfile(thumbnail_path):
+    if self.thumbnail:
         try:
-            os.remove(thumbnail_path)
-            logger.info(f"Deleted thumbnail file: {thumbnail_path}")
-        except OSError as e:
-            logger.error(f"Error deleting thumbnail file {thumbnail_path}: {e}")
+            self.thumbnail.delete(save=False)
+            logger.info(f"Deleted thumbnail file: {self.thumbnail.name}")
+        except Exception as e:
+            logger.error(f"Error deleting thumbnail file {self.thumbnail.name}: {e}")
 
 class VideoTag(models.Model):
     """Model representing the many-to-many relationship between videos and tags."""

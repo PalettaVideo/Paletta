@@ -76,7 +76,9 @@
                               
                               <div class="video-actions">
                                   <a href="#" class="button edit" data-id="{{ video.id }}">Edit</a>
+                                  {% if video.uploader == user %}
                                   <a href="#" class="button delete" data-id="{{ video.id }}" data-title="{{ video.title }}">Delete</a>
+                                  {% endif %}
                               </div>
                           </div>
                       </div>

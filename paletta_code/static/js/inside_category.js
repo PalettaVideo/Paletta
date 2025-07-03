@@ -519,7 +519,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const currentLibrarySlug = getCurrentLibrarySlug();
 
     // Always use library-specific URL pattern
-    window.location.href = `/library/${currentLibrarySlug}/clip/${videoId}/`;
+    window.location.href = `/library/${currentLibrarySlug}/video/${videoId}/`;
   }
 
   /**

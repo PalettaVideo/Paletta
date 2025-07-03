@@ -78,13 +78,29 @@ class LibraryViewSet(viewsets.ModelViewSet):
         try:
             instance = self.get_object()
             
-            if instance.owner != request.user and not UserLibraryRole.objects.filter(
-                library=instance, user=request.user, role='admin'
-            ).exists():
+            # Check if this is the Paletta library
+            is_paletta_library = instance.is_paletta_library
+            
+            # Permission check: Paletta library can only be deleted by superusers (owners)
+            if is_paletta_library and not request.user.is_superuser:
                 return Response({
                     'status': 'error',
-                    'message': 'You do not have permission to delete this library.'
+                    'message': 'Only users with owner-level access can delete the Paletta library.'
                 }, status=403)
+            
+            # Permission check: Other libraries can be deleted by owners or the library creator
+            if not is_paletta_library:
+                is_owner = request.user.is_superuser
+                is_creator = instance.owner == request.user
+                is_admin = UserLibraryRole.objects.filter(
+                    library=instance, user=request.user, role='admin'
+                ).exists()
+                
+                if not (is_owner or is_creator or is_admin):
+                    return Response({
+                        'status': 'error',
+                        'message': 'Only users with owner-level access or the library creator can delete this library.'
+                    }, status=403)
             
             self.perform_destroy(instance)
             return Response({
@@ -344,13 +360,24 @@ class ManageLibrariesView(LoginRequiredMixin, TemplateView):
         """
         context = super().get_context_data(**kwargs)
         
+        # Get all libraries the user can manage (owned + admin roles)
         user_libraries = Library.objects.filter(owner=self.request.user)
-        context['libraries'] = user_libraries
-        
-        contributed_libraries = Library.objects.filter(
-            user_roles__user=self.request.user
+        admin_libraries = Library.objects.filter(
+            user_roles__user=self.request.user,
+            user_roles__role='admin'
         ).exclude(owner=self.request.user)
-        context['contributed_libraries'] = contributed_libraries
+        
+        # Combine and order by name
+        all_libraries = list(user_libraries) + list(admin_libraries)
+        all_libraries.sort(key=lambda x: x.name.lower())
+        
+        context['libraries'] = all_libraries
+        
+        # Add user role information for permission checking
+        if self.request.user.is_superuser:
+            context['user_role'] = 'owner'
+        else:
+            context['user_role'] = 'user'  # Default role
         
         return context
 
