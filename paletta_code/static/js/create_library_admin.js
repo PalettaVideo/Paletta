@@ -170,17 +170,16 @@ document.addEventListener("DOMContentLoaded", function () {
     function updateWordCount() {
       const text = descriptionField.value;
       const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-      wordCountDisplay.textContent = `${wordCount}/200 words`;
 
-      // Change color based on word count
-      if (wordCount > 200) {
-        wordCountDisplay.style.color = "#f44336"; // Red for over limit
-      } else if (wordCount >= 100) {
-        wordCountDisplay.style.color = "#4caf50"; // Green for good length
-      } else if (wordCount >= 50) {
-        wordCountDisplay.style.color = "#ff9800"; // Orange for getting there
+      if (wordCount === 0) {
+        wordCountDisplay.textContent =
+          "Please write 10-200 words to provide adequate context for your library";
+      } else if (wordCount < 10) {
+        wordCountDisplay.textContent = `${wordCount} words - Please add more details (minimum 10 words)`;
+      } else if (wordCount > 200) {
+        wordCountDisplay.textContent = `${wordCount} words - Please shorten your description (maximum 200 words)`;
       } else {
-        wordCountDisplay.style.color = "#666"; // Default gray
+        wordCountDisplay.textContent = `${wordCount} words - Good length!`;
       }
     }
 

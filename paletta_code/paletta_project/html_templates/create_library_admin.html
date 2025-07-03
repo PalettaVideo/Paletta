@@ -62,7 +62,7 @@
 
                 <label for="id_description">Description</label>
                 <textarea id="id_description" name="description" maxlength="1000" placeholder="Enter description (100-200 words recommended)" required></textarea>
-                <div class="word-count" id="description-word-count">0/200 words</div>
+                <div class="word-count" id="description-word-count">Please write 10-200 words to provide enough context for your library</div>
                 {% if form.description.errors %}
                     <div class="error-message">{{ form.description.errors }}</div>
                 {% endif %}
