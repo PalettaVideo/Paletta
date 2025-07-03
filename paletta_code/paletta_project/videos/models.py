@@ -353,7 +353,11 @@ class Video(models.Model):
         try:
             from .services import AWSCloudStorageService
             storage_service = AWSCloudStorageService()
-            storage_service.delete_video(self)
+            # Just delete the S3 object, don't try to update the model
+            storage_service.s3_client.delete_object(
+                Bucket=storage_service.bucket_name,
+                Key=self.storage_reference_id
+            )
             logger.info(f"Deleted video from S3: {self.storage_reference_id}")
         except Exception as e:
             logger.error(f"Error deleting video from S3 {self.storage_reference_id}: {e}")
