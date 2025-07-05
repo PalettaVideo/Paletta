@@ -1,28 +1,31 @@
-
 body {
   margin: 0;
   font-family: 'Montserrat';
   background-color: #F8F8F8;
 }
 
+/* Fix for aligning icon and text in sidebar links */
+.sidebar ul.category-list li a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .filter{
-  position: absolute; 
-  right: 50px; 
+  position: absolute;
+  right: 50px;
   height:50px;
 }
 .popup {
-display: none;
-position: absolute;
-background-color: #fff;
-border: 2px solid #80B824;
-border-radius: 10px;
-box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-width: 200px;
-z-index: 2000; 
-
+  display: none;
+  position: absolute;
+  background-color: #fff;
+  border: 2px solid #80B824;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  width: 200px;
+  z-index: 2000;
 }
-
-
 
 #popupMenu{
   top:100%
@@ -45,20 +48,52 @@ z-index: 2000;
   background-color: #f9f9f9;
 }
 
+/* Sidebar styles matching layout.css but with fixed positioning for category page */
 .sidebar {
   position: fixed;
   top: 60px;
   left: 0;
   height: calc(100% - 60px);
   width: 220px;
-  background: white;
-  border-right: 1px solid #ddd;
+  background-color: #ffffff;
   padding: 20px;
-  box-sizing: border-box;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   margin-top: 50px;
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  margin-bottom: 50px;
+}
+
+.sidebar ul li a {
+  display: block;
+  padding: 12px 15px;
+  color: #333;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: 500;
+  transition: background-color 0.2s, color 0.2s;
+  font-family: "Montserrat";
+}
+
+.sidebar ul li a:hover, .sidebar ul li a:focus {
+  background-color: #f0f8e3;
+  color: #333;
+}
+
+/* Active link in the sidebar - matching layout.css exactly */
+.sidebar ul li a.active, 
+.sidebar ul li.active > a {
+  background-color: #80B824;
+  color: #fff;
+  font-weight: bold;
+}
 
 .backbutton svg{
   width: 20px;
@@ -73,9 +108,8 @@ z-index: 2000;
   font-family: "Montserrat";
 }
 
-
 .categorysearch {
-  width: 400px; 
+  width: 400px;
   display: flex;
   align-items: center;
   border: 2px solid #80B824;
@@ -85,7 +119,7 @@ z-index: 2000;
 }
 
 .categorysearch input {
-  width: 1000px; 
+  width: 1000px;
   padding: 10px;
   border: none;
   outline: none;
@@ -107,25 +141,6 @@ z-index: 2000;
   width: 15px;
   height: 15px;
   fill: #80B824;
-}
-
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-  margin-bottom: 50px;
-}
-
-.sidebar ul li {
-  padding: 10px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  text-align: center;
-  font-family: "Montserrat";
-}
-
-.sidebar ul li.active, .sidebar ul li:hover {
-  background-color: #7bbd42;
-  color: white;
 }
 
 main {
@@ -165,10 +180,10 @@ main {
 
 .clip img {
   width: 100%;
-  max-width: 300px;     
-  max-height: 200px;     
+  max-width: 300px;
+  max-height: 200px;
   height: auto;
-  object-fit: cover;     
+  object-fit: cover;
   border-radius: 5px;
 }
 
@@ -177,7 +192,6 @@ main {
   height:20px;
   width:20px;
   vertical-align: middle;
-
 }
 
 .clipactions button {
@@ -199,15 +213,12 @@ main {
   background-color: #6aa839;
 }
 
-
 .category-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
-
-
 
 .filters button {
   margin-left: 10px;
@@ -224,7 +235,6 @@ main {
   background-color: #6aa839;
 }
 
-
 .sortbypopup {
   display: none;
   position: absolute;
@@ -233,59 +243,53 @@ main {
   border-radius: 10px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
   width: 200px;
-  z-index: 2000; 
-  
-  }
+  z-index: 2000;
+}
 
-  .sortbypopup a {
-    display: block;
-    padding: 10px;
-    color: #80B824;
-    text-decoration: none;
-    font-weight: bold;
-    border-bottom: 1px solid #80B824;
-  }
-  
-  .sortbypopup a:last-child {
-    border-bottom: none;
-  }
-  
-  .sortbypopup a:hover {
-    background-color: #f9f9f9;
-  }
+.sortbypopup a {
+  display: block;
+  padding: 10px;
+  color: #80B824;
+  text-decoration: none;
+  font-weight: bold;
+  border-bottom: 1px solid #80B824;
+}
 
+.sortbypopup a:last-child {
+  border-bottom: none;
+}
 
+.sortbypopup a:hover {
+  background-color: #f9f9f9;
+}
 
-  .filterpopup {
-    display: none;
-    position: absolute;
-    background-color: #fff;
-    border: 2px solid #80B824;
-    border-radius: 10px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-    width: 200px;
-    z-index: 2000; 
-    
-    }
+.filterpopup {
+  display: none;
+  position: absolute;
+  background-color: #fff;
+  border: 2px solid #80B824;
+  border-radius: 10px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+  width: 200px;
+  z-index: 2000;
+}
 
+.filterpopup a {
+  display: block;
+  padding: 10px;
+  color: #80B824;
+  text-decoration: none;
+  font-weight: bold;
+  border-bottom: 1px solid #80B824;
+}
 
-    .filterpopup a {
-      display: block;
-      padding: 10px;
-      color: #80B824;
-      text-decoration: none;
-      font-weight: bold;
-      border-bottom: 1px solid #80B824;
-    }
-    
-    .filterpopup a:last-child {
-      border-bottom: none;
-    }
-    
-    .filterpopup a:hover {
-      background-color: #f9f9f9;
-    }
+.filterpopup a:last-child {
+  border-bottom: none;
+}
 
+.filterpopup a:hover {
+  background-color: #f9f9f9;
+}
 
 .banner {
   position: relative;
@@ -298,7 +302,6 @@ main {
   width: 100%;
   max-height: 200px;
   object-fit: cover;
-  
 }
 
 .banner-title {
@@ -315,10 +318,8 @@ main {
 }
 
 .scroll-container {
-  
   max-height: calc(100vh - 140px);
   overflow-y: auto;
-  
 }
 
 .scroll-container::-webkit-scrollbar {
@@ -383,12 +384,10 @@ input[type="radio"] {
   cursor: pointer;
 }
 
-
 input[type="radio"]:checked {
-  background-color: green; 
-  border-color: green; 
+  background-color: green;
+  border-color: green;
 }
-
 
 input[type="radio"]:checked::before {
   content: '';
@@ -397,6 +396,6 @@ input[type="radio"]:checked::before {
   left: 4px;
   width: 8px;
   height: 8px;
-  background-color: white; 
+  background-color: white;
   border-radius: 50%;
 }

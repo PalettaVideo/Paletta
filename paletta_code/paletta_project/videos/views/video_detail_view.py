@@ -5,7 +5,6 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404
 import logging
 from ..models import Video, VideoTag
-from accounts.views.home_view import get_library_slug
 
 logger = logging.getLogger(__name__)
 
@@ -24,14 +23,20 @@ class VideoDetailView(TemplateView):
         """Get context data for the template."""
         context = super().get_context_data(**kwargs)
         
+        # Use current library from middleware (this is already set by LibraryContextMiddleware)
+        current_library = getattr(self.request, 'current_library', None)
+        if current_library:
+            context['current_library'] = current_library
+        
         # Get the video ID from URL parameters
         video_id = self.kwargs.get('video_id')
         if not video_id:
             raise Http404("Video ID is required")
         
         try:
-            # Get the video object
+            # Get the video object and pass it to the context
             clip = get_object_or_404(Video, id=video_id)
+            context['clip'] = clip
             
             # Increment view count
             clip.views_count += 1
@@ -47,6 +52,7 @@ class VideoDetailView(TemplateView):
                     'name': vt.tag.name,
                     'id': vt.tag.id
                 })
+            context['tags'] = tags
             
             # Format duration for display
             duration_formatted = "Unknown"
@@ -54,60 +60,15 @@ class VideoDetailView(TemplateView):
                 minutes = clip.duration // 60
                 seconds = clip.duration % 60
                 duration_formatted = f"{minutes}:{seconds:02d}"
+            context['duration_formatted'] = duration_formatted
             
-            # Get related clips (same category, excluding current)
-            related_clips = Video.objects.filter(
-                category=clip.category,
-                is_published=True
+            # Get related clips (same subject area, excluding current)
+            context['related_clips'] = Video.objects.filter(
+                subject_area=clip.subject_area
             ).exclude(id=clip.id).order_by('-upload_date')[:4]
             
-            # Prepare related clips data for the template
-            related_clips_data = []
-            for related in related_clips:
-                related_data = {
-                    'id': related.id,
-                    'title': related.title,
-                    'thumbnail': related.thumbnail.url if related.thumbnail else None
-                }
-                related_clips_data.append(related_data)
-            
-            # Add library information to context if available
-            if clip.library:
-                context['library'] = {
-                    'name': clip.library.name,
-                    'slug': get_library_slug(clip.library.name)
-                }
-            
-            # Create a clip dictionary with all needed properties
-            clip_dict = {
-                'id': clip.id,
-                'title': clip.title,
-                'description': clip.description,
-                'upload_date': clip.upload_date,
-                'category': clip.category.name,
-                'tags': tags,
-                'duration': duration_formatted,
-                'frame_rate': getattr(clip, 'frame_rate', 'Unknown'),
-                'resolution': getattr(clip, 'resolution', 'Unknown'),
-                'format': getattr(clip, 'format', 'Unknown'),
-                'video_url': clip.video_file.url if clip.video_file else clip.storage_url
-            }
-            
-            # Add a tags.all property to match the template expectations
-            class TagList:
-                def __init__(self, tags):
-                    self.tags = tags
-                
-                def all(self):
-                    return self.tags
-            
-            clip_dict['tags'] = TagList(tags)
-            
-            # Add clip data to context
-            context['clip'] = clip_dict
-            
-            # Add related clips to context
-            context['related_clips'] = related_clips_data
+            # CLEAN APPROACH: Library context is handled by middleware
+            # Templates will generate slugs on-demand using template tags
             
         except Exception as e:
             logger.error(f"Error retrieving video details: {str(e)}")

@@ -1,14 +1,128 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // Clear any stale library cache before initializing the page
+  clearStaleLibraryCache();
+
+  // Check for static version changes and clear all cache if needed
+  checkStaticVersionAndClearCache();
+
+  // Add debug logging for library context
+  const currentLibrarySlug = getCurrentLibrarySlug();
+  const currentLibraryName =
+    document.querySelector('meta[name="current-library-name"]')?.content ||
+    "Unknown";
+  const categoriesCount =
+    document.querySelector('meta[name="categories-count"]')?.content || "0";
+
   // initialize the popup menu for the user center
   initPopupMenu();
 
   // initialize search functionality
   initVideoSearch();
   initLibrarySearch();
-
-  // initialize sidebar toggle
-  initSidebar();
 });
+
+// Check for static version changes and clear cache if needed
+function checkStaticVersionAndClearCache() {
+  // Get current static version from script tag URL
+  const scriptTags = document.querySelectorAll('script[src*="homepage.js"]');
+  let currentVersion = null;
+
+  for (const script of scriptTags) {
+    const src = script.src;
+    const versionMatch = src.match(/[?&]v=([^&]+)/);
+    if (versionMatch) {
+      currentVersion = versionMatch[1];
+      break;
+    }
+  }
+
+  if (currentVersion) {
+    const storedVersion = localStorage.getItem("staticVersion");
+
+    if (storedVersion && storedVersion !== currentVersion) {
+      // Clear all localStorage
+      localStorage.clear();
+      // Clear sessionStorage as well
+      sessionStorage.clear();
+    }
+
+    // Store the current version
+    localStorage.setItem("staticVersion", currentVersion);
+  }
+}
+
+// Get current library context for cache clearing
+function getCurrentLibrarySlug() {
+  // Try to get from meta tag first (most reliable)
+  const metaLibrarySlug = document.querySelector(
+    'meta[name="current-library-slug"]'
+  )?.content;
+  if (metaLibrarySlug) {
+    return metaLibrarySlug;
+  }
+
+  // Try to get from URL path as fallback
+  const pathParts = window.location.pathname.split("/");
+  const libraryIndex = pathParts.indexOf("library");
+  if (libraryIndex !== -1 && pathParts[libraryIndex + 1]) {
+    return pathParts[libraryIndex + 1];
+  }
+
+  // Fallback to 'paletta' if no library found
+  return "paletta";
+}
+
+// Clear stale library cache
+function clearStaleLibraryCache() {
+  const currentLibrarySlug = getCurrentLibrarySlug();
+  const keysToRemove = [];
+
+  // Check all localStorage keys
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (
+      key &&
+      (key.startsWith("userCart_") ||
+        key.startsWith("userCollection_") ||
+        key.startsWith("categoryCache_") ||
+        key.startsWith("libraryData_"))
+    ) {
+      // If it's not for the current library, mark for removal
+      if (!key.endsWith(`_${currentLibrarySlug}`)) {
+        keysToRemove.push(key);
+      }
+    }
+  }
+
+  // Remove stale keys
+  keysToRemove.forEach((key) => {
+    localStorage.removeItem(key);
+  });
+
+  // Also clear any general cache that might interfere
+  const generalCacheKeys = [
+    "lastLibrarySlug",
+    "cachedCategories",
+    "lastVisitedLibrary",
+    "categoryData",
+  ];
+  generalCacheKeys.forEach((key) => {
+    if (
+      localStorage.getItem(key) &&
+      localStorage.getItem(key) !== currentLibrarySlug
+    ) {
+      localStorage.removeItem(key);
+    }
+  });
+
+  // Clear any window-level cache objects
+  if (typeof window.libraryCache !== "undefined") {
+    window.libraryCache = {};
+  }
+
+  // Set current library slug to prevent future caching issues
+  localStorage.setItem("lastLibrarySlug", currentLibrarySlug);
+}
 
 function initPopupMenu() {
   const centerButton = document.getElementById("centerButton");
@@ -30,37 +144,6 @@ function initPopupMenu() {
       event.stopPropagation();
     });
   }
-}
-
-function initSidebar() {
-  // Set up sidebar toggle functionality
-  window.toggleSidebar = function () {
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("sidebar-overlay");
-
-    if (sidebar) {
-      sidebar.classList.toggle("active");
-      if (overlay) {
-        if (sidebar.classList.contains("active")) {
-          overlay.style.display = "block";
-        } else {
-          overlay.style.display = "none";
-        }
-      }
-    }
-  };
-
-  window.closeSidebar = function () {
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("sidebar-overlay");
-
-    if (sidebar) {
-      sidebar.classList.remove("active");
-      if (overlay) {
-        overlay.style.display = "none";
-      }
-    }
-  };
 }
 
 function initVideoSearch() {

@@ -1,3 +1,4 @@
+{% load library_tags %}
 {% extends 'base.html' %}
 
 {% block title %}Request Download - {{ video.title }}{% endblock %}
@@ -28,7 +29,7 @@
               </p>
               <p>{{ video.description }}</p>
               <p>
-                <strong>Category:</strong> {{ video.category.name }}<br>
+                <strong>Subject Area:</strong> {{ video.subject_area.display_name }}<br>
                 {% if video.duration %}
                 <strong>Duration:</strong> {{ video.duration|divisibleby:60 }}:{{ video.duration|modulo:60 }}<br>
                 {% endif %}
@@ -60,7 +61,7 @@
               <button type="submit" class="btn btn-primary">
                 <i class="fas fa-paper-plane"></i> Send Download Link
               </button>
-              <a href="{% url 'upload_history' %}" class="btn btn-outline-secondary">
+              <a href="{% library_specific_url 'library_upload_history' %}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left"></i> Back to Videos
               </a>
             </div>

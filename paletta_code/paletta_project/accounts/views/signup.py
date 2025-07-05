@@ -4,17 +4,34 @@ from django.contrib import messages
 from ..models import User
 
 class SignupView(TemplateView):
-    """Custom signup view that serves the signup.html file."""
+    """
+    BACKEND/FRONTEND-READY: User registration interface.
+    MAPPED TO: /signup/ URL
+    USED BY: signup.html template
     
+    Handles new user account creation with validation and error handling.
+    """
     def get(self, request, *args, **kwargs):
-        """Serve the signup.html file."""
+        """
+        BACKEND/FRONTEND-READY: Display registration form.
+        MAPPED TO: GET /signup/
+        USED BY: Registration page access
+        
+        Shows signup form or redirects to home if already authenticated.
+        """
         if request.user.is_authenticated:
             return redirect('home')
         return render(request, 'signup.html')
     
     def post(self, request, *args, **kwargs):
-        """Handle signup form submission."""
-        # get form data
+        """
+        BACKEND/FRONTEND-READY: Process registration form submission.
+        MAPPED TO: POST /signup/
+        USED BY: signup.html form submission
+        
+        Creates new user account with validation and redirects to login.
+        Required fields: email, first_name, last_name, password, confirm_password
+        """
         email = request.POST.get('email')
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
@@ -23,7 +40,6 @@ class SignupView(TemplateView):
         institution = request.POST.get('institution', '')
         company = request.POST.get('company', '')
         
-        # validate form data
         if not email or not first_name or not last_name or not password or not confirm_password:
             messages.error(request, 'Please fill in all required fields.')
             return render(request, 'signup.html')
@@ -32,12 +48,10 @@ class SignupView(TemplateView):
             messages.error(request, 'Passwords do not match.')
             return render(request, 'signup.html')
         
-        # check if user already exists
         if User.objects.filter(email=email).exists():
             messages.error(request, 'A user with this email already exists.')
             return render(request, 'signup.html')
         
-        # create user
         try:
             user = User.objects.create_user(
                 email=email,

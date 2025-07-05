@@ -1,18 +1,26 @@
 from rest_framework import serializers
-from .models import Video, Category, Tag, VideoTag, Upload
+from .models import Video, Category, Tag, VideoTag, ContentType, PalettaCategory
+from .services import AWSCloudStorageService
 
 class CategorySerializer(serializers.ModelSerializer):
     """
-    Serializer for the Category model.
-    Includes the image URL for easy access in the frontend.
+    BACKEND/FRONTEND-READY: Serializer for Category model (subject areas).
+    MAPPED TO: /api/categories/ endpoint
+    USED BY: Category selection dropdowns, category listing pages
+    
+    Provides category data with video counts and image URLs for frontend display.
+    Includes computed fields: display_name, slug, video_count, image_url
     """
     video_count = serializers.SerializerMethodField()
     image_url = serializers.SerializerMethodField()
+    display_name = serializers.ReadOnlyField()
+    slug = serializers.ReadOnlyField()
     
     class Meta:
         model = Category
-        fields = ('id', 'name', 'description', 'library', 'created_at', 'video_count', 'image', 'image_url')
-        read_only_fields = ('created_at', 'video_count')
+        fields = ('id', 'subject_area', 'display_name', 'slug', 'description', 'library', 
+                 'is_active', 'created_at', 'video_count', 'image', 'image_url')
+        read_only_fields = ('created_at', 'video_count', 'display_name', 'slug')
     
     def get_video_count(self, obj):
         """Get the count of videos in this category."""
@@ -26,7 +34,34 @@ class CategorySerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.image.url)
             return obj.image.url
         return None
+
+class ContentTypeSerializer(serializers.ModelSerializer):
+    """
+    BACKEND/FRONTEND-READY: Serializer for ContentType model.
+    MAPPED TO: /api/content-types/ endpoint  
+    USED BY: Content type selection components, filtering systems
     
+    Provides content type data for multi-select functionality.
+    Includes computed field: display_name
+    """
+    display_name = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = ContentType
+        fields = ('id', 'code', 'display_name', 'is_active')
+        read_only_fields = ('display_name',)
+
+class PalettaCategorySerializer(serializers.ModelSerializer):
+    """
+    Serializer for the PalettaCategory model.
+    """
+    display_name = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = PalettaCategory
+        fields = ('id', 'code', 'display_name', 'description', 'is_active')
+        read_only_fields = ('display_name',)
+
 class TagSerializer(serializers.ModelSerializer):
     """
     Serializer for the Tag model.
@@ -39,33 +74,43 @@ class TagSerializer(serializers.ModelSerializer):
         
     def get_videos_count(self, obj):
         """Get the count of videos with this tag."""
-        # We need to count through the VideoTag model now
         return VideoTag.objects.filter(tag=obj).count()
 
 class VideoSerializer(serializers.ModelSerializer):
     """
-    Serializer for the Video model.
-    Includes additional fields for easier frontend integration.
+    BACKEND/FRONTEND-READY: Comprehensive video serializer with dual-category structure.
+    MAPPED TO: /api/videos/ endpoints
+    USED BY: Video listings, detail views, upload forms
+    
+    Handles video data with subject areas, content types, and streaming URLs.
+    Includes validation for title/description lengths and content type limits.
     """
     uploaded_by_username = serializers.ReadOnlyField(source='uploader.username')
-    category_name = serializers.ReadOnlyField(source='category.name')
+    subject_area_name = serializers.ReadOnlyField(source='subject_area.display_name')
+    content_type_names = serializers.SerializerMethodField()
+    paletta_category_name = serializers.ReadOnlyField(source='paletta_category.display_name')
     library_name = serializers.ReadOnlyField(source='library.name')
     tags = serializers.SerializerMethodField()
     video_file_url = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
     storage_status_display = serializers.SerializerMethodField()
+    display_categories = serializers.ReadOnlyField()
     
     class Meta:
         model = Video
-        fields = ('id', 'title', 'description', 'category', 'category_name',
-                  'library', 'library_name', 'uploader', 'uploaded_by_username', 
-                  'upload_date', 'updated_at', 'tags', 'video_file', 
-                  'video_file_url', 'thumbnail', 'thumbnail_url',
-                  'duration', 'file_size', 'views_count', 'is_published',
-                  'storage_status', 'storage_status_display', 'storage_url')
+        fields = ('id', 'title', 'description', 'subject_area', 'subject_area_name', 
+                  'content_types', 'content_type_names', 'paletta_category', 'paletta_category_name',
+                  'library', 'library_name', 'uploader', 'uploaded_by_username', 'upload_date', 
+                  'updated_at', 'tags', 'video_file', 'video_file_url', 'thumbnail', 'thumbnail_url',
+                  'duration', 'file_size', 'views_count', 'storage_status', 'storage_status_display', 
+                  'storage_url', 'display_categories')
         read_only_fields = ('uploader', 'upload_date', 'updated_at', 'views_count', 
                            'storage_status', 'storage_url', 'download_link', 'download_link_expiry',
-                           'file_size', 'duration')
+                           'file_size', 'duration', 'display_categories')
+    
+    def get_content_type_names(self, obj):
+        """Get display names for all content types."""
+        return [ct.display_name for ct in obj.content_types.all()]
     
     def get_tags(self, obj):
         """Get all tags for this video through VideoTag."""
@@ -77,7 +122,19 @@ class VideoSerializer(serializers.ModelSerializer):
         ).data
     
     def get_video_file_url(self, obj):
-        """Get the absolute URL for the video file."""
+        """
+        BACKEND/FRONTEND-READY: Generate video streaming URL for playback.
+        MAPPED TO: Video player components
+        USED BY: Video detail pages, embedded players
+        
+        Returns S3 streaming URL for stored videos or local file URL for pending uploads.
+        Handles both S3-stored and locally-stored video files.
+        Required fields: obj.storage_status, obj.storage_reference_id or obj.video_file
+        """
+        if obj.storage_status == 'stored' and obj.storage_reference_id:
+            storage_service = AWSCloudStorageService()
+            return storage_service.generate_streaming_url(obj)
+            
         if obj.video_file:
             request = self.context.get('request')
             if request:

@@ -1,100 +1,74 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 {% load video_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>{% if current_category %}{{ current_category.name }}{% else %}All Videos{% endif %} - Paletta</title>
+  <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - {% if current_category %}{{ current_category.display_name }}{% else %}All Videos{% endif %}</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
+  <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
+  <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
   <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <!-- CSS Reusables -->
-  <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
-  <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
-  <link rel="stylesheet" href="{% static 'css/floating.css' %}">
+  <link rel="stylesheet" href="{% versioned_static 'css/header_reusable.css' %}">
+  <link rel="stylesheet" href="{% versioned_static 'css/footer_reusable.css' %}">
+  <link rel="stylesheet" href="{% versioned_static 'css/floating.css' %}">
+  <link rel="stylesheet" href="{% versioned_static 'css/layout.css' %}">
   <!-- CSS -->
-  <link rel="stylesheet" href="{% static 'css/inside_category.css' %}">
+  <link rel="stylesheet" href="{% versioned_static 'css/inside_category.css' %}">
   <!-- JS -->
-  <script src="{% static 'js/inside_category.js' %}" defer></script>
-  <script src="{% static 'js/floating_label.js' %}" defer></script>
+  <script src="{% versioned_static 'js/inside_category.js' %}" defer></script>
+  <script src="{% versioned_static 'js/floating_label.js' %}" defer></script>
 
 
 </head>
 <body>
 {% include "html_reusables/header_reusable.html" %}
-<main>
+<div class="layout">
   <aside class="sidebar">
-    <div class="backbutton">
-      {% if library_slug %}
-      <a href="{% url 'library_detail' library_slug=library_slug %}">
-      {% elif current_library %}
-      <a href="{% url 'library_detail' library_slug=current_library.name|slugify %}">
-      {% else %}
-      <a href="{% url 'home' %}">
-      {% endif %}
-        <svg baseProfile="tiny" height="24px" id="Layer_1" version="1.2" viewBox="0 0 24 24" width="24px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g>
-          <path d="M19.164,19.547c-1.641-2.5-3.669-3.285-6.164-3.484v1.437c0,0.534-0.208,1.036-0.586,1.414   c-0.756,0.756-2.077,0.751-2.823,0.005l-6.293-6.207C3.107,12.523,3,12.268,3,11.999s0.107-0.524,0.298-0.712l6.288-6.203   c0.754-0.755,2.073-0.756,2.829,0.001C12.792,5.463,13,5.965,13,6.499v1.704c4.619,0.933,8,4.997,8,9.796v1   c0,0.442-0.29,0.832-0.714,0.958c-0.095,0.027-0.19,0.042-0.286,0.042C19.669,19.999,19.354,19.834,19.164,19.547z M12.023,14.011   c2.207,0.056,4.638,0.394,6.758,2.121c-0.768-3.216-3.477-5.702-6.893-6.08C11.384,9.996,11,10,11,10V6.503l-5.576,5.496l5.576,5.5   V14C11,14,11.738,14.01,12.023,14.011z"/></g></svg>
-        <span>Back</span>
-      </a>
-    </div>
     <ul class="category-list">
-      {% if library_slug %}
-      <li class="{% if category_filter == 'all' or not category_filter or is_clip_store %}active{% endif %}" data-category="all">
-        <a href="{% url 'library_clip_store' library_slug=library_slug %}" style="display: block; text-decoration: none; color: inherit;">View All</a>
-      </li>
       <li>
-        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Campus Life</a>
+        {% if current_library %}
+                        <a href="{% library_specific_url 'library_home' %}">
+        {% else %}
+        <a href="{% url 'home' %}">
+        {% endif %}
+          <svg baseProfile="tiny" height="24px" id="Layer_1" version="1.2" viewBox="0 0 24 24" width="24px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g><path d="M19.164,19.547c-1.641-2.5-3.669-3.285-6.164-3.484v1.437c0,0.534-0.208,1.036-0.586,1.414   c-0.756,0.756-2.077,0.751-2.823,0.005l-6.293-6.207C3.107,12.523,3,12.268,3,11.999s0.107-0.524,0.298-0.712l6.288-6.203   c0.754-0.755,2.073-0.756,2.829,0.001C12.792,5.463,13,5.965,13,6.499v1.704c4.619,0.933,8,4.997,8,9.796v1   c0,0.442-0.29,0.832-0.714,0.958c-0.095,0.027-0.19,0.042-0.286,0.042C19.669,19.999,19.354,19.834,19.164,19.547z M12.023,14.011   c2.207,0.056,4.638,0.394,6.758,2.121c-0.768-3.216-3.477-5.702-6.893-6.08C11.384,9.996,11,10,11,10V6.503l-5.576,5.496l5.576,5.5   V14C11,14,11.738,14.01,12.023,14.011z"/></g></svg>
+          <span>Back</span>
+        </a>
       </li>
-      <li>
-        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Teaching & Learning</a>
-      </li>
-      <li>
-        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Research & Innovation</a>
-      </li>
-      <li>
-        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >City & Environment</a>
-      </li>
-      <li>
-        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Aerial & Establishing shots</a>
-      </li>
-      <li>
-        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >People & Portraits</a>
-      </li>
-      <li>
-        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Culture & Events</a>
-      </li>
-      <li>
-        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Workspaces & Facilities</a>
-      </li>
-      <li>
-        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Cutaways & Abstracts</a>
-      </li>
-      <li>
-        <a href="{% url 'library_clip_store' library_slug=library_slug %}" >Historical & Archieve</a>
+      <li class="{% if category_filter == 'all' or is_clip_store %}active{% endif %}" data-category="all">
+        {% if current_library %}
+        <a href="{% library_specific_url 'library_clip_store' %}">All Clips</a>
+        {% else %}
+        <a href="#">All Clips</a>
+        {% endif %}
       </li>
       
       {% for category in categories %}
-      <li class="{% if category_filter|lower == category.name|lower or category_slug == category.name|slugify or current_category and current_category.id == category.id %}active{% endif %}" data-category="{{ category.name|lower }}">
-        <a href="{% url 'library_category' library_slug=library_slug category_slug=category.name|slugify %}" style="display: block; text-decoration: none; color: inherit;">{{ category.name }}</a>
+      <li class="{% if current_category and current_category.display_name == category.display_name %}active{% endif %}" data-category="{{ category.display_name|lower }}">
+        <a href="{% library_specific_url 'library_category' category_slug=category.display_name|library_slugify %}">{{ category.display_name }}</a>
       </li>
       {% endfor %}
-      {% endif %}
     </ul>
   </aside>
   
-  <section class="main-content">
+  <main class="content">
     <div class="banner">
       {% if current_category %}
         <div class="imagecontainer">
-          <h1 class="banner-title">{{ current_category.name }}</h1>
+          <h1 class="banner-title">{{ current_category.display_name }}</h1>
           <!-- Simple image priority flow -->
           {% if category_image_url %}
-            <img src="{{ category_image_url }}" alt="{{ current_category.name }}" class="category-image">
+            <img src="{{ category_image_url }}" alt="{{ current_category.display_name }}" class="category-image">
           {% else %}
             <!-- Default image when no images are available -->
-            <img src="{% static 'picture/All.png' %}" alt="{{ current_category.name }}" class="category-image">
+            <img src="{% static 'picture/All.png' %}" alt="{{ current_category.display_name }}" class="category-image">
           {% endif %}
         </div>
       {% elif category_not_found %}
@@ -157,7 +131,7 @@
         {% for video in videos %}
           <div class="clip">
             <div class="clip-thumbnail" data-video-id="{{ video.id }}">
-              {% if video.thumbnail %}
+              {% if video.thumbnail and video.thumbnail.url %}
                 <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}">
               {% else %}
                 <img src="{% static 'picture/default-thumbnail.png' %}" alt="{{ video.title }}">
@@ -211,10 +185,10 @@
     <div class="pagination-controls" id="pagination-controls">
       <div class="pagination-wrapper">
         {% if page_obj.has_previous %}
-          {% if library_slug and category_slug %}
-            <a href="{% url 'library_category' library_slug=library_slug category_slug=category_slug %}?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn prev">&laquo; Previous</a>
-          {% elif library_slug %}
-            <a href="{% url 'library_detail' library_slug=library_slug %}?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn prev">&laquo; Previous</a>
+          {% if current_library and category_slug %}
+            <a href="{% library_specific_url 'library_category' category_slug=category_slug %}?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn prev">&laquo; Previous</a>
+          {% elif current_library %}
+                            <a href="{% library_specific_url 'library_home' %}?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn prev">&laquo; Previous</a>
           {% else %}
             <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn prev">&laquo; Previous</a>
           {% endif %}
@@ -224,10 +198,10 @@
           {% if page_obj.number == num %}
             <span class="pagination-btn page active">{{ num }}</span>
           {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-            {% if library_slug and category_slug %}
-              <a href="{% url 'library_category' library_slug=library_slug category_slug=category_slug %}?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn page">{{ num }}</a>
-            {% elif library_slug %}
-              <a href="{% url 'library_detail' library_slug=library_slug %}?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn page">{{ num }}</a>
+            {% if current_library and category_slug %}
+              <a href="{% library_specific_url 'library_category' category_slug=category_slug %}?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn page">{{ num }}</a>
+            {% elif current_library %}
+                                  <a href="{% library_specific_url 'library_home' %}?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn page">{{ num }}</a>
             {% else %}
               <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn page">{{ num }}</a>
             {% endif %}
@@ -235,10 +209,10 @@
         {% endfor %}
         
         {% if page_obj.has_next %}
-          {% if library_slug and category_slug %}
-            <a href="{% url 'library_category' library_slug=library_slug category_slug=category_slug %}?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn next">Next &raquo;</a>
-          {% elif library_slug %}
-            <a href="{% url 'library_detail' library_slug=library_slug %}?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn next">Next &raquo;</a>
+          {% if current_library and category_slug %}
+            <a href="{% library_specific_url 'library_category' category_slug=category_slug %}?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn next">Next &raquo;</a>
+          {% elif current_library %}
+                            <a href="{% library_specific_url 'library_home' %}?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn next">Next &raquo;</a>
           {% else %}
             <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if sort_by %}&sort_by={{ sort_by }}{% endif %}" class="pagination-btn next">Next &raquo;</a>
           {% endif %}
@@ -246,8 +220,8 @@
       </div>
     </div>
     {% endif %}
-  </section>
-</main>
+  </main>
+</div>
 
 </body>
 {% include "html_reusables/footer_reusable.html" %}

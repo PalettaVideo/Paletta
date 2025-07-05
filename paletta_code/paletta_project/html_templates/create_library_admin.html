@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Create a Library</title>
+    <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - Create a Library</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Styles -->
@@ -13,9 +13,9 @@
     <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
     <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
     <link rel="stylesheet" href="{% static 'css/button_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <!-- CSS -->
     <link rel="stylesheet" href="{% static 'css/create_library_admin.css' %}">
-    <link rel="stylesheet" href="{% static 'css/sidebar_admin.css' %}">
     <!-- JS -->
     <script src="{% static 'js/create_library_admin.js' %}" defer></script>
 </head>
@@ -23,108 +23,196 @@
 <body>
     {% include "html_reusables/header_reusable.html" %}
 
-    <div class="container">
-    <aside>
-        <div class="sidebar">
+    <div class="layout">
+        <aside class="sidebar">
             <ul>
                 <li><a href="{% url 'create_library' %}" class="active">Create a Library</a></li>
                 <li><a href="{% url 'manage_libraries' %}">Manage All Libraries</a></li>
                 <li><a href="{% url 'manage_administrators' %}">Manage Administrators</a></li>
             </ul>
-        </div>
-    </aside>
+        </aside>
 
-    <main>
-        <h2>Create a Library</h2>
-        
-        <form method="post" enctype="multipart/form-data" id="library-form">
-            {% csrf_token %}
-            {% if form.non_field_errors %}
-                <div class="error-message">
-                    {{ form.non_field_errors }}
+        <main class="content">
+            <h2>Create a Library</h2>
+            
+            <form method="post" enctype="multipart/form-data" id="library-form">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="error-message">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+                
+                <label for="id_name">Name</label>
+                <input type="text" id="id_name" name="name" maxlength="100" placeholder="Enter name" required>
+                {% if form.name.errors %}
+                    <div class="error-message">{{ form.name.errors }}</div>
+                {% endif %}
+
+                <label for="id_logo">Logo</label>
+                <div id="upload-box" style="border: 2px dashed #ccc; padding: 10px; cursor: pointer;">
+                    select a Logo
+                    <input type="file" id="file-input" name="logo" accept="image/*" style="display: none;">
                 </div>
-            {% endif %}
-            
-            <label for="id_name">Name</label>
-            <input type="text" id="id_name" name="name" maxlength="100" placeholder="Enter name" required>
-            {% if form.name.errors %}
-                <div class="error-message">{{ form.name.errors }}</div>
-            {% endif %}
+                
+                <div id="preview-container"></div>
+                {% if form.logo.errors %}
+                    <div class="error-message">{{ form.logo.errors }}</div>
+                {% endif %}
 
-            <label for="id_logo">Logo</label>
-            <div id="upload-box" style="border: 2px dashed #ccc; padding: 10px; cursor: pointer;">
-                select a Logo
-                <input type="file" id="file-input" name="logo" accept="image/*" style="display: none;">
-            </div>
-            
-            <div id="preview-container"></div>
-            {% if form.logo.errors %}
-                <div class="error-message">{{ form.logo.errors }}</div>
-            {% endif %}
+                <label for="id_description">Description</label>
+                <textarea id="id_description" name="description" maxlength="100" placeholder="Enter description" required></textarea>
+                {% if form.description.errors %}
+                    <div class="error-message">{{ form.description.errors }}</div>
+                {% endif %}
+                
+                <label for="id_storage_tier">Storage Tier</label>
+                <select id="id_storage_tier" name="storage_tier">
+                    <option value="basic">Basic (up to 100GB)</option>
+                    <option value="pro">Professional (up to 1TB)</option>
+                    <option value="enterprise">Enterprise (up to 10TB)</option>
+                </select>
+                {% if form.storage_tier.errors %}
+                    <div class="error-message">{{ form.storage_tier.errors }}</div>
+                {% endif %}
 
-            <label for="id_description">Description</label>
-            <textarea id="id_description" name="description" maxlength="100" placeholder="Enter description" required></textarea>
-            {% if form.description.errors %}
-                <div class="error-message">{{ form.description.errors }}</div>
-            {% endif %}
-            
-            <label for="id_storage_tier">Storage Tier</label>
-            <select id="id_storage_tier" name="storage_tier">
-                <option value="basic">Basic (up to 100GB)</option>
-                <option value="pro">Professional (up to 1TB)</option>
-                <option value="enterprise">Enterprise (up to 10TB)</option>
-            </select>
-            {% if form.storage_tier.errors %}
-                <div class="error-message">{{ form.storage_tier.errors }}</div>
-            {% endif %}
-
-            <!-- Category section -->
-            <div class="category-container">
-                <label class="category-label">Add Categories (Optional)</label>
-                <button type="button" class="add-category-btn" onclick="openCategoryModal()">➕ add category</button>
-            </div>
-
-            <!-- Category display area -->
-            <div id="categoryList" class="category-list"></div>
-            <div id="category-status" class="status-message">No categories added yet.</div>
-            <input type="hidden" id="categories-json" name="categories_json" value="[]">
-            
-            <!-- Category modal -->
-            <div id="categoryModal" class="modal">
-                <div class="modal-content">
-                    <span class="close" onclick="closeCategoryModal()">&times;</span>
-                    <h2>Add a Category</h2>
-
-                    <label for="categoryName">Category Name</label>
-                    <input type="text" id="categoryName" placeholder="Enter category name">
-
-                    <label for="categoryImage">Category Image</label>
-                    <input type="file" id="categoryImage" accept="image/*">
-                    <img id="imagePreview" style="display: none; width: 100px; height: 100px;">
-
-                    <label for="categoryDescription">Category Description</label>
-                    <textarea id="categoryDescription" placeholder="Enter description"></textarea>
-
-                    <p id="errorText" class="error-text"></p>
-                    <button type="button" class="add-btn" onclick="addCategory()">Add Category</button>
+                <!-- Category Source Selection -->
+                <div class="category-source-container">
+                    <label class="category-source-label">Category Management</label>
+                    <p class="category-explanation">Choose how video categories will be managed in this library:</p>
+                    
+                    <div class="category-source-options">
+                        <div class="category-option">
+                            <input type="radio" id="paletta_style" name="category_source" value="paletta_style" checked>
+                            <label for="paletta_style">
+                                <strong>Use Paletta Style Categories</strong>
+                                <p class="option-description">
+                                    Uses predefined Paletta categories (People & Community, Buildings & Architecture, etc.) 
+                                    combined with flexible content types (Campus Life, Teaching & Learning, etc.). 
+                                    Perfect for educational institutions.
+                                </p>
+                            </label>
                 </div>
-            </div>
 
-            <label for="id_theme_color">Theme Colour</label>
-            <div id="colorPickerContainer">
-                <div id="colorPreview" onclick="toggleColorPicker()"></div>
-                <input type="color" id="themeColor" name="primary_color" onchange="updateColor()" value="#86B049">
-            </div>
-            {% if form.theme_color.errors %}
-                <div class="error-message">{{ form.theme_color.errors }}</div>
-            {% endif %}
+                        <div class="category-option">
+                            <input type="radio" id="custom" name="category_source" value="custom">
+                            <label for="custom">
+                                <strong>Create My Own Categories</strong>
+                                <p class="option-description">
+                                    Uses academic subject areas (Engineering Sciences, Medical Sciences, etc.) 
+                                    combined with content types. Ideal for specialized academic or research institutions 
+                                    that need subject-specific organization.
+                                </p>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Custom Categories Creation Interface -->
+                    <div id="custom-categories-interface" class="custom-categories-interface" style="display: none;">
+                        <h4>Create Your Subject Area Categories</h4>
+                        <p class="interface-description">
+                            Select the subject areas that are relevant to your institution. You can always add more later.
+                        </p>
+                        
+                        <div class="subject-areas-grid">
+                            <div class="subject-area-item">
+                                <input type="checkbox" id="engineering_sciences" name="custom_subject_areas" value="engineering_sciences">
+                                <label for="engineering_sciences">Engineering Sciences</label>
+                            </div>
+                            <div class="subject-area-item">
+                                <input type="checkbox" id="mathematical_physical_sciences" name="custom_subject_areas" value="mathematical_physical_sciences">
+                                <label for="mathematical_physical_sciences">Mathematical & Physical Sciences</label>
+                            </div>
+                            <div class="subject-area-item">
+                                <input type="checkbox" id="medical_sciences" name="custom_subject_areas" value="medical_sciences">
+                                <label for="medical_sciences">Medical Sciences</label>
+                            </div>
+                            <div class="subject-area-item">
+                                <input type="checkbox" id="life_sciences" name="custom_subject_areas" value="life_sciences">
+                                <label for="life_sciences">Life Sciences</label>
+                            </div>
+                            <div class="subject-area-item">
+                                <input type="checkbox" id="brain_sciences" name="custom_subject_areas" value="brain_sciences">
+                                <label for="brain_sciences">Brain Sciences</label>
+                            </div>
+                            <div class="subject-area-item">
+                                <input type="checkbox" id="built_environment" name="custom_subject_areas" value="built_environment">
+                                <label for="built_environment">Built Environment</label>
+                            </div>
+                            <div class="subject-area-item">
+                                <input type="checkbox" id="population_health" name="custom_subject_areas" value="population_health">
+                                <label for="population_health">Population Health</label>
+                            </div>
+                            <div class="subject-area-item">
+                                <input type="checkbox" id="arts_humanities" name="custom_subject_areas" value="arts_humanities">
+                                <label for="arts_humanities">Arts & Humanities</label>
+                            </div>
+                            <div class="subject-area-item">
+                                <input type="checkbox" id="social_historical_sciences" name="custom_subject_areas" value="social_historical_sciences">
+                                <label for="social_historical_sciences">Social & Historical Sciences</label>
+                            </div>
+                            <div class="subject-area-item">
+                                <input type="checkbox" id="education" name="custom_subject_areas" value="education">
+                                <label for="education">Education</label>
+                            </div>
+                            <div class="subject-area-item">
+                                <input type="checkbox" id="fine_art" name="custom_subject_areas" value="fine_art">
+                                <label for="fine_art">Fine Art</label>
+                            </div>
+                            <div class="subject-area-item">
+                                <input type="checkbox" id="law" name="custom_subject_areas" value="law">
+                                <label for="law">Law</label>
+                            </div>
+                            <div class="subject-area-item">
+                                <input type="checkbox" id="business" name="custom_subject_areas" value="business">
+                                <label for="business">Business</label>
+                            </div>
+                        </div>
+                        
+                        <div class="custom-categories-note">
+                            <small>
+                                <strong>Note:</strong> Content types (Campus Life, Teaching & Learning, etc.) and tags will be available 
+                                for all libraries regardless of your subject area selection. A "Private" category is automatically 
+                                created for all libraries.
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div id="category-preview" class="category-preview">
+                        <h4>Category Structure Preview:</h4>
+                        <div id="preview-content">
+                            <div class="preview-section">
+                                <strong>Paletta Categories:</strong> People & Community, Buildings & Architecture, Classrooms & Learning Spaces, etc.
+                            </div>
+                            <div class="preview-section">
+                                <strong>Content Types:</strong> Campus Life, Teaching & Learning, Research & Innovation, etc. (1-3 per video)
+                            </div>
+                            <div class="preview-section">
+                                <strong>Tags:</strong> Optional custom tags for additional organization
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            <button type="submit" class="create-btn">Create</button>
-        </form>
-    </main>
-</div>
+                {% if form.category_source.errors %}
+                    <div class="error-message">{{ form.category_source.errors }}</div>
+                {% endif %}
 
-{% include "html_reusables/footer_reusable.html" %}
+                <label for="id_theme_color">Theme Colour</label>
+                <div id="colorPickerContainer">
+                    <div id="colorPreview" onclick="toggleColorPicker()"></div>
+                    <input type="color" id="themeColor" name="primary_color" onchange="updateColor()" value="#86B049">
+                </div>
+                {% if form.theme_color.errors %}
+                    <div class="error-message">{{ form.theme_color.errors }}</div>
+                {% endif %}
+
+                <button type="submit" class="create-btn">Create Library</button>
+            </form>
+        </main>
+    </div>
+
+    {% include "html_reusables/footer_reusable.html" %}
 
 </body>
 </html>

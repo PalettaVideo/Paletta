@@ -1,172 +1,277 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import TemplateView, ListView
+from django.shortcuts import redirect
+from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 import json
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action
 from .models import Library, UserLibraryRole
 from .serializers import LibrarySerializer, UserLibraryRoleSerializer
-from videos.serializers import CategorySerializer
 from videos.models import Category
 import base64
-import os
 from django.core.files.base import ContentFile
-from django.conf import settings
 from django.urls import reverse
 from django.contrib import messages
-from accounts.models import User
 
 # Create your views here.
 
 class IsLibraryAdminOrReadOnly(permissions.BasePermission):
     """
-    Custom permission to only allow library administrators to edit it.
+    BACKEND-READY: Custom permission for library administration.
+    MAPPED TO: Library API endpoints
+    USED BY: LibraryViewSet permission checking
+    
+    Allows read access to all, write access only to library owners.
     """
     def has_object_permission(self, request, view, obj):
-        # Read permissions are allowed to any request
         if request.method in permissions.SAFE_METHODS:
             return True
-        
-        # Write permissions are only allowed to the library administrator
         return obj.owner == request.user
 
 class LibraryViewSet(viewsets.ModelViewSet):
+    """
+    BACKEND/FRONTEND-READY: Complete CRUD operations for library management.
+    MAPPED TO: /api/libraries/ endpoints
+    USED BY: Frontend library management interface and admin tools
+    
+    Provides library creation, reading, updating, deletion, and custom actions.
+    """
     queryset = Library.objects.all()
     serializer_class = LibrarySerializer
     
     def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'destroy']:
-            permission_classes = [IsLibraryAdminOrReadOnly]
-        elif self.action == 'create':
-            permission_classes = [permissions.IsAuthenticated]
-        else:
-            permission_classes = [permissions.AllowAny]
+        """
+        BACKEND-READY: Dynamic permission assignment based on action.
+        MAPPED TO: DRF permission system
+        USED BY: All library API endpoints
+        
+        Sets appropriate permissions for different CRUD operations.
+        """
+        permission_map = {
+            'create': [permissions.IsAuthenticated],
+            'update': [IsLibraryAdminOrReadOnly],
+            'partial_update': [IsLibraryAdminOrReadOnly],
+            'destroy': [IsLibraryAdminOrReadOnly],
+        }
+        permission_classes = permission_map.get(self.action, [permissions.AllowAny])
         return [permission() for permission in permission_classes]
     
     def perform_create(self, serializer):
+        """
+        BACKEND-READY: Set library owner during creation.
+        MAPPED TO: POST /api/libraries/
+        USED BY: Library creation endpoint
+        
+        Automatically assigns current user as library owner.
+        """
         serializer.save(owner=self.request.user)
     
     def destroy(self, request, *args, **kwargs):
-        """Close (delete) a library"""
-        instance = self.get_object()
-        self.perform_destroy(instance)
-        return Response({
-            'success': True,
-            'message': 'Library closed successfully.'
-        }, status=status.HTTP_200_OK)
+        """
+        BACKEND-READY: Delete library with permission validation.
+        MAPPED TO: DELETE /api/libraries/{id}/
+        USED BY: Library management interface
+        
+        Removes library after validating user permissions.
+        """
+        try:
+            instance = self.get_object()
+            
+            # Check if this is the Paletta library
+            is_paletta_library = instance.is_paletta_library
+            
+            # Permission check: Paletta library can only be deleted by superusers (owners)
+            if is_paletta_library and not request.user.is_superuser:
+                return Response({
+                    'status': 'error',
+                    'message': 'Only users with owner-level access can delete the Paletta library.'
+                }, status=403)
+            
+            # Permission check: Other libraries can be deleted by owners or the library creator
+            if not is_paletta_library:
+                is_owner = request.user.is_superuser
+                is_creator = instance.owner == request.user
+                is_admin = UserLibraryRole.objects.filter(
+                    library=instance, user=request.user, role='admin'
+                ).exists()
+                
+                if not (is_owner or is_creator or is_admin):
+                    return Response({
+                        'status': 'error',
+                        'message': 'Only users with owner-level access or the library creator can delete this library.'
+                    }, status=403)
+            
+            self.perform_destroy(instance)
+            return Response({
+                'status': 'success',
+                'message': 'Library deleted successfully.'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({'status': 'error', 'message': str(e)}, status=500)
         
     @action(detail=True, methods=['post'])
     def toggle_status(self, request, pk=None):
-        """Toggle a library's active status"""
-        library = self.get_object()
+        """
+        BACKEND-READY: Toggle library active/inactive status.
+        MAPPED TO: POST /api/libraries/{id}/toggle_status/
+        USED BY: Library management interface
         
-        # Only the library administrator can change the status
-        if library.owner != request.user:
-            return Response(
-                {"error": "Only the library administrator can change the library status."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        Switches library between active and inactive states.
+        """
+        try:
+            library = self.get_object()
             
-        # Get the desired status from the request
-        active = request.data.get('active', not library.is_active)
-        
-        # Update the library status
-        library.is_active = active
-        library.save(update_fields=['is_active'])
-        
-        return Response({
-            'success': True,
-            'is_active': library.is_active,
-            'message': f"Library {'started' if active else 'stopped'} successfully."
-        }, status=status.HTTP_200_OK)
-        
+            if library.owner != request.user and not UserLibraryRole.objects.filter(
+                library=library, user=request.user, role='admin'
+            ).exists():
+                return Response({
+                    'status': 'error',
+                    'message': 'You do not have permission to modify this library.'
+                }, status=403)
+            
+            library.is_active = not library.is_active
+            library.save()
+            
+            status_text = 'activated' if library.is_active else 'deactivated'
+            return Response({
+                'status': 'success',
+                'message': f'Library has been {status_text} successfully.',
+                'is_active': library.is_active
+            })
+            
+        except Exception as e:
+            return Response({'status': 'error', 'message': str(e)}, status=500)
+
     @action(detail=True, methods=['post'])
-    def add_member(self, request, pk=None):
-        library = self.get_object()
-        
-        # Only the library administrator can add members
-        if library.owner != request.user:
-            return Response(
-                {"detail": "Only the library administrator can add members."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+    def add_categories(self, request, pk=None):
+        """Add custom categories to a library"""
+        try:
+            library = self.get_object()
             
-        user_id = request.data.get('user_id')
-        role = request.data.get('role', 'contributor')
-        
-        if not user_id:
-            return Response(
-                {"detail": "User ID is required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            # Check if user has permission to modify this library
+            if library.owner != request.user and not UserLibraryRole.objects.filter(
+                library=library, user=request.user, role='admin'
+            ).exists():
+                return Response({
+                    'status': 'error',
+                    'message': 'You do not have permission to modify this library.'
+                }, status=403)
             
-        # Check if the user is already a member
-        if UserLibraryRole.objects.filter(library=library, user_id=user_id).exists():
-            return Response(
-                {"detail": "User is already a member of this library."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            # Check if library uses custom categories
+            if library.category_source != 'custom':
+                return Response({
+                    'status': 'error',
+                    'message': 'This library does not use custom categories.'
+                }, status=400)
             
-        # Create the library member
-        user_role = UserLibraryRole.objects.create(
-            library=library,
-            user_id=user_id,
-            role=role
-        )
-        
-        serializer = UserLibraryRoleSerializer(user_role)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            categories_data = request.data.get('categories', [])
+            if not categories_data:
+                return Response({
+                    'status': 'error',
+                    'message': 'No categories provided.'
+                }, status=400)
+            
+            # Import here to avoid circular imports
+            from videos.models import Category
+            
+            created_categories = []
+            for category_data in categories_data:
+                # Create the category
+                category_kwargs = {
+                    'subject_area': category_data.get('subject_area'),
+                    'description': category_data.get('description', ''),
+                    'library': library,
+                    'is_active': True
+                }
+                
+                # Add custom_name if it's a custom category
+                if category_data.get('subject_area') == 'custom' and category_data.get('custom_name'):
+                    category_kwargs['custom_name'] = category_data.get('custom_name')
+                
+                category = Category.objects.create(**category_kwargs)
+                created_categories.append(category)
+            
+            return Response({
+                'status': 'success',
+                'message': f'Successfully added {len(created_categories)} categories.',
+                'created_count': len(created_categories)
+            })
+            
+        except Exception as e:
+            return Response({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
 
 class UserLibraryRoleViewSet(viewsets.ModelViewSet):
+    """
+    BACKEND/FRONTEND-READY: CRUD operations for user library roles.
+    MAPPED TO: /api/roles/ endpoints
+    USED BY: Library member management interface
+    
+    Manages contributor and admin role assignments within libraries.
+    """
     queryset = UserLibraryRole.objects.all()
     serializer_class = UserLibraryRoleSerializer
     
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            permission_classes = [permissions.IsAuthenticated]
-        else:
-            permission_classes = [permissions.AllowAny]
+        """
+        BACKEND-READY: Permission control for role management.
+        MAPPED TO: DRF permission system
+        USED BY: Role management endpoints
+        
+        Requires authentication for write operations.
+        """
+        write_actions = ['create', 'update', 'partial_update', 'destroy']
+        permission_classes = [permissions.IsAuthenticated] if self.action in write_actions else [permissions.AllowAny]
         return [permission() for permission in permission_classes]
 
 def process_base64_image(base64_data, name=None):
     """
-    Process base64 image data and convert it to a Django ContentFile
+    BACKEND-READY: Convert base64 image data to Django ContentFile.
+    MAPPED TO: Image upload processing
+    USED BY: EditLibraryView.post() for category images
+    
+    Processes base64 encoded images and creates proper Django file objects.
     """
-    # Remove header if present
     if ',' in base64_data:
         format, imgstr = base64_data.split(';base64,')
         ext = format.split('/')[-1]
     else:
-        # Assume it's already properly formatted
         imgstr = base64_data
-        ext = 'png'  # Default extension
+        ext = 'png'
     
-    # Generate a random filename if none provided
     if not name:
         import uuid
         name = f"{uuid.uuid4()}.{ext}"
     elif not name.endswith(f'.{ext}'):
         name = f"{name}.{ext}"
     
-    # Decode base64 and create ContentFile
     data = base64.b64decode(imgstr)
     return ContentFile(data, name=name)
 
 class CreateLibraryView(LoginRequiredMixin, TemplateView):
+    """
+    BACKEND/FRONTEND-READY: Library creation interface.
+    MAPPED TO: /admin/create-library/ URL
+    USED BY: create_library_admin.html template
+    
+    Handles both GET (form display) and POST (form submission) for library creation.
+    """
     template_name = 'create_library_admin.html'
     
     def post(self, request, *args, **kwargs):
         try:
-            # Log received data for debugging
-            print("POST data:", request.POST)
-            print("FILES:", request.FILES)
+            # Get category source selection
+            category_source = request.POST.get('category_source', 'custom')
             
             data = {
                 'name': request.POST.get('name'),
                 'description': request.POST.get('description'),
-                # Other fields as needed
+                'category_source': category_source,
+                'storage_tier': request.POST.get('storage_tier', 'basic'),
             }
             
             # Handle color
@@ -177,66 +282,8 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                     'secondary': '#FFFFFF',
                     'text': '#000000'
                 }
-                
-            # First, process any categories
-            categories = []
-            categories_json = request.POST.get('categories_json')
-            print(f"Raw categories_json: {categories_json}")
             
-            if categories_json and categories_json != '[]':
-                try:
-                    categories_data = json.loads(categories_json)
-                    print(f"Parsed categories data (count: {len(categories_data)}): {categories_data}")
-                    
-                    for category_data in categories_data:
-                        print(f"Processing category: {category_data.get('name')}")
-                        # Create category data dict for serializer
-                        category_dict = {
-                            'name': category_data.get('name'),
-                            'description': category_data.get('description')
-                        }
-                        
-                        # Use the CategorySerializer from videos app
-                        category_serializer = CategorySerializer(data=category_dict)
-                        if category_serializer.is_valid():
-                            print(f"Category {category_data.get('name')} validated successfully")
-                            # Save the category
-                            category = category_serializer.save()
-                            
-                            # Handle category image if provided as base64
-                            if 'image' in category_data and category_data['image'].startswith('data:image'):
-                                print(f"Processing image for category {category_data.get('name')}")
-                                try:
-                                    # Convert base64 to file and save
-                                    image_file = process_base64_image(
-                                        category_data['image'], 
-                                        name=f"category_{category_data.get('name', 'unnamed')}"
-                                    )
-                                    category.image = image_file
-                                    category.save()
-                                    print(f"Image saved for category {category_data.get('name')}")
-                                except Exception as e:
-                                    print(f"Error saving category image: {e}")
-                            else:
-                                print(f"No valid image found for category {category_data.get('name')}")
-                            
-                            categories.append(category)
-                        else:
-                            print(f"Category validation errors for {category_data.get('name')}: {category_serializer.errors}")
-                            return JsonResponse({
-                                'status': 'error',
-                                'message': f"Category validation failed: {category_serializer.errors}"
-                            }, status=400)
-                except json.JSONDecodeError as e:
-                    print(f"JSON decode error: {str(e)}")
-                    return JsonResponse({
-                        'status': 'error',
-                        'message': f"Invalid category data format: {str(e)}"
-                    }, status=400)
-            else:
-                print("No categories provided or empty categories array")
-                
-            # Then create the library
+            # Create the library first
             serializer = LibrarySerializer(data=data)
             if serializer.is_valid():
                 # Save with owner set to the current user
@@ -248,14 +295,29 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                     library.logo = logo
                     library.save()
                 
-                # If any videos belong to the library, associate them with the created categories
-                if categories and hasattr(library, 'videos'):
-                    for video in library.videos.all():
-                        # Check if video doesn't already have a category
-                        if not video.category:
-                            # Assign the first category as default
-                            video.category = categories[0]
-                            video.save()
+                # Categories are automatically set up by Library.save() method
+                
+                # For custom libraries, handle any additional selected subject areas
+                if category_source == 'custom':
+                    # Get selected subject areas from checkboxes
+                    custom_subject_areas = request.POST.getlist('custom_subject_areas')
+                    
+                    if custom_subject_areas:
+                        from videos.models import Category
+                        
+                        # Create categories for each selected subject area
+                        for subject_area in custom_subject_areas:
+                            # Convert subject area code to display name
+                            display_name = subject_area.replace('_', ' ').title()
+                            
+                            Category.objects.get_or_create(
+                                subject_area=subject_area,
+                                library=library,
+                                defaults={
+                                    'description': f'{display_name} category for {library.name}',
+                                    'is_active': True
+                                }
+                            )
                 
                 # Create an admin role for the creator automatically
                 UserLibraryRole.objects.create(
@@ -264,44 +326,69 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                     role='admin'
                 )
                 
-                return JsonResponse({
-                    'status': 'success',
-                    'message': 'Library created successfully.',
-                    'redirect_url': reverse('manage_libraries')
-                })
+                messages.success(request, f'Library "{library.name}" created successfully!')
+                return redirect('manage_libraries')
             else:
-                print(f"Library validation errors: {serializer.errors}")
                 return JsonResponse({
                     'status': 'error',
                     'message': f"Library validation failed: {serializer.errors}"
-                }, status=400)
+                }, status=400, content_type='application/json')
                 
         except Exception as e:
-            print(f"Error creating library: {str(e)}")
             return JsonResponse({
                 'status': 'error',
                 'message': f"An error occurred: {str(e)}"
-            }, status=500)
+            }, status=500, content_type='application/json')
 
 class ManageLibrariesView(LoginRequiredMixin, TemplateView):
+    """
+    BACKEND/FRONTEND-READY: Library management dashboard.
+    MAPPED TO: /admin/manage-libraries/ URL  
+    USED BY: manage_libraries.html template
+    
+    Displays user's owned libraries and libraries where they have contributor roles.
+    """
     template_name = 'manage_libraries.html'
     
     def get_context_data(self, **kwargs):
+        """
+        BACKEND/FRONTEND-READY: Prepare library data for dashboard display.
+        MAPPED TO: Template context
+        USED BY: manage_libraries.html template
+        
+        Provides owned and contributed libraries for current user.
+        """
         context = super().get_context_data(**kwargs)
         
-        # Get all libraries where the user is either the owner or has a role
+        # Get all libraries the user can manage (owned + admin roles)
         user_libraries = Library.objects.filter(owner=self.request.user)
-        context['libraries'] = user_libraries
-        
-        # Get libraries where the user is a contributor
-        contributed_libraries = Library.objects.filter(
-            user_roles__user=self.request.user
+        admin_libraries = Library.objects.filter(
+            user_roles__user=self.request.user,
+            user_roles__role='admin'
         ).exclude(owner=self.request.user)
-        context['contributed_libraries'] = contributed_libraries
+        
+        # Combine and order by name
+        all_libraries = list(user_libraries) + list(admin_libraries)
+        all_libraries.sort(key=lambda x: x.name.lower())
+        
+        context['libraries'] = all_libraries
+        
+        # Add user role information for permission checking
+        if self.request.user.is_superuser:
+            context['user_role'] = 'owner'
+        else:
+            context['user_role'] = 'user'  # Default role
         
         return context
 
 class EditLibraryView(LoginRequiredMixin, TemplateView):
+    """
+    BACKEND/FRONTEND-READY: Library editing interface.
+    MAPPED TO: /admin/edit-library/ URL
+    USED BY: edit_library_admin.html template
+    
+    Comprehensive library editing with categories, contributors, and settings management.
+    """
     template_name = 'edit_library_admin.html'
     
     def get_context_data(self, **kwargs):
@@ -317,16 +404,34 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
         try:
             library = Library.objects.get(id=library_id)
             
-            # Check if user can edit this library
-            if not (library.owner == self.request.user or 
-                    UserLibraryRole.objects.filter(library=library, user=self.request.user, role='admin').exists()):
+            # Check if the user has permission to edit this library
+            if library.owner != self.request.user and not self.request.user.is_superuser:
                 context['permission_error'] = True
                 context['library_name'] = library.name
                 return context
             
             context['library'] = library
-            # Get categories for this library
-            context['categories'] = Category.objects.filter(library=library)
+            
+            # Get categories for this library - ALWAYS include all library categories (including Private)
+            categories = Category.objects.filter(library=library, is_active=True).order_by('subject_area')
+            
+            # Separate Private category to show it first
+            private_category = None
+            other_categories = []
+            
+            for category in categories:
+                if category.subject_area == 'private':
+                    private_category = category
+                else:
+                    other_categories.append(category)
+            
+            # Combine with Private first
+            ordered_categories = []
+            if private_category:
+                ordered_categories.append(private_category)
+            ordered_categories.extend(other_categories)
+            
+            context['categories'] = ordered_categories
             
             # Get contributors for this library
             context['contributors'] = UserLibraryRole.objects.filter(
@@ -347,7 +452,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
             return JsonResponse({
                 'status': 'error',
                 'message': "No library specified"
-            }, status=400)
+            }, status=400, content_type='application/json')
             
         try:
             library = Library.objects.get(id=library_id)
@@ -358,7 +463,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                 return JsonResponse({
                     'status': 'error',
                     'message': "You don't have permission to edit this library."
-                }, status=403)
+                }, status=403, content_type='application/json')
             
             # Update library fields
             library_name = request.POST.get('library_name')
@@ -398,14 +503,14 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                             # Update existing category
                             try:
                                 category = Category.objects.get(id=category_id, library=library)
-                                category.name = category_data.get('name', category.name)
+                                # Note: Category name is now handled through subject_area enum
                                 category.description = category_data.get('description', category.description)
                                 
                                 # Handle image if provided
                                 if 'image' in category_data and category_data['image'] and category_data['image'].startswith('data:'):
                                     image_file = process_base64_image(
                                         category_data['image'],
-                                        name=f"category_{category.name}"
+                                        name=f"category_{category.display_name}"
                                     )
                                     category.image = image_file
                                     
@@ -417,7 +522,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                         else:
                             # Create new category
                             new_category = Category(
-                                name=category_data.get('name'),
+                                subject_area=category_data.get('subject_area'),
                                 description=category_data.get('description', ''),
                                 library=library
                             )
@@ -427,7 +532,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                             if 'image' in category_data and category_data['image'] and category_data['image'].startswith('data:'):
                                 image_file = process_base64_image(
                                     category_data['image'],
-                                    name=f"category_{new_category.name}"
+                                    name=f"category_{new_category.display_name}"
                                 )
                                 new_category.image = image_file
                                 new_category.save()
@@ -443,7 +548,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                     return JsonResponse({
                         'status': 'error',
                         'message': "Invalid category data format"
-                    }, status=400)
+                    }, status=400, content_type='application/json')
             
             # Process contributors
             if 'contributors' in request.POST:
@@ -484,7 +589,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                             except User.DoesNotExist:
                                 # User doesn't exist - we might want to invite them
                                 # For now, just log it
-                                print(f"User with email {contributor_data.get('email')} not found")
+                                pass  # User not found
                     
                     # Remove contributors that were removed
                     contributors_to_delete = current_contributors - processed_contributors
@@ -495,21 +600,21 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                     return JsonResponse({
                         'status': 'error',
                         'message': "Invalid contributor data format"
-                    }, status=400)
+                    }, status=400, content_type='application/json')
             
             return JsonResponse({
                 'status': 'success',
                 'message': 'Library updated successfully',
                 'redirect_url': reverse('manage_libraries')
-            })
+            }, content_type='application/json')
             
         except Library.DoesNotExist:
             return JsonResponse({
                 'status': 'error',
                 'message': "Library not found"
-            }, status=404)
+            }, status=404, content_type='application/json')
         except Exception as e:
             return JsonResponse({
                 'status': 'error',
                 'message': str(e)
-            }, status=500)
+            }, status=500, content_type='application/json')

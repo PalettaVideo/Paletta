@@ -27,6 +27,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+CSRF_TRUSTED_ORIGINS = []
+
+# Temporarily disable HTTPS redirect until we set up SSL
+SECURE_SSL_REDIRECT = False
+
 
 # Application definition
 
@@ -48,6 +53,9 @@ INSTALLED_APPS = [
     # Third-party apps
     'rest_framework',
     'rest_framework.authtoken',
+
+    # AWS S3 and storage
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -58,6 +66,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'libraries.middleware.LibraryContextMiddleware',  # Add library context middleware
 ]
 
 ROOT_URLCONF = 'paletta_core.urls'
@@ -77,6 +86,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.static',  # Add this for {% static %} tag
+                'libraries.context_processors.library_context',  # Add library context processor
             ],
         },
     },
@@ -144,31 +154,25 @@ STATICFILES_DIRS = [
     Path(__file__).resolve().parent.parent.parent / 'static',  # Absolute path to static
 ]
 
+# Static file versioning for cache busting
+# Change this value whenever you want to force cache invalidation
+STATIC_VERSION = '2.0.1'
+
+# Cache control settings
+# Prevent HTML caching but allow static file caching
+CACHE_MIDDLEWARE_ALIAS = 'default'
+CACHE_MIDDLEWARE_SECONDS = 0  # Don't cache HTML pages
+CACHE_MIDDLEWARE_KEY_PREFIX = ''
+
+# Add cache control headers for different content types
+USE_ETAGS = True
+
 # Media files (User uploaded files)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR.parent / 'media'
 
-# AWS S3 Configuration (commented out for local development)
-# When deploying to AWS, uncomment and configure these settings
-"""
-AWS_ACCESS_KEY_ID = 'your-access-key-id'
-AWS_SECRET_ACCESS_KEY = 'your-secret-access-key'
-AWS_STORAGE_BUCKET_NAME = 'your-bucket-name'
-AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-AWS_S3_OBJECT_PARAMETERS = {
-    'CacheControl': 'max-age=86400',
-}
-AWS_LOCATION = 'static'
-
-# Use S3 for static files in production
-if not DEBUG:
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
-    
-    # For media files
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
-"""
+# AWS Storage Configuration - Disabled in development
+AWS_STORAGE_ENABLED = False
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

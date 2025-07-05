@@ -8,7 +8,7 @@ from django.core.exceptions import PermissionDenied
 import json
 import logging
 
-from ..models import Video, Tag
+from ..models import Video, Tag, Category
 from libraries.models import UserLibraryRole
 
 logger = logging.getLogger(__name__)
@@ -68,8 +68,11 @@ class VideoEditView(TemplateView):
             else:
                 video.duration_formatted = "Unknown"
             
-            # Get available categories for the library
-            categories = video.library.categories.all()
+            # Get available categories for the library - Include ALL categories
+            categories = Category.objects.filter(
+                library=video.library, 
+                is_active=True
+            ).order_by('subject_area')
             
             # Add to context
             context['video'] = video
@@ -113,37 +116,15 @@ class VideoEditView(TemplateView):
             # Process form data
             title = request.POST.get('title')
             description = request.POST.get('description', '')
-            category_id = request.POST.get('category')
-            is_published = request.POST.get('is_published') == 'on'
-            tags_list = request.POST.get('tags_list', '[]')
             
-            # Basic validation
-            if not title:
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({
-                        'success': False,
-                        'message': 'Title is required',
-                        'errors': {'title': ['Title is required']}
-                    })
-                else:
-                    return self.render_to_response(self.get_context_data(
-                        form_errors={'title': 'Title is required'},
-                        **kwargs
-                    ))
+            # Handle category
+            category_id = request.POST.get('category')
+            if category_id:
+                video.subject_area = get_object_or_404(Category, id=category_id)
             
             # Update video fields
             video.title = title
             video.description = description
-            video.is_published = is_published
-            
-            # Update category if provided and valid
-            if category_id:
-                from ..models import Category
-                try:
-                    category = Category.objects.get(id=category_id, library=video.library)
-                    video.category = category
-                except Category.DoesNotExist:
-                    logger.warning(f"Invalid category ID: {category_id}")
             
             # Update thumbnail if provided
             if 'thumbnail' in request.FILES:
@@ -156,10 +137,11 @@ class VideoEditView(TemplateView):
             # Save changes
             video.save()
             
-            # Update tags
-            if tags_list:
+            # Handle tags
+            tags_str = request.POST.get('tags', '')
+            if tags_str:
                 try:
-                    tags_data = json.loads(tags_list)
+                    tags_data = json.loads(tags_str)
                     
                     # Clear existing tags
                     video.tags.clear()
@@ -189,7 +171,7 @@ class VideoEditView(TemplateView):
                             if created:
                                 logger.info(f"Edit video: Created new tag '{tag_name}' in library '{video.library.name}'")
                 except json.JSONDecodeError:
-                    logger.error(f"Invalid JSON for tags_list: {tags_list}")
+                    logger.error(f"Invalid JSON for tags_list: {tags_str}")
             
             # Return success response
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -234,19 +216,12 @@ class VideoDeleteView(View):
             video = get_object_or_404(Video, id=video_id)
             
             # Check if the user has permission to delete this video
+            # Only the video uploader can delete videos from upload history
             if video.uploader != request.user:
-                # Check if the user has admin role for the library
-                has_permission = UserLibraryRole.objects.filter(
-                    user=request.user,
-                    library=video.library,
-                    role='admin'  # Only admins can delete videos
-                ).exists()
-                
-                if not has_permission:
-                    return JsonResponse({
-                        'success': False,
-                        'message': 'Permission denied'
-                    }, status=403)
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Only the video uploader can delete this video'
+                }, status=403)
             
             # Store video details for logging
             video_title = video.title

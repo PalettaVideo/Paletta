@@ -226,7 +226,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // Use default image path - this will be set by Django template in the HTML
       const defaultImage = document.querySelector("#categoryList img")
         ? document.querySelector("#categoryList img").src
-        : "/static/picture/default-category.jpg";
+        : "/static/picture/All.png";
       categoryHTML = `<img src="${defaultImage}" alt="${name}">` + categoryHTML;
     }
 

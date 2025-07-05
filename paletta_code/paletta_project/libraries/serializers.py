@@ -5,8 +5,11 @@ from videos.serializers import VideoSerializer
 
 class UserLibraryRoleSerializer(serializers.ModelSerializer):
     """
-    Serializer for the UserLibraryRole model.
-    Includes user details for easier frontend integration.
+    BACKEND/FRONTEND-READY: Serializer for user library role management.
+    MAPPED TO: /api/roles/ endpoints
+    USED BY: Role management API views and frontend forms
+    
+    Handles serialization of user roles within libraries with user details.
     """
     user_details = UserSerializer(source='user', read_only=True)
     role_display = serializers.CharField(source='get_role_display', read_only=True)
@@ -18,8 +21,11 @@ class UserLibraryRoleSerializer(serializers.ModelSerializer):
 
 class LibrarySerializer(serializers.ModelSerializer):
     """
-    Serializer for the Library model.
-    Includes owner details and related counts for easier frontend integration.
+    BACKEND/FRONTEND-READY: Comprehensive library serializer for API operations.
+    MAPPED TO: /api/libraries/ endpoints
+    USED BY: Library management views, admin interface, and frontend
+    
+    Provides full library data with related counts and formatted fields.
     """
     owner_details = UserSerializer(source='owner', read_only=True)
     user_roles = UserLibraryRoleSerializer(many=True, read_only=True)
@@ -36,24 +42,49 @@ class LibrarySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'description', 'logo', 'owner', 'owner_details', 
             'storage_tier', 'storage_limit_display', 'storage_limit_gb',
-            'is_active', 'created_at', 'updated_at', 
+            'is_active', 'created_at', 'updated_at', 'category_source',
             'member_count', 'color_scheme', 'user_roles', 'categories_count', 'videos_count', 'logo_url'
         ]
         read_only_fields = ['owner', 'created_at', 'updated_at', 'storage_limit_display', 'storage_limit_gb']
         
     def get_member_count(self, obj):
+        """
+        BACKEND-READY: Count total members in library.
+        MAPPED TO: API response field
+        USED BY: Library listing and detail views
+        
+        Returns total count of users with roles in this library.
+        """
         return UserLibraryRole.objects.filter(library=obj).count()
         
     def get_categories_count(self, obj):
-        """Get the count of categories in this library."""
+        """
+        BACKEND-READY: Count categories in library.
+        MAPPED TO: API response field
+        USED BY: Library dashboard and statistics
+        
+        Returns total count of active categories in this library.
+        """
         return obj.categories.count()
         
     def get_videos_count(self, obj):
-        """Get the count of videos in this library."""
+        """
+        BACKEND-READY: Count videos in library.
+        MAPPED TO: API response field
+        USED BY: Library dashboard and statistics
+        
+        Returns total count of videos in this library.
+        """
         return obj.videos.count()
         
     def get_logo_url(self, obj):
-        """Get the absolute URL for the library logo."""
+        """
+        BACKEND/FRONTEND-READY: Get absolute URL for library logo.
+        MAPPED TO: API response field
+        USED BY: Frontend components and templates
+        
+        Returns absolute URL for logo image or None if no logo exists.
+        """
         if obj.logo:
             request = self.context.get('request')
             if request:
@@ -62,25 +93,34 @@ class LibrarySerializer(serializers.ModelSerializer):
         return None
         
     def validate_name(self, value):
-        """Validate the length of the library name."""
+        """
+        BACKEND-READY: Validate library name length.
+        MAPPED TO: API validation process
+        USED BY: Library creation and update endpoints
+        
+        Ensures library name doesn't exceed maximum length.
+        """
         if len(value) > 100:
             raise serializers.ValidationError("Library name cannot exceed 100 characters.")
         return value
         
     def validate_color_scheme(self, value):
-        """Validate the color scheme JSON structure."""
+        """
+        BACKEND-READY: Validate color scheme JSON structure.
+        MAPPED TO: API validation process  
+        USED BY: Library creation and update endpoints
+        
+        Validates required color keys and hex format for color schemes.
+        """
         required_keys = ['primary', 'secondary', 'text']
         
-        # If not provided, don't validate (the model will set defaults)
         if not value:
             return value
             
-        # Ensure all required keys are present
         missing_keys = [key for key in required_keys if key not in value]
         if missing_keys:
             raise serializers.ValidationError(f"Missing required keys: {', '.join(missing_keys)}")
             
-        # Validate color format (basic check for hex colors)
         for key in required_keys:
             if key in value:
                 color = value[key]

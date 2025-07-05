@@ -1,31 +1,18 @@
 body {
     font-family: 'Montserrat';
-    margin-top: 120px;
+    margin: 0;
     padding: 0;
-    background-color: #ffffff;
 }
-.layout {
+
+.content {
+    flex: 1;
+    padding: 20px 40px;
+}
+
+.orders-container {
     display: flex;
-    flex-direction: row;
-    width: 100%;
-    margin-top: 120px; /* Space for fixed header */
-    min-height: calc(100vh - 180px); /* Adjust for header and footer */
-}
-
-
-
-.container {
-    width: 90%;
-    max-width: 1200px;
-    margin-left: 5vh;
-}
-
-.main-content {
-    width: calc(100% - 300px);
-    overflow-y: auto;  
-    display: flex;
-    flex-direction: row;
-    min-height: calc(100vh - 180px); /* Adjust for header and footer */
+    flex-direction: column;
+    gap: 20px;
 }
 
 .order-item {

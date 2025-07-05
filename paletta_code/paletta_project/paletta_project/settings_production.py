@@ -1,22 +1,37 @@
 import os
 from pathlib import Path
 import sys
+from dotenv import load_dotenv
+import dj_database_url
 
+# Production settings file for AWS deployment
 # Import base settings from paletta_core
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from paletta_core.settings import *
+from paletta_core.settings_development import *
+from paletta_core.storage import MediaStorage
+
+# Load environment variables from .env file
+env_path = '/home/ssm-user/Paletta/.env'
+load_dotenv(dotenv_path=env_path)
 
 # Override settings for production
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = False
 SECRET_KEY = os.environ.get('SECRET_KEY', SECRET_KEY)
 
-# Allow all hosts or specify allowed hosts
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+# Allow EC2 instance public IP and domain
+ALLOWED_HOSTS = [
+    'paletta-alb-62461270.eu-west-2.elb.amazonaws.com',
+    'paletta.io',
+    'www.paletta.io',
+    'localhost',
+    '127.0.0.1',
+]
 
 # Security settings for production
 if not DEBUG:
-    # HTTPS settings
-    SECURE_SSL_REDIRECT = True
+    # Check if the request is already HTTPS
+    SECURE_SSL_REDIRECT = False
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
@@ -27,33 +42,57 @@ if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
 
 # Database settings - use environment variables for production
-if os.environ.get('DATABASE_URL'):
-    import dj_database_url
-    DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        ssl_require=True
+    )
+}
+
+# Ensure DATABASE_URL is set in production
+if not os.environ.get('DATABASE_URL'):
+    raise ValueError("DATABASE_URL environment variable not set in production.")
+
+# API Gateway Configuration
+API_GATEWAY_URL = os.environ.get('API_GATEWAY_URL')
+if not API_GATEWAY_URL:
+    # In production, we require the API Gateway URL to be set.
+    raise ValueError("API_GATEWAY_URL environment variable not set.")
 
 # AWS S3 Storage Configuration
-AWS_STORAGE_ENABLED = os.environ.get('AWS_STORAGE_ENABLED', 'False') == 'True'
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
-AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
-AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
-AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com')
+AWS_STORAGE_ENABLED = True
+AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_REGION = os.environ.get('AWS_REGION')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME') # For direct video uploads
+AWS_MEDIA_BUCKET_NAME = os.environ.get('AWS_MEDIA_BUCKET_NAME') # For thumbnails and other uploaded images
+AWS_STATIC_BUCKET_NAME = os.environ.get('AWS_STATIC_BUCKET_NAME') # For static CSS/JS
+
+# Check for essential AWS settings
+if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_STORAGE_BUCKET_NAME, AWS_MEDIA_BUCKET_NAME, AWS_STATIC_BUCKET_NAME]):
+    raise ValueError("One or more required AWS environment variables are not set.")
+
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STATIC_BUCKET_NAME}.s3.amazonaws.com'
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
-AWS_LOCATION = 'static'
-AWS_DEFAULT_ACL = 'private'
 AWS_S3_SIGNATURE_VERSION = 's3v4'
 AWS_S3_REGION_NAME = AWS_REGION
 
 # Use S3 for static files in production
-if not DEBUG and AWS_STORAGE_ENABLED:
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
-    
-    # For media files
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+if AWS_STORAGE_ENABLED:
+    # Static files configuration
+    STATICFILES_STORAGE = 'paletta_core.storage.StaticStorage'
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/static/'
+
+    # Media files configuration
+    DEFAULT_FILE_STORAGE = 'paletta_core.storage.MediaStorage'
+    MEDIA_URL = f'https://{AWS_MEDIA_BUCKET_NAME}.s3.amazonaws.com/{MediaStorage.location}/'
+
+# Static file versioning for cache busting
+# Change this value whenever you want to force cache invalidation
+STATIC_VERSION = '2.0.0'
 
 # Download link configuration
 DOWNLOAD_LINK_EXPIRY_HOURS = int(os.environ.get('DOWNLOAD_LINK_EXPIRY_HOURS', '24'))
@@ -111,16 +150,15 @@ LOGGING = {
             'formatter': 'verbose',
         },
         'file': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs/paletta.log'),
-            'formatter': 'verbose',
+            'filename': '/home/ssm-user/Paletta/django-debug.log',
         },
     },
     'loggers': {
         'django': {
             'handlers': ['console', 'file'],
-            'level': 'INFO',
+            'level': 'DEBUG',
             'propagate': True,
         },
         'videos': {
@@ -137,5 +175,14 @@ if not os.path.exists(logs_dir):
     os.makedirs(logs_dir)
 
 # File upload settings
-FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880000  # 5GB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880000  # 5GB 
+# NOTE: Increasing this to a large value without implementing direct-to-S3 uploads
+# can cause server instability, as the entire file will be temporarily stored on the server's disk.
+FILE_UPLOAD_MAX_MEMORY_SIZE = 274877906944  # 256GB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 274877906944  # 256GB
+
+CSRF_TRUSTED_ORIGINS = [
+    'http://paletta-alb-62461270.eu-west-2.elb.amazonaws.com',
+    'https://paletta-alb-62461270.eu-west-2.elb.amazonaws.com',
+    'https://paletta.io',
+    'https://www.paletta.io',
+]

@@ -1,30 +1,45 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>{% if current_library %}{{ current_library.name }} - Library {% else %}Paletta Homepage{% endif %}</title>
+  <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - Home</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Debug meta tags for library context -->
+  <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
+  <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
+  <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
+  <meta name="categories-count" content="{{ categories|length }}">
+  
   <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <!-- CSS Reusables -->
-  <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
-  <link rel="stylesheet" href="{% static 'css/floating.css' %}">
-  <link rel="stylesheet" href="{% static 'css/button_reusable.css' %}">
+  <link rel="stylesheet" href="{% versioned_static 'css/footer_reusable.css' %}">
+  <link rel="stylesheet" href="{% versioned_static 'css/floating.css' %}">
+  <link rel="stylesheet" href="{% versioned_static 'css/button_reusable.css' %}">
 
   <!-- CSS -->
-  <link rel="stylesheet" href="{% static 'css/homepage.css' %}">
+  <link rel="stylesheet" href="{% versioned_static 'css/homepage.css' %}">
   <!-- JS -->
-  <script src="{% static 'js/homepage.js' %}" defer></script>
-  <script src="{% static 'js/floating_label.js' %}" defer></script>
+  <script src="{% versioned_static 'js/homepage.js' %}" defer></script>
+  <script src="{% versioned_static 'js/floating_label.js' %}" defer></script>
 
 </head>
 <body>
+  <!-- Debug comments for troubleshooting -->
+  <!-- Current Library: {% if current_library %}{{ current_library.name }} (ID: {{ current_library.id }}){% else %}None{% endif %} -->
+  <!-- Categories Count: {{ categories|length }} -->
+  {% if categories %}
+  <!-- Category Names: {% for cat in categories %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %} -->
+  {% endif %}
+  
   <header>
     <div class="actions">
-        <a href="{% url 'upload' %}" style="text-decoration: none;">
+        <a href="{% library_specific_url 'library_upload' %}" style="text-decoration: none;">
           <button>
             <svg style="enable-background:new 0 0 24 24;" version="1.1" viewBox="0 0 24 24" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
               <g id="grid_system"/>
@@ -49,11 +64,11 @@
           My Center
         </button>
         <div class="popup" id="popupMenu">
-          <a href="{% url 'profile' %}">My Profile</a>
-          <a href="{% url 'collection' %}">My Collection</a>
-          <a href="{% url 'cart' %}">My Cart</a>
-          <a href="{% url 'orders_list' %}">My Orders</a>
-          <a href="{% url 'logout' %}">Log Out</a>
+          <a href="{% library_specific_url 'library_profile' %}">My Profile</a>
+          <a href="{% library_specific_url 'library_collection' %}">My Collection</a>
+          <a href="{% library_specific_url 'library_cart' %}">My Cart</a>
+          <a href="{% library_specific_url 'library_orders_list' %}">My Orders</a>
+          <a href="{% url 'logout' %}">Logout</a>
         </div>
     </div>
   </header>
@@ -78,9 +93,11 @@
           <span class="clip-line1">Clip</span>
           <span class="clip-line2">Store</span>
         </div>
-    <div>
-      
-    </div>
+    {% else %}
+      <img src="{% static 'picture/logo.jpg' %}" alt="Logo">
+      <h1>
+        Your Footage, Your Story
+      </h1>
     {% endif %}
   </div>
 
@@ -97,24 +114,15 @@
 
 <!-- new VIEWALL section -->
   <div class="viewall" id="viewall">
-
-
     <!-- "All" category is always shown -->
-    {% if library_slug %}
-    <a href="{% url 'library_clip_store' library_slug=library_slug %}" style="text-decoration: none;">
-    {% elif current_library %}
-    <a href="{% url 'library_clip_store' library_slug=current_library.name|slugify %}" style="text-decoration: none;">
+    {% if current_library %}
+    <a href="{% library_specific_url 'library_clip_store' %}" style="text-decoration: none;">
     {% else %}
-    <!-- Fallback if no library is selected - redirect to home -->
     <a href="{% url 'home' %}" style="text-decoration: none;">
     {% endif %}
     <img src="{% static 'picture/viewall.png' %}" alt="All">
     <span>View All</span>
-      
-
     </a>
-    
-
   </div>
 
   <div class="categoriestitle">
@@ -123,69 +131,31 @@
   
   <!-- new categories section -->
   <div class="categories-wrap">
-      <div class="categories" id="categories-container">
-        
-       
-          <div class="category">
-            <img src="{% static 'picture/campus_life.png' %}" alt="All">
-            <span>Campus Life</span>
-          </div>
-
-        <div class="category">
-          <img src="{% static 'picture/Teaching&Learning.jpeg' %}" alt="campus_life">
-          <span>Teaching & Learning</span>
-        </div>
-        
-        <div class="category">
-          <img src="{% static 'picture/Research&Innovation.png' %}" alt="All">
-          <span>Research & Innovation</span>
-        </div>
-
-        <div class="category">
-          <img src="{% static 'picture/City&Environment.jpg' %}" alt="All">
-          <span>City & Environment</span>
-        </div>
-
-        <div class="category">
-          <img src="{% static 'picture/Aerial&Establishing_shots.png' %}" alt="All">
-          <span>Aerial & Establishing shots</span>
-        </div>
-
-        <div class="category">
-          <img src="{% static 'picture/People&Portraits.png' %}" alt="All">
-          <span>People & Portraits</span>
-        </div>
-        
-        <div class="category">
-          <img src="{% static 'picture/Culture&Events.png' %}" alt="All">
-          <span>Culture & Events</span>
-        </div>
-
-        <div class="category">
-          <img src="{% static 'picture/Workspaces&Facilities.jpg' %}" alt="All">
-          <span>Workspaces & Facilities</span>
-        </div>
-
-        <div class="category">
-          <img src="{% static 'picture/Cutaways&Abstracts.png' %}" alt="All">
-          <span>Cutaways & Abstracts</span>
-        </div>
-
-        <div class="category">
-          <img src="{% static 'picture/Historical&Archive.jpg' %}" alt="All">
-          <span>Historical & Archieve</span>
-        </div>
-
-
-        
-        <!-- Dynamic categories from database for authenticated users -->
-        {% for category in categories %}
-        {% if library_slug %}
-        <a href="{% url 'library_category' library_slug=library_slug category_slug=category.name|slugify %}" style="text-decoration: none;">
-        {% elif current_library %}
-        <a href="{% url 'library_category' library_slug=current_library.name|slugify category_slug=category.name|slugify %}" style="text-decoration: none;">
+    <div class="categories" id="categories-container">
+      
+      <!-- Private category (pinned) - shown first among library categories -->
+      {% for category in categories %}
+        {% if category.code == 'private' or category.type == 'library_category' and category.name == 'Private' %}
+        {% if current_library %}
+        <a href="{% library_specific_url 'library_category' category_slug=category.name|library_slugify %}" style="text-decoration: none;">
         {% else %}
-        <!-- Fallback if no library is selected -->
+        <a href="{% url 'home' %}" style="text-decoration: none;">
+        {% endif %}
+          <div class="category private-category">
+            <img src="{% if category.image_url %}{{ category.image_url }}{% else %}{% static 'picture/main_campus.png' %}{% endif %}" 
+                 alt="{{ category.name }}" data-category="{{ category.name }}" class="category-image">
+            <span>{{ category.name }}</span>
+          </div>
+        </a>
+        {% endif %}
+      {% endfor %}
+      
+      <!-- Other dynamic categories from database -->
+      {% for category in categories %}
+        {% if category.code != 'private' and category.name != 'Private' %}
+        {% if current_library %}
+        <a href="{% library_specific_url 'library_category' category_slug=category.name|library_slugify %}" style="text-decoration: none;">
+        {% else %}
         <a href="{% url 'home' %}" style="text-decoration: none;">
         {% endif %}
           <div class="category">
@@ -200,12 +170,13 @@
             <span>{{ category.name }}</span>
           </div>
         </a>
-        {% empty %}
-        <!-- If no categories are found, show a message -->
-        <p class="no-categories">No categories created yet. Reach out to Admin for more information.</p>
-        {% endfor %}
-      </div>
-
+        {% endif %}
+      {% empty %}
+      <!-- If no categories are found, show a message -->
+      <p class="no-categories">No categories created yet. Reach out to Admin for more information.</p>
+      {% endfor %}
+    </div>
+  </div>
   </div>
 </main>
 

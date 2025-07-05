@@ -1,14 +1,20 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>{{ clip.title|default:"Clip Detail" }}</title>
+  <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - {{ clip.title }}</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
+  <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
+  <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
   {% if clip %}
   <meta name="clip-id" content="{{ clip.id }}">
+  <meta name="clip-thumbnail" content="{% if clip.thumbnail %}{{ clip.thumbnail.url }}{% endif %}">
   {% endif %}
+  
   <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
@@ -21,6 +27,10 @@
   <script src="{% static 'js/video_details.js' %}" defer></script>
 </head>
 <body>
+  <!-- Debug comments for troubleshooting -->
+  <!-- Current Library: {% if current_library %}{{ current_library.name }} (ID: {{ current_library.id }}){% else %}None{% endif %} -->
+  <!-- Clip ID: {% if clip %}{{ clip.id }}{% else %}None{% endif %} -->
+  
   {% include "html_reusables/header_reusable.html" %}
   
   {% csrf_token %}
@@ -31,16 +41,34 @@
     <div class="content">
       <div class="video-container">
           <div class="navigation-buttons">
-            {% if clip.category %}
-              <a href="{% url 'library_category' library_slug=library.slug category_slug=clip.category|slugify %}">
-                <button class="back-button">Back to all videos in Category -  '{{ clip.category }}'</button>
+            {% if clip.subject_area and current_library %}
+              <a href="{% library_specific_url 'library_category' category_slug=clip.subject_area.display_name|library_slugify %}">
+                <button class="back-button">Back to all videos in Category -  '{{ clip.subject_area.display_name }}'</button>
               </a>
             {% endif %}
-            <a href="{% url 'library_clip_store' library_slug=library.slug %}">
-              <button class="back-button">Back to all videos in Library -  '{{ library.name }}'</button>
+            {% if current_library %}
+            <a href="{% library_specific_url 'library_clip_store' %}">
+              <button class="back-button">Back to all videos in Library -  '{{ current_library.name }}'</button>
             </a>
+            {% else %}
+            <a href="{% url 'home' %}">
+              <button class="back-button">Back to Home</button>
+            </a>
+            {% endif %}
           </div>
-        <video src="{{ clip.video_url|default:'' }}" controls{% if not clip.video_url %} poster="{% static 'picture/video_placeholder.jpg' %}"{% endif %}></video>
+          {% if clip.storage_status == 'stored' %}
+            <video src="{{ clip.get_streaming_url }}" controls></video>
+          {% elif clip.storage_status == 'processing' %}
+            <div class="processing-placeholder">
+              <p>This video is currently being processed. Please check back in a few minutes.</p>
+              <div class="spinner"></div>
+            </div>
+          {% else %}
+            <div class="processing-placeholder">
+                <p>No video with supported format and MIME type found.</p>
+                <p><small>(Status: {{ clip.get_storage_status_display }})</small></p>
+            </div>
+          {% endif %}
       </div>
       <div class="details">
         <h1>{{ clip.title|default:"Video Title" }}</h1>
@@ -57,50 +85,42 @@
       <div class="video-info">
         <h2>Description</h2>
         <p>{{ clip.description|default:"No description available." }}</p>
-        <div class="category">
-          <strong>Category:</strong>
-          <span>{{ clip.category|default:"Uncategorized" }}</span>
+        <!-- Subject Area Display -->
+        {% if clip.subject_area %}
+        <div class="subject-area">
+          <strong>Subject Area:</strong>
+          <span class="subject-area-name">{{ clip.subject_area.display_name }}</span>
         </div>
+        {% endif %}
+        
+        <!-- Content Types Display -->
+        {% if clip.content_types.exists %}
+        <div class="content-types">
+          <strong>Content Types:</strong>
+          <div class="content-types-list">
+            {% for content_type in clip.content_types.all %}
+              <span class="content-type-badge">{{ content_type.display_name }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+               
         <div class="tags">
           <strong>Tags:</strong>
-          {% for tag in clip.tags.all %}
-            <span>{{ tag.name }}</span>
+          {% for tag in tags %}
+            <span class="tag-badge">{{ tag.name }}</span>
+          {% empty %}
+            <span>No tags</span>
           {% endfor %}
         </div>
       </div>
       <div class="attributes">
         <h2>Attributes</h2>
-        <p><strong>Duration:</strong> {{ clip.duration|default:"Unknown" }}</p>
-        <p><strong>Frame Rate:</strong> {{ clip.frame_rate|default:"Unknown" }}</p>
-        <p><strong>Resolution:</strong> {{ clip.resolution|default:"Unknown" }}</p>
-        <p><strong>Format:</strong> {{ clip.format|default:"Unknown" }}</p>
+        <p><strong>Duration:</strong> {{ duration_formatted }}</p>
+        <p><strong>Format:</strong> {{ clip.format|upper|default:"Unknown" }}</p>
+        <p><strong>File Size:</strong> {{ clip.file_size|filesizeformat }}</p>
       </div>
     </div>
-<!-- Related Clips feature not available yet
-    <div class="related-clips">
-      <h2>Related Clips:</h2>
-      <div class="related-container">
-        {% if related_clips %}
-          {% for related_clip in related_clips %}
-        <div class="clip-card">
-              <a href="{% url 'clip_detail' clip_id=related_clip.id %}">
-                {% if related_clip.thumbnail %}
-                  <img src="{{ related_clip.thumbnail }}" alt="{{ related_clip.title }}">
-                {% else %}
-                  <img src="{% static 'picture/default_thumbnail.png' %}" alt="{{ related_clip.title }}">
-                {% endif %}
-                <p>{{ related_clip.title }}</p>
-              </a>
-        </div>
-          {% endfor %}
-        {% else %}
-          <div class="no-related-clips">
-            <p>No related clips found</p>
-        </div>
-        {% endif %}
-      </div>
-    </div> 
--->
   </main>
 
 <!-- Popup -->

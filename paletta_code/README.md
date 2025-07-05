@@ -28,15 +28,11 @@ To run the Django application, follow these steps:
 
    > python manage.py migrate
 
-6. Create a superuser to access the admin interface:
-
-   > python manage.py createsuperuser
-
-7. Start the development server:
+6. Start the development server:
 
    > python manage.py runserver
 
-8. Access the application:
+7. Access the application:
    - Main site: http://127.0.0.1:8000/
    - Admin interface: http://127.0.0.1:8000/admin/
 
@@ -44,10 +40,11 @@ To run the Django application, follow these steps:
 
 - `paletta_project/` - Main Django project directory
   - `accounts/` - User authentication and management app
+  - `html_templates/` - HTML templates
+  - `libraries/` - Library management app
+  - `orders/` - Order and download management app
+  - `paletta_core/` - Core Django settings and configuration
   - `videos/` - Video management app
-  - `templates/` - HTML templates
-  - `paletta_core/` - Core settings and configuration
-  - `libraries/` - Additional libraries and utilities
 
 ## API Endpoints
 
@@ -67,6 +64,7 @@ To run the Django application, follow these steps:
 - **Retrieve/Update/Delete Category**: `/api/videos/categories/{id}/` (GET, PUT, DELETE)
 - **Filter Videos by Category**: `/api/videos/videos/?category={id}` (GET)
 - **Search Videos**: `/api/videos/videos/?search={query}` (GET)
+- **Video Thumbnail**: `/api/clip/{clip_id}/thumbnail/` (GET)
 
 ### Libraries
 
@@ -74,6 +72,14 @@ To run the Django application, follow these steps:
 - **Retrieve/Update/Delete Library**: `/api/libraries/libraries/{id}/` (GET, PUT, DELETE)
 - **List/Create Library Members**: `/api/libraries/members/` (GET, POST)
 - **Retrieve/Update/Delete Library Member**: `/api/libraries/members/{id}/` (GET, PUT, DELETE)
+- **User Library Roles**: `/api/libraries/user-roles/` (GET, POST)
+
+### Orders
+
+- **List/Create Orders**: `/api/orders/orders/` (GET, POST)
+- **Retrieve/Update/Delete Order**: `/api/orders/orders/{id}/` (GET, PUT, DELETE)
+- **Order Details**: `/api/orders/order-details/` (GET, POST)
+- **Order Detail by ID**: `/api/orders/order-details/{id}/` (GET, PUT, DELETE)
 
 ## User Roles
 
@@ -82,7 +88,6 @@ The application supports the following user roles:
 - Owner
 - Administrator
 - Contributor
-- Customer
 
 ## Admin Interface
 
@@ -91,6 +96,8 @@ The Django admin interface allows administrators to:
 - Manage users and their roles
 - Control video uploads and categories
 - Monitor system activity
+- Manage libraries and their members
+- Track orders and downloads
 
 ## Database Setup
 

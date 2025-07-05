@@ -5,18 +5,6 @@ body {
    
 }
 
-.container {
-    display: flex;
-    min-height: 100vh;
-    margin-top: 100px;
-}
-
-main {
-    flex: 1;
-    padding: 40px;
-    background: white;
-}
-
 main label {
     display: block;
     font-weight: bold;
@@ -296,4 +284,279 @@ main label {
 
 .hidden {
     display: none;
+}
+
+/* Add these styles to support the new category source selection */
+
+.category-source-container {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.category-source-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.category-explanation {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.category-source-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.category-option {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.category-option:hover {
+    border-color: #86B049;
+    background-color: #f8fff8;
+}
+
+.category-option input[type="radio"] {
+    margin-right: 12px;
+    transform: scale(1.2);
+}
+
+.category-option input[type="radio"]:checked + label {
+    color: #86B049;
+}
+
+.category-option:has(input[type="radio"]:checked) {
+    border-color: #86B049;
+    background-color: #f0f8f0;
+    box-shadow: 0 2px 8px rgba(134, 176, 73, 0.15);
+}
+
+.category-option label {
+    cursor: pointer;
+    display: block;
+    margin: 0;
+}
+
+.category-option strong {
+    font-size: 16px;
+    color: #333;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.option-description {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.category-preview {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.category-preview h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.category-preview h5 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: #86B049;
+    font-size: 16px;
+}
+
+.preview-section {
+    margin-bottom: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.preview-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.preview-section strong {
+    color: #333;
+    font-weight: 600;
+}
+
+.requirement {
+    font-size: 12px;
+    color: #86B049;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+/* Responsive design for category selection */
+@media (max-width: 768px) {
+    .category-source-container {
+        margin: 15px 0;
+        padding: 15px;
+    }
+    
+    .category-option {
+        padding: 12px;
+    }
+    
+    .category-option strong {
+        font-size: 15px;
+    }
+    
+    .option-description {
+        font-size: 13px;
+    }
+    
+    .category-preview {
+        padding: 12px;
+    }
+}
+
+/* Custom Categories Interface Styles */
+.custom-categories-interface {
+    margin-top: 20px;
+    padding: 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+.custom-categories-interface h4 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+.interface-description {
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 0.95em;
+}
+
+.subject-areas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.subject-area-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.subject-area-item:hover {
+    border-color: #80B824;
+    background-color: #f0f8e8;
+}
+
+.subject-area-item input[type="checkbox"] {
+    margin-right: 10px;
+    transform: scale(1.1);
+    accent-color: #80B824;
+}
+
+.subject-area-item label {
+    cursor: pointer;
+    font-weight: 500;
+    color: #333;
+    flex: 1;
+    font-size: 0.95em;
+}
+
+.subject-area-item input[type="checkbox"]:checked + label {
+    color: #80B824;
+    font-weight: 600;
+}
+
+.custom-categories-note {
+    padding: 15px;
+    background-color: #e8f4fd;
+    border: 1px solid #b8daff;
+    border-radius: 6px;
+    margin-top: 15px;
+}
+
+.custom-categories-note small {
+    color: #0c5460;
+    line-height: 1.4;
+}
+
+/* Category Source Options Enhancement */
+.category-source-options {
+    margin-bottom: 20px;
+}
+
+.category-option {
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.category-option:hover {
+    border-color: #80B824;
+    background-color: #f8f9fa;
+}
+
+.category-option input[type="radio"]:checked + label {
+    color: #80B824;
+}
+
+.category-option input[type="radio"]:checked ~ .option-description {
+    color: #333;
+}
+
+.option-description {
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 8px;
+    line-height: 1.4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .subject-areas-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .category-option {
+        padding: 12px;
+    }
+    
+    .custom-categories-interface {
+        padding: 15px;
+    }
 }

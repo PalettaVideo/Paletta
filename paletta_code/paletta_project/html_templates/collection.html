@@ -1,20 +1,24 @@
 {% load static %}
+{% load library_tags %}
 {% if user.is_authenticated %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Paletta - My Collection</title>
+  <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - My Collection</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="clip-store-url" content="{% url 'library_clip_store' library_slug='all' %}">
+  <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
+  <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
+  <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
+  <meta name="clip-store-url" content="{% library_specific_url 'library_clip_store' %}">
   <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
   <!-- CSS Reusables -->
-  <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
   <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
-  <link rel="stylesheet" href="{% static 'css/sidebar_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
   <link rel="stylesheet" href="{% static 'css/button_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}">
   <!-- CSS -->
   <link rel="stylesheet" href="{% static 'css/collection.css' %}">
   <!-- JS -->
@@ -29,10 +33,10 @@
 <aside class="sidebar">
   <nav>
     <ul>
-        <li><a href="{% url 'profile' %}">My profile</a></li>
-        <li><a href="{% url 'collection' %}" class="active">My collection</a></li>
-        <li><a href="{% url 'cart' %}">My cart</a></li>
-        <li><a href="{% url 'orders_list' %}">My orders</a></li>
+        <li><a href="{% library_specific_url 'library_profile' %}">My profile</a></li>
+        <li><a href="{% library_specific_url 'library_collection' %}" class="active">My collection</a></li>
+        <li><a href="{% library_specific_url 'library_cart' %}">My cart</a></li>
+        <li><a href="{% library_specific_url 'library_orders_list' %}">My orders</a></li>
     </ul>
   </nav>
 </aside>

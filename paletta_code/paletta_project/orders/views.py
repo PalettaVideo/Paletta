@@ -70,6 +70,22 @@ class OrdersListView(LoginRequiredMixin, ListView):
             payment_status='completed'
         ).order_by('-order_date')
 
+    def get_context_data(self, **kwargs):
+        """Add library context to the orders list page."""
+        context = super().get_context_data(**kwargs)
+        
+        # Get current library from session
+        current_library_id = self.request.session.get('current_library_id')
+        if current_library_id:
+            try:
+                context['current_library'] = Library.objects.get(id=current_library_id)
+            except Library.DoesNotExist:
+                context['current_library'] = None
+        else:
+            context['current_library'] = None
+            
+        return context
+
 class OrderDetailView(LoginRequiredMixin, DetailView):
     """View for displaying details of a specific order."""
     template_name = 'orders/order_detail.html'
