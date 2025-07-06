@@ -23,7 +23,7 @@ django.setup()
 from orders.models import DownloadRequest
 from orders.services import DownloadRequestService
 from accounts.models import User
-from videos.models import Video
+from videos.models import Video, Category
 from libraries.models import Library
 import logging
 
@@ -78,10 +78,14 @@ class DownloadRequestSystemTest:
             defaults={
                 'description': 'Test video for validating download requests',
                 'library': self.test_library,
-                'uploaded_by': admin_user,
+                'uploader': admin_user,
                 'storage_status': 'stored',
                 'storage_reference_id': 'test-video-key.mp4',
-                'is_private': False
+                'subject_area': Category.objects.get_or_create(
+                    subject_area='engineering_sciences',
+                    library=self.test_library,
+                    defaults={'description': 'Test category'}
+                )[0]
             }
         )
         

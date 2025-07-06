@@ -4,10 +4,6 @@ document.addEventListener("DOMContentLoaded", function () {
     "addToCollectionButton"
   );
 
-  // Storage keys for cart and collection
-  const COLLECTION_STORAGE_KEY = "userCollection";
-  const CART_STORAGE_KEY = "userCart";
-
   // Get current library context for localStorage keys
   function getCurrentLibrarySlug() {
     // Try to get from meta tag first (most reliable)
@@ -102,12 +98,18 @@ document.addEventListener("DOMContentLoaded", function () {
   function setupEventListeners() {
     // Add to cart functionality - direct call without popup
     if (addToCartButton) {
-      addToCartButton.addEventListener("click", handleAddToCart);
+      addToCartButton.addEventListener("click", function (event) {
+        event.preventDefault();
+        handleAddToCart();
+      });
     }
 
     // Add to collection functionality
     if (addToCollectionButton) {
-      addToCollectionButton.addEventListener("click", handleAddToCollection);
+      addToCollectionButton.addEventListener("click", function (event) {
+        event.preventDefault();
+        handleAddToCollection();
+      });
     }
   }
 

@@ -27,14 +27,8 @@
   <script src="{% static 'js/video_details.js' %}" defer></script>
 </head>
 <body>
-  <!-- Debug comments for troubleshooting -->
-  <!-- Current Library: {% if current_library %}{{ current_library.name }} (ID: {{ current_library.id }}){% else %}None{% endif %} -->
-  <!-- Clip ID: {% if clip %}{{ clip.id }}{% else %}None{% endif %} -->
-  
   {% include "html_reusables/header_reusable.html" %}
-  
   {% csrf_token %}
-
   <!-- Main content -->
   <main>
     <!-- Video and Details -->
