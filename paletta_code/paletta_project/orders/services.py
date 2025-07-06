@@ -128,6 +128,16 @@ class DownloadRequestService:
       return None
   
     try:
+      # Extract bucket name from video's storage URL if available
+      bucket_name = self.bucket_name  # Default to configured bucket
+      
+      if download_request.video.storage_url:
+        # Parse bucket name from storage URL (e.g., s3://paletta-videos/...)
+        storage_url = download_request.video.storage_url
+        if storage_url.startswith('s3://'):
+          bucket_name = storage_url.split('/')[2]
+          logger.info(f"Using bucket '{bucket_name}' from video storage URL")
+      
       # Generate AWS request ID for tracking
       aws_request_id = str(uuid.uuid4())
       
@@ -137,7 +147,7 @@ class DownloadRequestService:
       presigned_url = self.s3_client.generate_presigned_url(
         'get_object',
         Params={
-          'Bucket': self.bucket_name,
+          'Bucket': bucket_name,
           'Key': download_request.s3_key,
           'ResponseContentDisposition': f'attachment; filename="{download_request.video.title}"'
         },
