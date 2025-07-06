@@ -301,7 +301,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function fetchCategories() {
     try {
-      console.log("Fetching categories...");
       // Get the current library ID from the page
       let currentLibraryId = null;
       const libraryInfo = document.querySelector(".library-info");
@@ -317,7 +316,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Use the new unified category API
       let apiUrl = `/api/api/categories/?library=${currentLibraryId}`;
-      console.log(`Using unified API URL: ${apiUrl}`);
 
       // fetch cache options
       const response = await fetch(apiUrl, {
@@ -328,7 +326,6 @@ document.addEventListener("DOMContentLoaded", function () {
           Pragma: "no-cache",
         },
       });
-      console.log("Response status:", response.status);
 
       if (!response.ok) {
         console.error("Failed to fetch categories. Status:", response.status);
@@ -336,7 +333,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       const categories = await response.json();
-      console.log("Categories data:", categories);
 
       const categorySelect = document.getElementById("category");
       if (!categorySelect) {

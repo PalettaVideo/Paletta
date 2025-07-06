@@ -1,7 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
   const addToCartButton = document.getElementById("addToCartButton");
-  const popupOverlay = document.getElementById("popupOverlay");
-  const confirmAddToCart = document.getElementById("confirmAddToCart");
   const addToCollectionButton = document.getElementById(
     "addToCollectionButton"
   );
@@ -81,12 +79,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-    if (keysToRemove.length > 0) {
-      console.log(
-        `Cleared ${keysToRemove.length} stale localStorage entries for library switch`
-      );
-    }
-
     // Set current library slug to prevent future caching issues
     localStorage.setItem("lastLibrarySlug", currentLibrarySlug);
   }
@@ -94,21 +86,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Clear stale data and initialize localStorage for cart and collection if not present
   clearStaleLibraryData();
 
-  // Add debug logging for library context
-  const currentLibrarySlug = getCurrentLibrarySlug();
-  const currentLibraryName =
-    document.querySelector('meta[name="current-library-name"]')?.content ||
-    "Unknown";
-  const clipId =
-    document.querySelector('meta[name="clip-id"]')?.content || "Unknown";
-
-  console.log(`[VideoDetails Debug] Library context initialized:`);
-  console.log(
-    `[VideoDetails Debug] - Current library: ${currentLibraryName} (slug: ${currentLibrarySlug})`
-  );
-  console.log(`[VideoDetails Debug] - Clip ID: ${clipId}`);
-  console.log(`[VideoDetails Debug] - URL: ${window.location.pathname}`);
-
+  // Clear stale data and initialize localStorage for cart and collection if not present
   if (!localStorage.getItem(getCollectionStorageKey())) {
     localStorage.setItem(getCollectionStorageKey(), JSON.stringify([]));
   }
@@ -122,19 +100,9 @@ document.addEventListener("DOMContentLoaded", function () {
    * Set up event listeners
    */
   function setupEventListeners() {
-    // Add to cart functionality
-    if (addToCartButton && popupOverlay && confirmAddToCart) {
-      addToCartButton.addEventListener("click", () => {
-        popupOverlay.style.display = "flex";
-      });
-
-      confirmAddToCart.addEventListener("click", handleAddToCart);
-
-      popupOverlay.addEventListener("click", (event) => {
-        if (event.target === popupOverlay) {
-          popupOverlay.style.display = "none";
-        }
-      });
+    // Add to cart functionality - direct call without popup
+    if (addToCartButton) {
+      addToCartButton.addEventListener("click", handleAddToCart);
     }
 
     // Add to collection functionality
@@ -147,16 +115,9 @@ document.addEventListener("DOMContentLoaded", function () {
    * Handle adding to cart
    */
   function handleAddToCart() {
-    const selectedResolution = document.querySelector(
-      'input[name="resolution"]:checked'
-    );
-    if (!selectedResolution) {
-      showNotification("Please select a resolution", "warning");
-      return;
-    }
-
-    const resolution = selectedResolution.value;
-    const price = selectedResolution.dataset.price;
+    // Use default resolution and price (no popup needed)
+    const resolution = "HD";
+    const price = "5.00";
 
     // Get video ID using the same approach as inside_category.js
     const videoId = getVideoId();
@@ -178,8 +139,8 @@ document.addEventListener("DOMContentLoaded", function () {
     formData.append("resolution", resolution);
     formData.append("price", price);
 
-    // Send AJAX request to add to cart
-    fetch("/cart/add/", {
+    // Send AJAX request to add to cart (correct endpoint)
+    fetch("/orders/add-to-cart/", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -202,9 +163,6 @@ document.addEventListener("DOMContentLoaded", function () {
           // Display success message
           const clipTitle = document.querySelector("h1").textContent;
           showNotification(`"${clipTitle}" added to cart (${resolution})`);
-
-          // Close the popup
-          popupOverlay.style.display = "none";
 
           // Update cart count in header if exists
           const cartCountElement = document.querySelector(".cart-count");
@@ -241,15 +199,12 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    // Log what we're sending (same as inside_category.js)
-    console.log(`Adding video ID ${videoId} to collection`);
-
     // Create URL-encoded form data
     const formData = new URLSearchParams();
     formData.append("clip_id", videoId);
 
-    // Send POST request to add to collection (same endpoint as inside_category.js)
-    fetch("/collection/add/", {
+    // Send POST request to add to collection (correct endpoint)
+    fetch("/orders/add-to-collection/", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -259,14 +214,12 @@ document.addEventListener("DOMContentLoaded", function () {
       credentials: "same-origin",
     })
       .then((response) => {
-        console.log(`Response status: ${response.status}`);
         if (response.ok) {
           return response.json();
         }
         throw new Error(`Network error: ${response.status}`);
       })
       .then((data) => {
-        console.log("Response data:", data);
         if (data.success) {
           // Update client-side collection cache
           updateCollectionCache(videoId);
@@ -365,8 +318,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Save back to localStorage
       localStorage.setItem(getCartStorageKey(), JSON.stringify(cart));
-
-      console.log("Cart updated in localStorage:", cart);
     } catch (error) {
       console.error("Error updating cart in localStorage:", error);
     }
@@ -411,7 +362,6 @@ document.addEventListener("DOMContentLoaded", function () {
           getCollectionStorageKey(),
           JSON.stringify(collection)
         );
-        console.log("Collection updated in localStorage:", collection);
       }
     } catch (error) {
       console.error("Error updating collection in localStorage:", error);
