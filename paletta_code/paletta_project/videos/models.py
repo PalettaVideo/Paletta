@@ -353,7 +353,6 @@ class Video(models.Model):
         try:
             from .services import AWSCloudStorageService
             storage_service = AWSCloudStorageService()
-            # Just delete the S3 object, don't try to update the model
             storage_service.s3_client.delete_object(
                 Bucket=storage_service.bucket_name,
                 Key=self.storage_reference_id

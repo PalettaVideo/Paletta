@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 import sys
 from dotenv import load_dotenv
 import dj_database_url
@@ -94,10 +93,16 @@ if AWS_STORAGE_ENABLED:
 # Change this value whenever you want to force cache invalidation
 STATIC_VERSION = '2.0.0'
 
-# Download link configuration
-DOWNLOAD_LINK_EXPIRY_HOURS = int(os.environ.get('DOWNLOAD_LINK_EXPIRY_HOURS', '24'))
+# Download link configuration - 48 hours for download requests
+DOWNLOAD_LINK_EXPIRY_HOURS = int(os.environ.get('DOWNLOAD_LINK_EXPIRY_HOURS', '48'))  # 48 hours for download requests
+DOWNLOAD_REQUEST_EXPIRY_HOURS = 48  # Fixed 48-hour expiry for download requests
 DELETE_LOCAL_FILE_AFTER_UPLOAD = os.environ.get('DELETE_LOCAL_FILE_AFTER_UPLOAD', 'True') == 'True'
 SEND_UPLOAD_CONFIRMATION_EMAIL = os.environ.get('SEND_UPLOAD_CONFIRMATION_EMAIL', 'True') == 'True'
+
+# AWS SES Configuration for email automation
+AWS_SES_ENABLED = os.environ.get('AWS_SES_ENABLED', 'False') == 'True'
+AWS_SES_REGION = os.environ.get('AWS_SES_REGION', AWS_REGION)
+AWS_SES_SENDER_EMAIL = os.environ.get('AWS_SES_SENDER_EMAIL', 'automatic-video-request@paletta.io')
 
 # Celery Configuration
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
@@ -113,6 +118,10 @@ CELERY_BEAT_SCHEDULE = {
     'cleanup-expired-download-links': {
         'task': 'videos.tasks.cleanup_expired_download_links',
         'schedule': crontab(hour='*/1'),  # Run every hour
+    },
+    'cleanup-expired-download-requests': {
+        'task': 'orders.tasks.cleanup_expired_download_requests',
+        'schedule': crontab(minute='*/120'),  # Run every 2 hours
     },
     'retry-failed-uploads': {
         'task': 'videos.tasks.retry_failed_uploads',
