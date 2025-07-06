@@ -74,7 +74,7 @@ class DownloadRequestSystemTest:
         
         # Create test video
         self.test_video, created = Video.objects.get_or_create(
-            title='Test Video for Download Request',
+            title='Test Download',
             defaults={
                 'description': 'Test video for validating download requests',
                 'library': self.test_library,
