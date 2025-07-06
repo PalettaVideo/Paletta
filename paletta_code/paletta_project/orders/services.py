@@ -212,7 +212,7 @@ class DownloadRequestService:
       
       # Render email templates
       subject = f"Download link for {download_request.video.title} - Valid for 48 hours"
-      html_message = render_to_string('videos/emails/download_link.html', context)
+      html_message = render_to_string('emails/download_link.html', context)
       plain_message = strip_tags(html_message)
       
       # Send email
