@@ -142,7 +142,7 @@ document.addEventListener("DOMContentLoaded", function () {
     formData.append("price", price);
 
     // Send AJAX request to add to cart (correct endpoint)
-    fetch("/orders/add-to-cart/", {
+    fetch("/add-to-cart/", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -206,7 +206,7 @@ document.addEventListener("DOMContentLoaded", function () {
     formData.append("clip_id", videoId);
 
     // Send POST request to add to collection (correct endpoint)
-    fetch("/orders/add-to-collection/", {
+    fetch("/add-to-collection/", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",

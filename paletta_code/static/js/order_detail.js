@@ -16,7 +16,7 @@ function confirmRequest() {
                     document.querySelector('meta[name="csrf-token"]')?.content || "";
 
   // Get URL by constructing it with the detail ID
-  const url = `/orders/request-download/${detailId}/`;
+      const url = `/request-download/${detailId}/`;
 
   // Send request to server to reprocess the download
   fetch(url, {

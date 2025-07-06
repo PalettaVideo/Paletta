@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     // Make API request
-    fetch("/orders/bulk-download-request/", {
+    fetch("/bulk-download-request/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -124,7 +124,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
           // Optional: Redirect to orders page after 3 seconds
           setTimeout(() => {
-            window.location.href = "/orders/orders/";
+            window.location.href = "/orders/";
           }, 3000);
         } else {
           let errorMsg = data.message || "Failed to process download request";
