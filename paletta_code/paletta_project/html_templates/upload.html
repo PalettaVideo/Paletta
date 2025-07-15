@@ -38,14 +38,12 @@
           <form id="upload-form" method="post" enctype="multipart/form-data" data-success-url="{% library_specific_url 'library_upload_history' %}" data-api-gateway-url="{{ API_GATEWAY_URL }}/getPresignedVideoUploadURL" data-library-id="{{ current_library.id }}" novalidate>
             {% csrf_token %}
             <h1>Upload your clip</h1>
-            
             {% if current_library %}
             <div class="library-info" data-library-id="{{ current_library.id }}">
                 <p>Uploading to library: <strong>{{ current_library.name }}</strong></p>
                 <input type="hidden" name="library_id" value="{{ current_library.id }}">
             </div>
             {% endif %}
-            
             <div class="upload-box" id="upload-box">
                 <p>MPEG, MOV, MP4, AVI videos no larger than 256GB and no larger than 1920x1080px</p>
                 <input type="file" id="file-input" name="video_file" accept="video/*" required style="display: none;">
@@ -59,13 +57,11 @@
                 <input type="text" id="title" name="title" maxlength="1000" required>
                 <div class="word-count" id="title-word-count">0/20 words</div>
             </div>
-
             <div class="form-group">
               <label for="preview-image">Upload Preview Image (Thumbnail)</label>
               <input type="file" id="preview-image" name="thumbnail" accept="image/*">
               <div class="preview-container" id="preview-container"></div>
             </div>
-
             <div class="form-group">
                 <label for="description">Description</label>
                 <textarea id="description" name="description" maxlength="6000"></textarea>
@@ -85,7 +81,6 @@
                     </div>
                 </div>
             </div>
-            
             <div class="form-group">
                 <label for="content-types">Content Type</label>
                 <div class="content-types-container">
@@ -149,17 +144,14 @@
                         <span class="tag">abstract</span>
                         <span class="tag">historical</span>
                         <span class="tag">archive</span>
-
                 </div>
             </div>
-            
             <div class="form-actions">
                 <button type="submit" class="button">Upload Clip</button>
             </div>
           </form>
         </main>
     </div>
-
 </body>
 
 <!-- Modal for upload limit warning -->

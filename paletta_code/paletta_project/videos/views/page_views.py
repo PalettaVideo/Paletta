@@ -2,7 +2,8 @@ from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.conf import settings
-from libraries.models import Library
+from libraries.models import Library, UserLibraryRole
+from django.db.models import Q
 
 @method_decorator(login_required, name='dispatch')
 class UploadPageView(TemplateView):
@@ -16,8 +17,15 @@ class UploadPageView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Get all libraries for the current user
-        user_libraries = Library.objects.filter(owner=self.request.user)
+        # Get all libraries where user has access (owned + contributor/admin roles)
+        user_owned_libraries = Q(owner=self.request.user)
+        user_role_libraries = Q(user_roles__user=self.request.user, 
+                               user_roles__role__in=['contributor', 'admin'])
+        
+        user_libraries = Library.objects.filter(
+            user_owned_libraries | user_role_libraries
+        ).distinct().filter(is_active=True)
+        
         context['user_libraries'] = user_libraries
         
         # Determine the current library from the session

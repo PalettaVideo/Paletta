@@ -86,6 +86,6 @@ class UserLibraryRoleAdmin(admin.ModelAdmin):
     """
     list_display = ('user', 'library', 'role', 'added_at')
     list_filter = ('role', 'added_at')
-    search_fields = ('user__username', 'library__name')
+    search_fields = ('user__email', 'library__name')
 
 admin.site.register(Library, LibraryAdmin)
