@@ -56,9 +56,9 @@ class ClipStoreView(TemplateView):
             
             logger.debug(f"Found {library_content_types.count()} content types for library {current_library.name}")
             
-            # Separate Private category to show it first (same as homepage)
-            private_category = None
-            other_categories = []
+            # Separate Private content type to show it first (same as homepage)
+            private_content_type = None
+            other_content_types = []
             
             for ct in library_content_types:
                 cat_data = {
@@ -72,21 +72,21 @@ class ClipStoreView(TemplateView):
                 logger.debug(f"Content Type: {ct.display_name} (subject_area: {ct.subject_area})")
                 
                 if ct.subject_area == 'private':
-                    private_category = cat_data
+                    private_content_type = cat_data
                 else:
-                    other_categories.append(cat_data)
+                    other_content_types.append(cat_data)
             
-            # Add Private category first (pinned), then other categories
-            categories = []
-            if private_category:
-                categories.append(private_category)
-                logger.debug("Added Private category to sidebar")
-            categories.extend(other_categories)
+            # Add Private content type first (pinned), then other content types
+            content_types = []
+            if private_content_type:
+                content_types.append(private_content_type)
+                logger.debug("Added Private content type to sidebar")
+            content_types.extend(other_content_types)
             
-            context['categories'] = categories
-            logger.debug(f"Total categories in context: {len(categories)}")
+            context['content_types'] = content_types
+            logger.debug(f"Total content types in context: {len(content_types)}")
         else:
-            context['categories'] = []
+            context['content_types'] = []
             
         # Get popular tags for filtering - annotate with video count and order by that count
         if current_library:

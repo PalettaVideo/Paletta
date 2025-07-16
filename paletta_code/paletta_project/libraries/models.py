@@ -11,7 +11,7 @@ class Library(models.Model):
     MAPPED TO: /api/libraries/ endpoints
     USED BY: All library-related views and templates
     
-    Manages video libraries with storage tiers, categories, and user roles.
+    Manages video libraries with storage tiers, content types, and user roles.
     """
     STORAGE_TIER_CHOICES = [
         ('basic', 'Basic'),
@@ -20,8 +20,8 @@ class Library(models.Model):
     ]
     
     CONTENT_SOURCE_CHOICES = [
-        ('paletta_style', 'Use Paletta Style Categories'),
-        ('custom', 'Create My Own Categories'),
+        ('paletta_style', 'Use Paletta Style Content Types'),
+        ('custom', 'Create My Own Content Types'),
     ]
     
     # Storage size constants (in bytes)
@@ -50,7 +50,7 @@ class Library(models.Model):
         max_length=20, 
         choices=CONTENT_SOURCE_CHOICES, 
         default='custom',
-        help_text="Choose the source for video categories in this library"
+        help_text="Choose the source for video content types in this library"
     )
 
     class Meta:
@@ -73,7 +73,7 @@ class Library(models.Model):
     @property
     def uses_paletta_categories(self):
         """
-        BACKEND/FRONTEND-READY: Check if library uses Paletta-style categories.
+        BACKEND/FRONTEND-READY: Check if library uses Paletta-style content types.
         MAPPED TO: Content management logic
         USED BY: setup_default_categories() and admin interface
         
@@ -133,7 +133,7 @@ class Library(models.Model):
                 'text': '#000000'
             }
         
-        # Paletta library must use Paletta categories
+        # Paletta library must use Paletta content types
         if self.is_paletta_library and self.content_source != 'paletta_style':
             self.content_source = 'paletta_style'
 
@@ -143,13 +143,13 @@ class Library(models.Model):
         MAPPED TO: Model creation/update process
         USED BY: All library create/update operations
         
-        Runs validation and sets up default categories for new libraries.
+        Runs validation and sets up default content types for new libraries.
         """
         self.clean()
         is_new = self.pk is None
         super().save(*args, **kwargs)
         
-        # Create default categories based on source choice
+        # Create default content types based on source choice
         if is_new:
             self.setup_default_categories()
     
@@ -160,10 +160,11 @@ class Library(models.Model):
         USED BY: save() method for new libraries
         
         Creates library-specific content types based on the content type list.
+        Ensures all required content types exist in the system (they're global).
         """
         from videos.models import ContentType
         
-        # Create library-specific content types
+        # Create all content types (they're global and available to all libraries)
         content_types_data = [
             'private', 'campus_life', 'teaching_learning', 'research_innovation', 
             'city_environment', 'aerial_establishing', 'people_portraits',
@@ -172,7 +173,7 @@ class Library(models.Model):
         ]
         
         for ct_code in content_types_data:
-            ContentType.objects.get_or_create(subject_area=ct_code, library=self)
+            ContentType.objects.get_or_create(code=ct_code)
     
     def get_storage_display(self):
         """

@@ -10,6 +10,42 @@ document.addEventListener("DOMContentLoaded", function () {
     return;
   }
 
+  // Get user role from meta tag or data attribute
+  function getUserRole() {
+    const metaUserRole = document.querySelector('meta[name="user-role"]');
+    return metaUserRole ? metaUserRole.getAttribute("content") : "user";
+  }
+
+  // Check if user has admin/owner permissions
+  function hasAdminPermissions() {
+    const userRole = getUserRole();
+    return userRole === "owner" || userRole === "admin";
+  }
+
+  // Show permission denied popup
+  function showPermissionDeniedPopup() {
+    alert(
+      "Only Library Admin or Owner can access these pages. Enjoy exploring other libraries!"
+    );
+  }
+
+  // Add permission checks to admin navigation buttons
+  function addPermissionChecks() {
+    const adminButtons = document.querySelectorAll(".admin-nav-btn a");
+
+    adminButtons.forEach((link) => {
+      link.addEventListener("click", function (e) {
+        if (!hasAdminPermissions()) {
+          e.preventDefault();
+          e.stopPropagation();
+          showPermissionDeniedPopup();
+          return false;
+        }
+        // If they have permission, let the navigation proceed normally
+      });
+    });
+  }
+
   // open the sidebar
   const openSidebar = () => {
     sidebar.classList.add("active");
@@ -39,4 +75,7 @@ document.addEventListener("DOMContentLoaded", function () {
     e.stopPropagation();
     closeSidebar();
   });
+
+  // Initialize permission checks when DOM is loaded
+  addPermissionChecks();
 });

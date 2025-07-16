@@ -423,13 +423,13 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
             context['library'] = library
             
             # Get content types for this library - ALWAYS include all library content types (including Private)
-            content_types = ContentType.objects.filter(library=library, is_active=True).order_by('subject_area')
+            library_content_types = ContentType.objects.filter(library=library, is_active=True).order_by('subject_area')
             
             # Separate Private content type to show it first
             private_content_type = None
             other_content_types = []
             
-            for content_type in content_types:
+            for content_type in library_content_types:
                 if content_type.subject_area == 'private':
                     private_content_type = content_type
                 else:
@@ -441,7 +441,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                 ordered_content_types.append(private_content_type)
             ordered_content_types.extend(other_content_types)
             
-            context['categories'] = ordered_content_types
+            context['content_types'] = ordered_content_types
             
             # Get contributors for this library
             context['contributors'] = UserLibraryRole.objects.filter(
@@ -497,35 +497,35 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                 
             library.save()
             
-            # Process categories
-            if 'categories' in request.POST:
+            # Process content types
+            if 'content_types' in request.POST:
                 try:
-                    categories_data = json.loads(request.POST.get('categories'))
+                    content_types_data = json.loads(request.POST.get('content_types'))
                     
                     # Keep track of existing content type IDs
                     current_content_types = set(ContentType.objects.filter(library=library).values_list('id', flat=True))
                     processed_content_types = set()
                     
-                    for category_data in categories_data:
-                        category_id = category_data.get('id')
+                    for content_type_data in content_types_data:
+                        content_type_id = content_type_data.get('id')
                         
-                        if category_id and not category_id.startswith('temp_'):
+                        if content_type_id and not content_type_id.startswith('temp_'):
                             # Update existing content type
                             try:
-                                content_type = ContentType.objects.get(id=category_id, library=library)
+                                content_type = ContentType.objects.get(id=content_type_id, library=library)
                                 # Note: Content type name is now handled through subject_area enum
-                                content_type.description = category_data.get('description', content_type.description)
+                                content_type.description = content_type_data.get('description', content_type.description)
                                 
                                 # Handle image if provided
-                                if 'image' in category_data and category_data['image'] and category_data['image'].startswith('data:'):
+                                if 'image' in content_type_data and content_type_data['image'] and content_type_data['image'].startswith('data:'):
                                     image_file = process_base64_image(
-                                        category_data['image'],
+                                        content_type_data['image'],
                                         name=f"content_type_{content_type.display_name}"
                                     )
                                     content_type.image = image_file
                                     
                                 content_type.save()
-                                processed_content_types.add(int(category_id))
+                                processed_content_types.add(int(content_type_id))
                                 
                             except ContentType.DoesNotExist:
                                 pass  # Content type might belong to another library or doesn't exist
@@ -557,7 +557,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                 except json.JSONDecodeError:
                     return JsonResponse({
                         'status': 'error',
-                        'message': "Invalid category data format"
+                        'message': "Invalid content type data format"
                     }, status=400, content_type='application/json')
             
             # Process contributors
