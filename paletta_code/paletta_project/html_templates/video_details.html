@@ -10,6 +10,7 @@
   <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
   <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
   <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
+  <meta name="user-role" content="{{ user_role|default:'user' }}">
   {% if clip %}
   <meta name="clip-id" content="{{ clip.id }}">
   <meta name="clip-thumbnail" content="{% if clip.thumbnail %}{{ clip.thumbnail.url }}{% endif %}">

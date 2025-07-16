@@ -1,15 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("Manage libraries page loaded");
-  console.log("Checking for required elements...");
-
   // Check if required elements exist
   const confirmModal = document.getElementById("confirmModal");
   const confirmBtn = document.getElementById("confirmBtn");
   const categoriesModal = document.getElementById("categoriesModal");
-
-  console.log("confirmModal:", confirmModal ? "found" : "NOT FOUND");
-  console.log("confirmBtn:", confirmBtn ? "found" : "NOT FOUND");
-  console.log("categoriesModal:", categoriesModal ? "found" : "NOT FOUND");
 
   // Get CSRF token for AJAX requests
   function getCookie(name) {
@@ -28,7 +21,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   const csrftoken = getCookie("csrftoken");
-  console.log("CSRF token:", csrftoken ? "found" : "NOT FOUND");
 
   // Global variables for confirmation modal
   let pendingAction = null;
