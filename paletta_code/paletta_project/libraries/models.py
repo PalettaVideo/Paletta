@@ -173,7 +173,7 @@ class Library(models.Model):
         ]
         
         for ct_code in content_types_data:
-            ContentType.objects.get_or_create(code=ct_code)
+            ContentType.objects.get_or_create(subject_area=ct_code, library=self)
     
     def get_storage_display(self):
         """
