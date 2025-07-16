@@ -62,9 +62,9 @@ class VideoDetailView(TemplateView):
                 duration_formatted = f"{minutes}:{seconds:02d}"
             context['duration_formatted'] = duration_formatted
             
-            # Get related clips (same subject area, excluding current)
+            # Get related clips (same content type, excluding current)
             context['related_clips'] = Video.objects.filter(
-                subject_area=clip.subject_area
+                content_type=clip.content_type
             ).exclude(id=clip.id).order_by('-upload_date')[:4]
             
             # CLEAN APPROACH: Library context is handled by middleware

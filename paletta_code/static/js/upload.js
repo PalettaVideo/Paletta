@@ -297,7 +297,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      // Create content type cards for single selection
+      // Create content type cards for SINGLE selection only
       contentTypes.forEach((contentType) => {
         const card = document.createElement("div");
         card.className = "content-type-card";

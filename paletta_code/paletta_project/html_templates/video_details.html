@@ -35,9 +35,9 @@
     <div class="content">
       <div class="video-container">
           <div class="navigation-buttons">
-            {% if clip.subject_area and current_library %}
-              <a href="{% library_specific_url 'library_category' category_slug=clip.subject_area.display_name|library_slugify %}">
-                <button class="back-button">Back to all videos in Category -  '{{ clip.subject_area.display_name }}'</button>
+                                {% if clip.content_type and current_library %}
+                    <a href="{% library_specific_url 'library_category' category_slug=clip.content_type.display_name|library_slugify %}">
+                    <button class="back-button">Back to all videos in Category -  '{{ clip.content_type.display_name }}'</button>
               </a>
             {% endif %}
             {% if current_library %}
@@ -79,23 +79,19 @@
       <div class="video-info">
         <h2>Description</h2>
         <p>{{ clip.description|default:"No description available." }}</p>
-        <!-- Subject Area Display -->
-        {% if clip.subject_area %}
-        <div class="subject-area">
-          <strong>Subject Area:</strong>
-          <span class="subject-area-name">{{ clip.subject_area.display_name }}</span>
+        <!-- Content Type Display -->
+        {% if clip.content_type %}
+        <div class="content-type">
+          <strong>Content Type:</strong>
+          <span class="content-type-name">{{ clip.content_type.display_name }}</span>
         </div>
         {% endif %}
         
-        <!-- Content Types Display -->
-        {% if clip.content_types.exists %}
-        <div class="content-types">
-          <strong>Content Types:</strong>
-          <div class="content-types-list">
-            {% for content_type in clip.content_types.all %}
-              <span class="content-type-badge">{{ content_type.display_name }}</span>
-            {% endfor %}
-          </div>
+        <!-- Content Type Display -->
+        {% if clip.content_type %}
+        <div class="content-type">
+          <strong>Content Type:</strong>
+          <span class="content-type-badge">{{ clip.content_type.display_name }}</span>
         </div>
         {% endif %}
                

@@ -17,14 +17,8 @@ class UploadPageView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Get all libraries where user has access (owned + contributor/admin roles)
-        user_owned_libraries = Q(owner=self.request.user)
-        user_role_libraries = Q(user_roles__user=self.request.user, 
-                               user_roles__role__in=['contributor', 'admin'])
-        
-        user_libraries = Library.objects.filter(
-            user_owned_libraries | user_role_libraries
-        ).distinct().filter(is_active=True)
+        # ALL authenticated users can contribute to ANY active library
+        user_libraries = Library.objects.filter(is_active=True)
         
         context['user_libraries'] = user_libraries
         

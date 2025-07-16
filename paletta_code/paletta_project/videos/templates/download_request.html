@@ -29,7 +29,7 @@
               </p>
               <p>{{ video.description }}</p>
               <p>
-                <strong>Subject Area:</strong> {{ video.subject_area.display_name }}<br>
+                <strong>Content Type:</strong> {{ video.content_type.display_name }}<br>
                 {% if video.duration %}
                 <strong>Duration:</strong> {{ video.duration|divisibleby:60 }}:{{ video.duration|modulo:60 }}<br>
                 {% endif %}

@@ -95,7 +95,7 @@
                     <select id="videoCategory" name="category">
                         <option value="">Select a category</option>
                         {% for category in categories %}
-                            <option value="{{ category.id }}" {% if video.subject_area and video.subject_area.id == category.id %}selected{% endif %}>{{ category.display_name }}</option>
+                                                                <option value="{{ category.id }}" {% if video.content_type and video.content_type.id == category.id %}selected{% endif %}>{{ category.display_name }}</option>
                         {% endfor %}
                     </select>
                     {% if form.category.errors %}
