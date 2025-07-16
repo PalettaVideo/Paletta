@@ -8,7 +8,7 @@ Groups related functionality for better maintainability.
 """
 
 from django.urls import path
-from .views.viewsets import UnifiedContentTypeViewSet, ContentTypeViewSet
+from .views.viewsets import ContentTypeViewSet
 from .views.upload_view import UploadHistoryView
 from .views.download_view import DownloadRequestView
 from .views.api_views import VideoListAPIView, VideoDetailAPIView, PopularTagsAPIView, VideoAPIUploadView, ContentTypeVideosAPIView
@@ -35,7 +35,7 @@ urlpatterns = [
     path('api/upload/', VideoAPIUploadView.as_view(), name='api_upload'),
     
     # Content Type APIs - Library-specific content type system  
-    path('api/content-types/', ContentTypeViewSet.as_view(), name='api_content_types'),
+    path('api/content-types/', ContentTypeViewSet.as_view({'get': 'list'}), name='api_content_types'),
     path('api/content-type-videos/', ContentTypeVideosAPIView.as_view(), name='api_content_type_videos'),
     
     # Media & Metadata APIs - File and thumbnail handling
