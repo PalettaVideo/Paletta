@@ -196,7 +196,7 @@ select {
     position: relative;
 }
 
-/* Custom select box */
+/* Custom select box - IE/Edge support (legacy browsers) */
 select::-ms-expand {
     display: none;
 }

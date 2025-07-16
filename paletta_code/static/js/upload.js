@@ -253,7 +253,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .getAttribute("content");
 
       // Use the content types API with library filtering
-      let apiUrl = `/api/content-types/`;
+      let apiUrl = `/api/api/content-types/`;
       if (libraryId) {
         apiUrl += `?library=${libraryId}`;
       }

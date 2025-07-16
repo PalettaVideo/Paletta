@@ -81,16 +81,16 @@ class LibraryViewSet(viewsets.ModelViewSet):
             # Check if this is the Paletta library
             is_paletta_library = instance.is_paletta_library
             
-            # Permission check: Paletta library can only be deleted by superusers (owners)
-            if is_paletta_library and not request.user.is_superuser:
+            # Permission check: Paletta library can only be deleted by system superusers or users with owner role
+            if is_paletta_library and not (request.user.is_superuser or request.user.role == 'owner'):
                 return Response({
                     'status': 'error',
-                    'message': 'Only users with owner-level access can delete the Paletta library.'
+                    'message': 'Only users with owner-level access or System Superuser can delete the Paletta library.'
                 }, status=403)
             
             # Permission check: Other libraries can be deleted by owners or the library creator
             if not is_paletta_library:
-                is_owner = request.user.is_superuser
+                is_owner = request.user.is_superuser or request.user.role == 'owner'
                 is_creator = instance.owner == request.user
                 is_admin = UserLibraryRole.objects.filter(
                     library=instance, user=request.user, role='admin'
@@ -99,7 +99,7 @@ class LibraryViewSet(viewsets.ModelViewSet):
                 if not (is_owner or is_creator or is_admin):
                     return Response({
                         'status': 'error',
-                        'message': 'Only users with owner-level access or the library creator can delete this library.'
+                        'message': 'Only users with owner-level access or System Superuser can delete this library.'
                     }, status=403)
             
             self.perform_destroy(instance)
@@ -259,8 +259,18 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
     USED BY: create_library_admin.html template
     
     Handles both GET (form display) and POST (form submission) for library creation.
+    PERMISSIONS: Only users with Owner level (superuser) can create libraries.
     """
     template_name = 'create_library_admin.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Check if user has Owner level permissions before allowing access.
+        """
+        if not (request.user.is_superuser or request.user.role == 'owner'):
+            messages.error(request, 'Only users with Owner level access can create libraries.')
+            return redirect('home')
+        return super().dispatch(request, *args, **kwargs)
     
     def post(self, request, *args, **kwargs):
         try:
@@ -374,7 +384,7 @@ class ManageLibrariesView(LoginRequiredMixin, TemplateView):
         context['libraries'] = all_libraries
         
         # Add user role information for permission checking
-        if self.request.user.is_superuser:
+        if self.request.user.is_superuser or self.request.user.role == 'owner':
             context['user_role'] = 'owner'
         else:
             context['user_role'] = 'user'  # Default role
@@ -405,7 +415,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
             library = Library.objects.get(id=library_id)
             
             # Check if the user has permission to edit this library
-            if library.owner != self.request.user and not self.request.user.is_superuser:
+            if library.owner != self.request.user and not (self.request.user.is_superuser or self.request.user.role == 'owner'):
                 context['permission_error'] = True
                 context['library_name'] = library.name
                 return context
