@@ -50,22 +50,22 @@ fi
 
 echo "Loading initial data..."
 python manage.py shell << 'EOF'
-from videos.models import ContentType, PalettaCategory
+from videos.models import ContentType, PalettaContentType
 from libraries.models import Library
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-# Create content types (GLOBAL - available for all libraries)
+# Create PalettaContentTypes (GLOBAL - available for all libraries)
 content_types = ['private', 'campus_life', 'teaching_learning', 'research_innovation', 'city_environment', 'aerial_establishing', 'people_portraits', 'culture_events', 'workspaces_facilities', 'cutaways_abstracts', 'historical_archive']
 
-print("Creating global content types...")
+print("Creating global Paletta content types...")
 for ct in content_types:
-    obj, created = ContentType.objects.get_or_create(code=ct)
+    obj, created = PalettaContentType.objects.get_or_create(code=ct)
     if created:
-        print(f"✓ Created ContentType: {ct} -> {obj.display_name}")
+        print(f"✓ Created PalettaContentType: {ct} -> {obj.display_name}")
     else:
-        print(f"ContentType already exists: {ct}")
+        print(f"PalettaContentType already exists: {ct}")
 
 # Create default Paletta library
 admin_user = User.objects.filter(is_superuser=True).first()
@@ -76,7 +76,7 @@ if admin_user:
         defaults={
             'description': 'Default Paletta video library for educational content',
             'owner': admin_user,
-            'category_source': 'paletta_style',
+            'content_source': 'paletta_style',
             'storage_tier': 'enterprise',
             'is_active': True
         }
@@ -88,7 +88,7 @@ if admin_user:
         print("Updated Paletta library owner to superuser")
     
     # ALWAYS ensure content types are set up for the Paletta library
-    paletta_lib.setup_default_categories()  # This method will be updated to use ContentType
+    paletta_lib.setup_default_categories()  # Creates library-specific ContentType instances
     print("Set up default content types for Paletta library")
     
     if created:
@@ -109,7 +109,7 @@ from libraries.models import Library
 try:
     paletta_lib = Library.objects.get(name='Paletta')
     print("Setting up default content types...")
-    paletta_lib.setup_default_categories()  # Method will be updated to use ContentType
+    paletta_lib.setup_default_categories()  # Creates library-specific ContentType instances
     
     content_type_count = ContentType.objects.filter(is_active=True).count()
     print(f"System now has {content_type_count} content types available")
