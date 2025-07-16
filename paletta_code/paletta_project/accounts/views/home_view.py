@@ -2,8 +2,7 @@ from django.views.generic import TemplateView
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.contrib import messages
-from videos.models import Category, PalettaCategory
-from videos.serializers import CategorySerializer
+from videos.models import ContentType
 from libraries.models import Library
 from django.utils.text import slugify
 import logging
@@ -56,7 +55,7 @@ class HomeView(TemplateView):
                 categories = []
                 
                 if current_library:
-                    library_categories = Category.objects.filter(
+                    library_content_types = ContentType.objects.filter(
                         library=current_library, 
                         is_active=True
                     ).order_by('subject_area')
@@ -64,17 +63,17 @@ class HomeView(TemplateView):
                     private_category = None
                     other_categories = []
                     
-                    for lc in library_categories:
+                    for ct in library_content_types:
                         cat_data = {
-                            'id': lc.id,
-                            'name': lc.display_name,
-                            'display_name': lc.display_name,
-                            'code': lc.subject_area,
+                            'id': ct.id,
+                            'name': ct.display_name,
+                            'display_name': ct.display_name,
+                            'code': ct.subject_area,
                             'type': 'library_category',
-                            'image_url': lc.image.url if lc.image else None,
+                            'image_url': ct.image.url if ct.image else None,
                         }
                         
-                        if lc.subject_area == 'private':
+                        if ct.subject_area == 'private':
                             private_category = cat_data
                         else:
                             other_categories.append(cat_data)

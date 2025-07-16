@@ -1,6 +1,6 @@
 from rest_framework import viewsets, permissions, status
-from ..models import Category, Video
-from ..serializers import CategorySerializer, VideoSerializer
+from ..models import ContentType, Video
+from ..serializers import ContentTypeSerializer, VideoSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from ..tasks import generate_and_send_download_link
@@ -12,13 +12,13 @@ from django.db.models import Q
 from libraries.models import Library, UserLibraryRole
 from rest_framework.views import APIView
 from django.http import JsonResponse
-from ..models import Tag, VideoTag, ContentType, PalettaCategory
+from ..models import Tag, VideoTag, ContentType, PalettaContentType
 
 logger = logging.getLogger(__name__)
 
 class IsLibraryOwnerOrAdmin(permissions.BasePermission):
     """
-    Custom permission to only allow library owners or admins to create/modify categories.
+    Custom permission to only allow library owners or admins to create/modify content types.
     """
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -47,32 +47,22 @@ class IsLibraryOwnerOrAdmin(permissions.BasePermission):
 
 @method_decorator(never_cache, name='list')
 @method_decorator(never_cache, name='retrieve')
-class CategoryViewSet(viewsets.ModelViewSet):
+class ContentTypeViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    API viewset for managing predefined video categories.
-    Only library owners and admins can create/modify categories.
-    Categories use fixed enums for subject areas and content types.
+    API viewset for managing content types within libraries.
+    ContentType objects are library-specific and managed by library owners/admins.
     
-    Query parameters:
-    - library: Filter categories by library ID
+    Query parameters: 
+    - library: Library ID to filter content types by specific library
     """
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-    
-    def get_permissions(self):
-        """
-        Set permissions based on action type.
-        """
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            permission_classes = [IsLibraryOwnerOrAdmin]
-        else:
-            permission_classes = [permissions.AllowAny]
-        return [permission() for permission in permission_classes]
+    queryset = ContentType.objects.filter(is_active=True)
+    serializer_class = ContentTypeSerializer
+    permission_classes = [permissions.AllowAny]
     
     def get_queryset(self):
         """
-        Filter categories based on query parameters.
-        If library ID is provided, filter categories by that library.
+        Filter content types based on query parameters.
+        If library ID is provided, filter content types by that library.
         If no library ID is provided, use the current library from session.
         """
         queryset = super().get_queryset()
@@ -89,7 +79,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
             library_id = self.request.session.get('current_library_id')
             queryset = queryset.filter(library_id=library_id)
 
-        # Only show active categories unless user is library owner/admin
+        # Only show active content types unless user is library owner/admin
         if library_id and user.is_authenticated:
             try:
                 library = Library.objects.get(id=library_id)
@@ -108,9 +98,9 @@ class CategoryViewSet(viewsets.ModelViewSet):
         
         # Add library information to the log for debugging
         if library_id:
-            logger.debug(f"Filtering categories by library_id: {library_id}")
+            logger.debug(f"Filtering content types by library_id: {library_id}")
         else:
-            logger.debug("No library_id filter applied to categories query")
+            logger.debug("No library_id filter applied to content types query")
             
         return queryset
     
@@ -137,104 +127,13 @@ class CategoryViewSet(viewsets.ModelViewSet):
     
     def create(self, request, *args, **kwargs):
         """
-        Create a new category, ensuring it's associated with a library and user has permission.
+        Create a new content type, ensuring it's associated with a library and user has permission.
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-    
-    @action(detail=False, methods=['get'])
-    def available_combinations(self, request):
-        """
-        Return all available subject area combinations
-        """
-        subject_areas = [
-            {'code': code, 'display': display} 
-            for code, display in Category.SUBJECT_AREA_CHOICES
-        ]
-        return Response(subject_areas)
-    
-    @action(detail=False, methods=['get'])
-    def subject_areas(self, request):
-        """
-        Return all available subject areas
-        """
-        subject_areas = [
-            {'code': code, 'display': display} 
-            for code, display in Category.SUBJECT_AREA_CHOICES
-        ]
-        return Response(subject_areas)
-    
-    @action(detail=False, methods=['get'])
-    def content_types(self, request):
-        """
-        Return all available content types from the ContentType model
-        """
-        from ..models import ContentType
-        content_types = [
-            {'code': ct.code, 'display': ct.display_name} 
-            for ct in ContentType.objects.filter(is_active=True)
-        ]
-        return Response(content_types)
-    
-    @action(detail=True, methods=['get'])
-    def image(self, request, pk=None):
-        """
-        Return the image URL for a specific category
-        """
-        try:
-            category = self.get_object()
-            if category.image:
-                image_url = request.build_absolute_uri(category.image.url)
-                return Response({'image_url': image_url})
-            return Response({'image_url': None})
-        except Exception as e:
-            logger.error(f"Error in category image action: {str(e)}")
-            return Response(
-                {'error': 'Failed to retrieve category image'}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-    
-    def destroy(self, request, *args, **kwargs):
-        """
-        Delete a category with proper permission checks and response format
-        """
-        try:
-            category = self.get_object()
-            
-            # Check if user has permission to delete this category
-            if category.library.owner != request.user and not UserLibraryRole.objects.filter(
-                library=category.library, user=request.user, role='admin'
-            ).exists():
-                return Response({
-                    'status': 'error',
-                    'message': 'You do not have permission to delete this category.'
-                }, status=403)
-            
-            # Check if there are videos using this category
-            video_count = Video.objects.filter(subject_area=category).count()
-            if video_count > 0:
-                return Response({
-                    'status': 'error',
-                    'message': f'Cannot delete category. {video_count} video(s) are using this category. Please reassign or delete those videos first.'
-                }, status=400)
-            
-            category_name = category.display_name
-            self.perform_destroy(category)
-            
-            return Response({
-                'status': 'success',
-                'message': f'Category "{category_name}" deleted successfully.'
-            }, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            logger.error(f"Error deleting category: {str(e)}")
-            return Response({
-                'status': 'error',
-                'message': 'Failed to delete category.'
-            }, status=500)
 
 class VideoViewSet(viewsets.ModelViewSet):
     """
@@ -275,7 +174,7 @@ class VideoViewSet(viewsets.ModelViewSet):
         - For non-list/retrieve actions: Only user's own videos
         
         Query filters:
-        - category: Filter by subject_area ID
+        - content_type: Filter by content_type ID  
         - tag: Filter by tag name
         - search: Filter by title content
         
@@ -288,20 +187,20 @@ class VideoViewSet(viewsets.ModelViewSet):
         # Filter private videos based on user permissions
         if user.is_authenticated:
             # For authenticated users, exclude private videos unless they're the library owner
-            # UNIFIED APPROACH: Only check subject_area for private videos
-            private_videos_q = Q(subject_area__subject_area='private') & ~Q(library__owner=user)
+            # UNIFIED APPROACH: Only check content_type for private videos
+            private_videos_q = Q(content_type__subject_area='private') & ~Q(library__owner=user)
             queryset = queryset.exclude(private_videos_q)
         else:
             # For anonymous users, exclude ALL private videos
-            queryset = queryset.exclude(Q(subject_area__subject_area='private'))
+            queryset = queryset.exclude(Q(content_type__subject_area='private'))
         
         # Apply filters from query parameters
-        category_id = self.request.query_params.get('category', None)
+        content_type_id = self.request.query_params.get('content_type', None)
         tag = self.request.query_params.get('tag', None)
         search = self.request.query_params.get('search', None)
         
-        if category_id:
-            queryset = queryset.filter(subject_area_id=category_id)
+        if content_type_id:
+            queryset = queryset.filter(content_type_id=content_type_id)
         if tag:
             queryset = queryset.filter(tags__name=tag)
         if search:
@@ -461,109 +360,67 @@ class VideoViewSet(viewsets.ModelViewSet):
         # Deny access for all other cases
         self.permission_denied(
             request, 
-            message="You do not have permission to access this category."
+            message="You do not have permission to access this content type."
         ) 
 
 @method_decorator(never_cache, name='get')
-class UnifiedCategoryViewSet(APIView):
+class UnifiedContentTypeViewSet(APIView):
     """
-    Unified API for categories that returns appropriate categories based on library type.
-    - For Paletta-style libraries: Returns PalettaCategory objects
-    - For custom libraries: Returns Category objects (subject areas)
+    Unified API for content types that returns library-specific content types.
+    ContentType objects are library-specific and available to their respective libraries.
     
     Query parameters:
-    - library: Library ID to filter categories for
+    - library: Library ID to filter content types by specific library
     """
     
     def get(self, request, *args, **kwargs):
         """
-        Return categories appropriate for the specified library
+        Return active content types for the specified library
         """
         try:
+            content_types_data = []
+            
             # Get library ID from query parameter
             library_id = request.query_params.get('library', None)
             
-            if not library_id:
-                return Response(
-                    {'error': 'Library ID is required'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            if library_id:
+                # Get active content types for the specific library
+                content_types = ContentType.objects.filter(
+                    library_id=library_id, 
+                    is_active=True
+                ).order_by('subject_area')
+            else:
+                # If no library specified, try to get from session
+                library_id = request.session.get('current_library_id')
+                if library_id:
+                    content_types = ContentType.objects.filter(
+                        library_id=library_id, 
+                        is_active=True
+                    ).order_by('subject_area')
+                else:
+                    # No library context, return empty list
+                    content_types = ContentType.objects.none()
             
-            # Get the library
-            try:
-                library = Library.objects.get(id=library_id)
-            except Library.DoesNotExist:
-                return Response(
-                    {'error': 'Library not found'}, 
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
-            categories_data = []
-            
-            # Get library-specific categories = all categories for this library
-            library_categories = Category.objects.filter(library=library, is_active=True).order_by('subject_area')
-            
-            for category in library_categories:
-                image_url = None
-                if category.image:
-                    image_url = request.build_absolute_uri(category.image.url)
-                
-                categories_data.append({
-                    'id': category.id,
-                    'name': category.display_name,
-                    'display_name': category.display_name,
-                    'subject_area': category.subject_area,
-                    'type': 'library_category',
-                    'library': {
-                        'id': library.id,
-                        'name': library.name
-                    },
-                    'is_active': category.is_active,
-                    'description': category.description or '',
-                    'image_url': image_url,
-                    'created_at': category.created_at.isoformat() if category.created_at else None,
-                })
-            
-            logger.debug(f"Returned {len(categories_data)} categories for library {library.name}")
-            
-            return Response(categories_data, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            logger.error(f"Error in UnifiedCategoryViewSet: {str(e)}")
-            return Response(
-                {'error': 'Failed to retrieve categories'}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-@method_decorator(never_cache, name='get')
-class ContentTypeViewSet(APIView):
-    """
-    API for content types - these are global and used by all libraries
-    """
-    
-    def get(self, request, *args, **kwargs):
-        """
-        Return all available content types
-        """
-        try:
-            content_types = ContentType.objects.filter(is_active=True).order_by('code')
-            
-            content_types_data = []
-            for ct in content_types:
+            for content_type in content_types:
                 content_types_data.append({
-                    'id': ct.id,
-                    'code': ct.code,
-                    'name': ct.display_name,
-                    'display_name': ct.display_name,
-                    'is_active': ct.is_active,
+                    'id': content_type.id,
+                    'name': content_type.display_name,
+                    'display_name': content_type.display_name,
+                    'code': content_type.subject_area,
+                    'type': 'content_type',
+                    'is_active': content_type.is_active,
+                    'library_id': content_type.library_id,
                 })
             
-            logger.debug(f"Returned {len(content_types_data)} content types")
+            logger.debug(f"Returned {len(content_types_data)} content types for library {library_id}")
+            
             return Response(content_types_data, status=status.HTTP_200_OK)
             
         except Exception as e:
-            logger.error(f"Error in ContentTypeViewSet: {str(e)}")
+            logger.error(f"Error in UnifiedContentTypeViewSet: {str(e)}")
             return Response(
                 {'error': 'Failed to retrieve content types'}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            ) 
+            )
+
+ 

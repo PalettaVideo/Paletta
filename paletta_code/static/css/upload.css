@@ -500,6 +500,65 @@ input:invalid + .error-message {
     margin-bottom: 10px;
 }
 
+/* New card-based design for content types */
+.content-type-card {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background-color: #fff;
+    position: relative;
+    text-align: center;
+}
+
+.content-type-card:hover {
+    border-color: #80B824;
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.content-type-card.selected {
+    border-color: #80B824;
+    background-color: #80B824;
+    color: white;
+}
+
+.content-type-card.selected .content-type-title {
+    color: white;
+}
+
+.content-type-card.selected .content-type-check {
+    opacity: 1;
+}
+
+.content-type-title {
+    font-weight: 500;
+    font-size: 0.95em;
+    margin-bottom: 8px;
+    color: #333;
+    transition: color 0.3s ease;
+}
+
+.content-type-check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #80B824;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
 .content-type-item {
     border: 2px solid #e0e0e0;
     border-radius: 8px;
@@ -571,5 +630,9 @@ input:invalid + .error-message {
 @media (max-width: 768px) {
     .content-types-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .content-type-card {
+        padding: 12px;
     }
 }

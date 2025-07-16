@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status, permissions, generics, parsers
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Count, Q
-from ..models import Video, Category, Tag, VideoTag
+from ..models import Video, ContentType, Tag, VideoTag
 from ..serializers import VideoSerializer, TagSerializer
 from libraries.models import Library
 import logging
@@ -85,7 +85,7 @@ class VideoAPIUploadView(APIView):
     2. Frontend calls this endpoint with S3 key and metadata
     3. This endpoint creates the Video record with storage_status='stored'
     
-    Required fields: s3_key, title, category, library_id, content_types
+    Required fields: s3_key, title, content_type, library_id
     Optional fields: description, tags, duration, file_size, format, thumbnail
     """
     permission_classes = [permissions.IsAuthenticated]
@@ -98,9 +98,8 @@ class VideoAPIUploadView(APIView):
         Request data expected:
         - s3_key (str): AWS S3 key where video is stored
         - title (str): Video title
-        - category (int): Category ID for subject area
+        - content_type (int): Content type ID for primary classification
         - library_id (int): Library ID where video belongs
-        - content_types (list): List of content type IDs (1-3 required)
         - description (str, optional): Video description
         - tags (str, optional): Comma-separated tag names
         - duration (int, optional): Video duration in seconds
@@ -119,7 +118,7 @@ class VideoAPIUploadView(APIView):
             # Get required data from request
             title = request.data.get('title', 'Untitled Video')
             description = request.data.get('description', '')
-            category_id = request.data.get('category')
+            content_type_id = request.data.get('content_type')
             library_id = request.data.get('library_id')
             tags_str = request.data.get('tags', '')
             duration = request.data.get('duration')
@@ -127,37 +126,27 @@ class VideoAPIUploadView(APIView):
             format_type = request.data.get('format')
             thumbnail = request.FILES.get('thumbnail')
             
-            # Content types validation (1-3 required)
-            content_type_ids = request.data.getlist('content_types')
-            if not content_type_ids:
-                return Response({'message': 'At least one content type is required.'}, status=status.HTTP_400_BAD_REQUEST)
-            if len(content_type_ids) > 3:
-                return Response({'message': 'Maximum of 3 content types allowed.'}, status=status.HTTP_400_BAD_REQUEST)
+            # Content type validation (1 required)
+            if not content_type_id:
+                return Response({'message': 'Content type is required.'}, status=status.HTTP_400_BAD_REQUEST)
             
-            # Validate library and category
+            # Validate library and content type
             try:
                 library = Library.objects.get(id=library_id)
-                category = Category.objects.get(id=category_id, library=library)
             except Library.DoesNotExist:
                 return Response({'message': 'Library not found'}, status=status.HTTP_404_NOT_FOUND)
-            except Category.DoesNotExist:
-                return Response({'message': f"Category with id {category_id} not found in this library"}, status=status.HTTP_404_NOT_FOUND)
             
-            # Validate content types
-            from ..models import ContentType
-            content_types = []
-            for ct_id in content_type_ids:
-                try:
-                    ct = ContentType.objects.get(id=ct_id, is_active=True)
-                    content_types.append(ct)
-                except ContentType.DoesNotExist:
-                    return Response({'message': f"Content type with id {ct_id} not found"}, status=status.HTTP_404_NOT_FOUND)
+            # Validate content type belongs to the library
+            try:
+                content_type = ContentType.objects.get(id=content_type_id, library=library, is_active=True)
+            except ContentType.DoesNotExist:
+                return Response({'message': f"Content type with id {content_type_id} not found in this library"}, status=status.HTTP_404_NOT_FOUND)
             
             # Create video record
             video = Video.objects.create(
                 title=title,
                 description=description,
-                subject_area=category,
+                content_type=content_type,
                 library=library,
                 uploader=request.user,
                 storage_reference_id=s3_key,
@@ -168,8 +157,7 @@ class VideoAPIUploadView(APIView):
                 format=format_type
             )
             
-            # Set content types and thumbnail
-            video.content_types.set(content_types)
+            # Set thumbnail if provided
             if thumbnail:
                 video.thumbnail = thumbnail
                 video.save(update_fields=['thumbnail'])
@@ -241,15 +229,15 @@ class PopularTagsAPIView(APIView):
 
 class UnifiedVideoListAPIView(generics.ListAPIView, VideoFilterMixin):
     """
-    BACKEND-READY: Unified video listing with optional category filtering.
-    MAPPED TO: /api/videos/ and /api/categories/<name>/videos/
+    BACKEND-READY: Unified video listing with optional content type filtering.
+    MAPPED TO: /api/videos/ and /api/content-types/<name>/videos/
     
-    Consolidates VideoListAPIView and CategoryVideosAPIView into one endpoint.
-    Returns paginated list of videos with optional category filtering.
+    Consolidates VideoListAPIView and ContentTypeVideosAPIView into one endpoint.
+    Returns paginated list of videos with optional content type filtering.
     
     URL patterns:
     - /api/videos/ - All videos
-    - /api/categories/<category_name>/videos/ - Videos in specific category
+    - /api/content-types/<content_type_name>/videos/ - Videos in specific content type
     
     Query parameters:
     - search: Filter by title/description content
@@ -262,39 +250,34 @@ class UnifiedVideoListAPIView(generics.ListAPIView, VideoFilterMixin):
     
     def get_queryset(self):
         """
-        QUERYSET BUILDER: Get videos with optional category filtering.
+        QUERYSET BUILDER: Get videos with optional content type filtering.
         
-        Category filtering logic:
-        1. If category_name in URL kwargs, filter by that category
-        2. Handles both subject areas and paletta categories
+        Content type filtering logic:
+        1. If content_type_name in URL kwargs, filter by that content type
+        2. Handles both subject areas and content types
         3. Decodes URL encoding and converts hyphens to spaces
-        4. Returns empty queryset if category not found
+        4. Returns empty queryset if content type not found
         
         Returns:
-            QuerySet: Video objects filtered by category (if specified) and common filters
+            QuerySet: Video objects filtered by content type (if specified) and common filters
         """
         queryset = Video.objects.all()
         
-        # Category filtering (if category_name is provided in URL)
-        category_name = self.kwargs.get('category_name')
-        if category_name:
+        # Content type filtering (if content_type_name is provided in URL)
+        content_type_name = self.kwargs.get('content_type_name')
+        if content_type_name:
             # Decode URL encoding and handle hyphens vs spaces
-            decoded_category_name = urllib.parse.unquote(category_name)
-            db_category_name = decoded_category_name.replace('-', ' ')
+            decoded_content_type_name = urllib.parse.unquote(content_type_name)
+            db_content_type_name = decoded_content_type_name.replace('-', ' ')
             
-            logger.info(f"Category lookup: '{db_category_name}'")
+            logger.info(f"Content type lookup: '{db_content_type_name}'")
             
             try:
-                # Try subject area first, then paletta category
-                try:
-                    category = Category.objects.get(subject_area__iexact=db_category_name)
-                    queryset = queryset.filter(subject_area=category)
-                except Category.DoesNotExist:
-                    from ..models import PalettaCategory
-                    paletta_category = PalettaCategory.objects.get(code__iexact=db_category_name)
-                    queryset = queryset.filter(paletta_category=paletta_category)
-            except (Category.DoesNotExist, PalettaCategory.DoesNotExist):
-                logger.warning(f"Category '{db_category_name}' not found")
+                # Look up content type by subject_area
+                content_type = ContentType.objects.get(subject_area__iexact=db_content_type_name.replace(' ', '_'), is_active=True)
+                queryset = queryset.filter(content_type=content_type)
+            except ContentType.DoesNotExist:
+                logger.warning(f"Content type '{db_content_type_name}' not found")
                 return Video.objects.none()
         
         # Apply common filters (search, sorting)
@@ -374,16 +357,15 @@ class VideoDetailAPIView(generics.RetrieveAPIView):
 
 class ContentTypeVideosAPIView(generics.ListAPIView, VideoFilterMixin):
     """
-    BACKEND-READY: Filter videos by content types with advanced matching.
+    BACKEND-READY: Filter videos by content types.
     MAPPED TO: /api/content-type-videos/
     
-    Advanced filtering by content type codes or IDs with AND/OR logic.
+    Advanced filtering by content type codes or IDs.
     Supports both content type codes ('campus_life') and IDs (1, 2, 3).
     
     Query parameters:
     - content_types: List of content type codes (e.g., campus_life, research_innovation)
     - content_type_ids: List of content type IDs (e.g., 1, 3, 5)
-    - match_all: Boolean, if true videos must have ALL specified types (default: ANY)
     - search: Filter by title/description
     - sort_by: 'newest', 'oldest', or 'popular'
     """
@@ -393,13 +375,12 @@ class ContentTypeVideosAPIView(generics.ListAPIView, VideoFilterMixin):
     
     def get_queryset(self):
         """
-        QUERYSET BUILDER: Filter videos by content types with flexible matching.
+        QUERYSET BUILDER: Filter videos by content types.
         
         Filtering logic:
         1. Get content_types (codes) and content_type_ids from query params
-        2. If match_all=true: Videos must have ALL specified content types
-        3. If match_all=false: Videos must have ANY of the specified content types
-        4. Apply additional common filters (search, sorting)
+        2. Filter videos by the specified content types
+        3. Apply additional common filters (search, sorting)
         
         Returns:
             QuerySet: Videos filtered by content types and other criteria
@@ -409,21 +390,13 @@ class ContentTypeVideosAPIView(generics.ListAPIView, VideoFilterMixin):
         # Content type filtering
         content_types = self.request.query_params.getlist('content_types', [])
         content_type_ids = self.request.query_params.getlist('content_type_ids', [])
-        match_all = self.request.query_params.get('match_all', 'false').lower() == 'true'
         
         if content_types or content_type_ids:
-            if match_all:
-                # Must have ALL specified content types
-                for ct_code in content_types:
-                    queryset = queryset.filter(content_types__code=ct_code)
-                for ct_id in content_type_ids:
-                    queryset = queryset.filter(content_types__id=ct_id)
-            else:
-                # Must have ANY of the specified content types
-                if content_types:
-                    queryset = queryset.filter(content_types__code__in=content_types)
-                if content_type_ids:
-                    queryset = queryset.filter(content_types__id__in=content_type_ids)
+            # Filter by content types
+            if content_types:
+                queryset = queryset.filter(content_type__subject_area__in=content_types)
+            if content_type_ids:
+                queryset = queryset.filter(content_type__id__in=content_type_ids)
         
         # Apply common filters
         queryset = self.apply_video_filters(queryset, self.request)
@@ -437,4 +410,4 @@ class ContentTypeVideosAPIView(generics.ListAPIView, VideoFilterMixin):
 
 # These maintain backward compatibility with existing URLs
 VideoListAPIView = UnifiedVideoListAPIView
-CategoryVideosAPIView = UnifiedVideoListAPIView 
+ContentTypeVideosAPIView = UnifiedVideoListAPIView 

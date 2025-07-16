@@ -3,38 +3,24 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.db.models import Count, Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from ..models import Category, Tag, Video, VideoTag, PalettaCategory
-from ..serializers import CategorySerializer, VideoSerializer
-import urllib.parse
+from ..models import ContentType, Tag, Video
 import logging
-from django.shortcuts import redirect
-from django.urls import reverse
-
-from accounts.views.home_view import get_library_by_slug
 from django.utils.text import slugify
-from libraries.models import Library
 
 def get_category_slug(category_name):
     """Convert a category name to a URL-friendly slug."""
     return slugify(category_name)
 
 def get_category_by_slug(slug, library=None):
-    """Get a category by its slug, handling both PalettaCategory and Category objects."""
+    """Get a content type by its slug, using the new ContentType model."""
     if not library:
         return None
     
-    if library.uses_paletta_categories:
-        # For Paletta-style libraries, search in PalettaCategory objects
-        paletta_categories = PalettaCategory.objects.filter(is_active=True)
-        for pc in paletta_categories:
-            if get_category_slug(pc.display_name) == slug:
-                return pc
-    else:
-        # For custom libraries, search in Category objects
-        categories = Category.objects.filter(library=library, is_active=True)
-        for category in categories:
-            if get_category_slug(category.display_name) == slug:
-                return category
+    # Search in ContentType objects for the library
+    content_types = ContentType.objects.filter(library=library, is_active=True)
+    for ct in content_types:
+        if get_category_slug(ct.display_name) == slug:
+            return ct
     
     return None
 
@@ -61,31 +47,31 @@ class ClipStoreView(TemplateView):
         if current_library:
             context['current_library'] = current_library
         
-        # Get all categories for the sidebar - ONLY load library-specific Category objects
+        # Get all content types for the sidebar - ONLY load library-specific ContentType objects
         if current_library:
-            library_categories = Category.objects.filter(
+            library_content_types = ContentType.objects.filter(
                 library=current_library, 
                 is_active=True
             ).order_by('subject_area')
             
-            logger.debug(f"Found {library_categories.count()} categories for library {current_library.name}")
+            logger.debug(f"Found {library_content_types.count()} content types for library {current_library.name}")
             
             # Separate Private category to show it first (same as homepage)
             private_category = None
             other_categories = []
             
-            for lc in library_categories:
+            for ct in library_content_types:
                 cat_data = {
-                    'id': lc.id,
-                    'name': lc.display_name,
-                    'display_name': lc.display_name,
-                    'subject_area': lc.subject_area,
+                    'id': ct.id,
+                    'name': ct.display_name,
+                    'display_name': ct.display_name,
+                    'subject_area': ct.subject_area,
                     'type': 'library_category',
                 }
                 
-                logger.debug(f"Category: {lc.display_name} (subject_area: {lc.subject_area})")
+                logger.debug(f"Content Type: {ct.display_name} (subject_area: {ct.subject_area})")
                 
-                if lc.subject_area == 'private':
+                if ct.subject_area == 'private':
                     private_category = cat_data
                 else:
                     other_categories.append(cat_data)
@@ -142,12 +128,12 @@ class ClipStoreView(TemplateView):
         if user.is_authenticated:
             # For authenticated users, exclude private videos unless they're the library owner
             if library:
-                # UNIFIED APPROACH: Only check subject_area for private videos
-                private_videos_q = Q(subject_area__subject_area='private') & ~Q(library__owner=user)
+                # UNIFIED APPROACH: Only check content_type for private videos
+                private_videos_q = Q(content_type__subject_area='private') & ~Q(library__owner=user)
                 queryset = queryset.exclude(private_videos_q)
         else:
             # For anonymous users, exclude ALL private videos
-            queryset = queryset.exclude(Q(subject_area__subject_area='private'))
+            queryset = queryset.exclude(Q(content_type__subject_area='private'))
         
         # Filter by library if specified
         if library:
@@ -155,25 +141,25 @@ class ClipStoreView(TemplateView):
         
         # Apply category filter if not 'all'
         if category_filter and category_filter.lower() != 'all':
-            # UNIFIED APPROACH: All videos now use subject_area field
-            # Whether it's Paletta-style or custom, we filter by subject_area (Category objects)
+            # UNIFIED APPROACH: All videos now use content_type field
+            # We filter by content_type (ContentType objects)
             try:
-                # Find the Category that matches the display_name
-                matching_category = None
-                for cat in Category.objects.filter(library=library, is_active=True):
-                    if cat.display_name.lower() == category_filter.lower():
-                        matching_category = cat
+                # Find the ContentType that matches the display_name
+                matching_content_type = None
+                for ct in ContentType.objects.filter(library=library, is_active=True):
+                    if ct.display_name.lower() == category_filter.lower():
+                        matching_content_type = ct
                         break
                 
-                if matching_category:
-                    queryset = queryset.filter(subject_area=matching_category)
-                    logger.debug(f"Filtering videos by subject_area: {matching_category.display_name} (ID: {matching_category.id})")
+                if matching_content_type:
+                    queryset = queryset.filter(content_type=matching_content_type)
+                    logger.debug(f"Filtering videos by content_type: {matching_content_type.display_name} (ID: {matching_content_type.id})")
                 else:
-                    # If no matching category found, return empty queryset
-                    logger.warning(f"No matching category found for filter '{category_filter}' in library {library.name if library else 'None'}")
+                    # If no matching content type found, return empty queryset
+                    logger.warning(f"No matching content type found for filter '{category_filter}' in library {library.name if library else 'None'}")
                     queryset = queryset.none()
             except Exception as e:
-                logger.error(f"Error filtering by category '{category_filter}': {e}")
+                logger.error(f"Error filtering by content type '{category_filter}': {e}")
                 queryset = queryset.none()
         
         # Apply search filter
@@ -256,7 +242,7 @@ class CategoryClipView(ClipStoreView):
         
         # Get the category based on the slug
         if category_slug and category_slug != 'clip-store':
-            # Get category by slug (handles both PalettaCategory and Category)
+            # Get content type by slug using ContentType model
             category = get_category_by_slug(category_slug, current_library)
             if category:
                 context['current_category'] = category

@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import Library, UserLibraryRole
 from .serializers import LibrarySerializer, UserLibraryRoleSerializer
-from videos.models import Category
+from videos.models import ContentType
 import base64
 from django.core.files.base import ContentFile
 from django.urls import reverse
@@ -159,11 +159,11 @@ class LibraryViewSet(viewsets.ModelViewSet):
                     'message': 'You do not have permission to modify this library.'
                 }, status=403)
             
-            # Check if library uses custom categories
-            if library.category_source != 'custom':
+            # Check if library uses custom content types
+            if library.content_source != 'custom':
                 return Response({
                     'status': 'error',
-                    'message': 'This library does not use custom categories.'
+                    'message': 'This library does not use custom content types.'
                 }, status=400)
             
             categories_data = request.data.get('categories', [])
@@ -174,7 +174,7 @@ class LibraryViewSet(viewsets.ModelViewSet):
                 }, status=400)
             
             # Import here to avoid circular imports
-            from videos.models import Category
+            from videos.models import ContentType
             
             created_categories = []
             for category_data in categories_data:
@@ -190,8 +190,8 @@ class LibraryViewSet(viewsets.ModelViewSet):
                 if category_data.get('subject_area') == 'custom' and category_data.get('custom_name'):
                     category_kwargs['custom_name'] = category_data.get('custom_name')
                 
-                category = Category.objects.create(**category_kwargs)
-                created_categories.append(category)
+                content_type = ContentType.objects.create(**category_kwargs)
+                created_categories.append(content_type)
             
             return Response({
                 'status': 'success',
@@ -264,13 +264,13 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
     
     def post(self, request, *args, **kwargs):
         try:
-            # Get category source selection
-            category_source = request.POST.get('category_source', 'custom')
+            # Get content source selection
+            content_source = request.POST.get('content_source', 'custom')
             
             data = {
                 'name': request.POST.get('name'),
                 'description': request.POST.get('description'),
-                'category_source': category_source,
+                'content_source': content_source,
                 'storage_tier': request.POST.get('storage_tier', 'basic'),
             }
             
@@ -295,26 +295,26 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                     library.logo = logo
                     library.save()
                 
-                # Categories are automatically set up by Library.save() method
+                # Content types are automatically set up by Library.save() method
                 
                 # For custom libraries, handle any additional selected subject areas
-                if category_source == 'custom':
+                if content_source == 'custom':
                     # Get selected subject areas from checkboxes
                     custom_subject_areas = request.POST.getlist('custom_subject_areas')
                     
                     if custom_subject_areas:
-                        from videos.models import Category
+                        from videos.models import ContentType
                         
-                        # Create categories for each selected subject area
+                        # Create content types for each selected subject area
                         for subject_area in custom_subject_areas:
                             # Convert subject area code to display name
                             display_name = subject_area.replace('_', ' ').title()
                             
-                            Category.objects.get_or_create(
+                            ContentType.objects.get_or_create(
                                 subject_area=subject_area,
                                 library=library,
                                 defaults={
-                                    'description': f'{display_name} category for {library.name}',
+                                    'description': f'{display_name} content type for {library.name}',
                                     'is_active': True
                                 }
                             )
@@ -412,26 +412,26 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
             
             context['library'] = library
             
-            # Get categories for this library - ALWAYS include all library categories (including Private)
-            categories = Category.objects.filter(library=library, is_active=True).order_by('subject_area')
+            # Get content types for this library - ALWAYS include all library content types (including Private)
+            content_types = ContentType.objects.filter(library=library, is_active=True).order_by('subject_area')
             
-            # Separate Private category to show it first
-            private_category = None
-            other_categories = []
+            # Separate Private content type to show it first
+            private_content_type = None
+            other_content_types = []
             
-            for category in categories:
-                if category.subject_area == 'private':
-                    private_category = category
+            for content_type in content_types:
+                if content_type.subject_area == 'private':
+                    private_content_type = content_type
                 else:
-                    other_categories.append(category)
+                    other_content_types.append(content_type)
             
             # Combine with Private first
-            ordered_categories = []
-            if private_category:
-                ordered_categories.append(private_category)
-            ordered_categories.extend(other_categories)
+            ordered_content_types = []
+            if private_content_type:
+                ordered_content_types.append(private_content_type)
+            ordered_content_types.extend(other_content_types)
             
-            context['categories'] = ordered_categories
+            context['categories'] = ordered_content_types
             
             # Get contributors for this library
             context['contributors'] = UserLibraryRole.objects.filter(
@@ -492,57 +492,57 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                 try:
                     categories_data = json.loads(request.POST.get('categories'))
                     
-                    # Keep track of existing category IDs
-                    current_categories = set(Category.objects.filter(library=library).values_list('id', flat=True))
-                    processed_categories = set()
+                    # Keep track of existing content type IDs
+                    current_content_types = set(ContentType.objects.filter(library=library).values_list('id', flat=True))
+                    processed_content_types = set()
                     
                     for category_data in categories_data:
                         category_id = category_data.get('id')
                         
                         if category_id and not category_id.startswith('temp_'):
-                            # Update existing category
+                            # Update existing content type
                             try:
-                                category = Category.objects.get(id=category_id, library=library)
-                                # Note: Category name is now handled through subject_area enum
-                                category.description = category_data.get('description', category.description)
+                                content_type = ContentType.objects.get(id=category_id, library=library)
+                                # Note: Content type name is now handled through subject_area enum
+                                content_type.description = category_data.get('description', content_type.description)
                                 
                                 # Handle image if provided
                                 if 'image' in category_data and category_data['image'] and category_data['image'].startswith('data:'):
                                     image_file = process_base64_image(
                                         category_data['image'],
-                                        name=f"category_{category.display_name}"
+                                        name=f"content_type_{content_type.display_name}"
                                     )
-                                    category.image = image_file
+                                    content_type.image = image_file
                                     
-                                category.save()
-                                processed_categories.add(int(category_id))
+                                content_type.save()
+                                processed_content_types.add(int(category_id))
                                 
-                            except Category.DoesNotExist:
-                                pass  # Category might belong to another library or doesn't exist
+                            except ContentType.DoesNotExist:
+                                pass  # Content type might belong to another library or doesn't exist
                         else:
-                            # Create new category
-                            new_category = Category(
+                            # Create new content type
+                            new_content_type = ContentType(
                                 subject_area=category_data.get('subject_area'),
                                 description=category_data.get('description', ''),
                                 library=library
                             )
-                            new_category.save()
+                            new_content_type.save()
                             
                             # Handle image if provided
                             if 'image' in category_data and category_data['image'] and category_data['image'].startswith('data:'):
                                 image_file = process_base64_image(
                                     category_data['image'],
-                                    name=f"category_{new_category.display_name}"
+                                    name=f"content_type_{new_content_type.display_name}"
                                 )
-                                new_category.image = image_file
-                                new_category.save()
+                                new_content_type.image = image_file
+                                new_content_type.save()
                                 
-                            processed_categories.add(new_category.id)
+                            processed_content_types.add(new_content_type.id)
                     
-                    # Delete categories that were removed
-                    categories_to_delete = current_categories - processed_categories
-                    if categories_to_delete:
-                        Category.objects.filter(id__in=categories_to_delete, library=library).delete()
+                    # Delete content types that were removed
+                    content_types_to_delete = current_content_types - processed_content_types
+                    if content_types_to_delete:
+                        ContentType.objects.filter(id__in=content_types_to_delete, library=library).delete()
                         
                 except json.JSONDecodeError:
                     return JsonResponse({

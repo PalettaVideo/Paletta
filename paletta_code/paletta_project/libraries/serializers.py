@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import Library, UserLibraryRole
 from accounts.serializers import UserSerializer
-from videos.serializers import VideoSerializer
 
 class UserLibraryRoleSerializer(serializers.ModelSerializer):
     """
@@ -42,7 +41,7 @@ class LibrarySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'description', 'logo', 'owner', 'owner_details', 
             'storage_tier', 'storage_limit_display', 'storage_limit_gb',
-            'is_active', 'created_at', 'updated_at', 'category_source',
+            'is_active', 'created_at', 'updated_at', 'content_source',
             'member_count', 'color_scheme', 'user_roles', 'categories_count', 'videos_count', 'logo_url'
         ]
         read_only_fields = ['owner', 'created_at', 'updated_at', 'storage_limit_display', 'storage_limit_gb']
@@ -59,13 +58,13 @@ class LibrarySerializer(serializers.ModelSerializer):
         
     def get_categories_count(self, obj):
         """
-        BACKEND-READY: Count categories in library.
+        BACKEND-READY: Count content types in library.
         MAPPED TO: API response field
         USED BY: Library dashboard and statistics
         
-        Returns total count of active categories in this library.
+        Returns total count of active content types in this library.
         """
-        return obj.categories.count()
+        return obj.content_types.count()
         
     def get_videos_count(self, obj):
         """

@@ -3,15 +3,15 @@ BACKEND/FRONTEND-READY: URL routing configuration for videos app.
 MAPPED TO: /videos/ base path 
 USED BY: Django URL dispatcher, frontend AJAX calls, admin interface
 
-Organizes video-related endpoints: upload, management, API, categories, downloads.
+Organizes video-related endpoints: upload, management, API, content types, downloads.
 Groups related functionality for better maintainability.
 """
 
 from django.urls import path
-from .views.viewsets import UnifiedCategoryViewSet, ContentTypeViewSet
+from .views.viewsets import UnifiedContentTypeViewSet, ContentTypeViewSet
 from .views.upload_view import UploadHistoryView
 from .views.download_view import DownloadRequestView
-from .views.api_views import VideoListAPIView, VideoDetailAPIView, CategoryVideosAPIView, PopularTagsAPIView, VideoAPIUploadView, ContentTypeVideosAPIView
+from .views.api_views import VideoListAPIView, VideoDetailAPIView, PopularTagsAPIView, VideoAPIUploadView, ContentTypeVideosAPIView
 from .views.tag_views import assign_tags, TagsAPIView
 from .views.video_management_views import VideoEditView, VideoDeleteView, TagSuggestionsAPIView
 from .views.thumbnail_view import VideoThumbnailAPIView
@@ -34,9 +34,7 @@ urlpatterns = [
     path('api/videos/<int:video_id>/', VideoDetailAPIView.as_view(), name='api_video_detail'),
     path('api/upload/', VideoAPIUploadView.as_view(), name='api_upload'),
     
-    # Category & Content Type APIs - Classification systems
-    path('api/categories/', UnifiedCategoryViewSet.as_view(), name='api_unified_categories'),
-    path('api/categories/<str:category_name>/videos/', CategoryVideosAPIView.as_view(), name='api_category_videos'),
+    # Content Type APIs - Library-specific content type system  
     path('api/content-types/', ContentTypeViewSet.as_view(), name='api_content_types'),
     path('api/content-type-videos/', ContentTypeVideosAPIView.as_view(), name='api_content_type_videos'),
     

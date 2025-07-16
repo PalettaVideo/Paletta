@@ -22,10 +22,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const MAX_FILE_SIZE = 256 * 1024 * 1024 * 1024;
 
   let selectedTags = [];
+  let selectedContentType = null; // Store the selected content type
   let videoMetadata = {}; // Variable to store extracted metadata
 
-  // fetch categories and content types from API
-  fetchCategories();
+  // fetch content types from API
   fetchContentTypes();
 
   // event Listeners
@@ -89,62 +89,8 @@ document.addEventListener("DOMContentLoaded", function () {
     uploadForm.addEventListener("submit", handleFormSubmit);
   }
 
-  // Add event listeners for content type checkboxes
-  const contentTypeCheckboxes = document.querySelectorAll(
-    ".content-type-checkbox"
-  );
-  contentTypeCheckboxes.forEach((checkbox) => {
-    checkbox.addEventListener("change", handleContentTypeChange);
-  });
-
-  // Category creation removed - categories are now predefined by administrators
-  // Users can only select from existing categories
-
   // functions
-  function handleContentTypeChange(event) {
-    const selectedContentTypes = document.querySelectorAll(
-      ".content-type-checkbox:checked"
-    );
-    const contentTypesError = document.getElementById("content-types-error");
-    const allContentTypeItems = document.querySelectorAll(".content-type-item");
 
-    // If trying to select more than 3, prevent the selection
-    if (event && event.target.checked && selectedContentTypes.length > 3) {
-      event.target.checked = false;
-      if (contentTypesError) {
-        contentTypesError.textContent =
-          "You can select a maximum of 3 content types.";
-        contentTypesError.style.display = "block";
-      }
-      return;
-    }
-
-    // Clear previous error messages
-    if (contentTypesError) {
-      contentTypesError.style.display = "none";
-      contentTypesError.textContent = "";
-    }
-
-    // Remove disabled class from all items
-    allContentTypeItems.forEach((item) => {
-      item.classList.remove("disabled");
-      const checkbox = item.querySelector(".content-type-checkbox");
-      if (checkbox && !checkbox.checked) {
-        checkbox.disabled = false;
-      }
-    });
-
-    // If exactly 3 content types are selected, disable the rest
-    if (selectedContentTypes.length >= 3) {
-      allContentTypeItems.forEach((item) => {
-        const checkbox = item.querySelector(".content-type-checkbox");
-        if (checkbox && !checkbox.checked) {
-          item.classList.add("disabled");
-          checkbox.disabled = true;
-        }
-      });
-    }
-  }
   function handleVideoFileSelect(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -299,93 +245,23 @@ document.addEventListener("DOMContentLoaded", function () {
     video.src = URL.createObjectURL(file);
   }
 
-  async function fetchCategories() {
+  async function fetchContentTypes() {
     try {
-      // Get the current library ID from the page
-      let currentLibraryId = null;
-      const libraryInfo = document.querySelector(".library-info");
-      if (libraryInfo) {
-        // Try to extract library ID from data attribute if available
-        currentLibraryId = libraryInfo.getAttribute("data-library-id");
+      // Get library ID from meta tag or data attribute
+      const libraryId = document
+        .querySelector('meta[name="current-library-id"]')
+        .getAttribute("content");
+
+      // Use the content types API with library filtering
+      let apiUrl = `/api/content-types/`;
+      if (libraryId) {
+        apiUrl += `?library=${libraryId}`;
       }
 
-      if (!currentLibraryId) {
-        console.error("No library ID found, cannot fetch categories");
-        return;
-      }
-
-      // Use the new unified category API
-      let apiUrl = `/api/api/categories/?library=${currentLibraryId}`;
-
-      // fetch cache options
+      // fetch with cache options
       const response = await fetch(apiUrl, {
         method: "GET",
         cache: "no-cache", // force server request, don't check cache
-        headers: {
-          "Cache-Control": "no-cache",
-          Pragma: "no-cache",
-        },
-      });
-
-      if (!response.ok) {
-        console.error("Failed to fetch categories. Status:", response.status);
-        throw new Error(`Failed to fetch categories: ${response.statusText}`);
-      }
-
-      const categories = await response.json();
-
-      const categorySelect = document.getElementById("category");
-      if (!categorySelect) {
-        console.error("Category select element not found in DOM");
-        return;
-      }
-
-      // Clear existing options
-      categorySelect.innerHTML = "";
-
-      // Add initial "Select a category" option
-      const defaultOption = document.createElement("option");
-      defaultOption.value = "";
-      defaultOption.textContent = "Select a category";
-      categorySelect.appendChild(defaultOption);
-
-      // Add categories to the select dropdown
-      categories.forEach((category) => {
-        const option = document.createElement("option");
-        option.value = category.id;
-
-        // Handle both paletta and library categories
-        if (category.type === "paletta_category") {
-          option.textContent = `${category.display_name} (Paletta)`;
-        } else if (
-          category.type === "library_category" ||
-          category.type === "subject_area"
-        ) {
-          option.textContent = category.display_name || category.name;
-        } else {
-          option.textContent = category.display_name || category.name;
-        }
-
-        categorySelect.appendChild(option);
-      });
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      const categorySelect = document.getElementById("category");
-      if (categorySelect) {
-        categorySelect.innerHTML = "";
-        const errorOption = document.createElement("option");
-        errorOption.value = "";
-        errorOption.textContent = "Error loading categories";
-        categorySelect.appendChild(errorOption);
-      }
-    }
-  }
-
-  async function fetchContentTypes() {
-    try {
-      const response = await fetch("/api/api/content-types/", {
-        method: "GET",
-        cache: "no-cache",
         headers: {
           "Cache-Control": "no-cache",
           Pragma: "no-cache",
@@ -397,63 +273,88 @@ document.addEventListener("DOMContentLoaded", function () {
           "Failed to fetch content types. Status:",
           response.status
         );
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
-        return;
+        throw new Error(
+          `Failed to fetch content types: ${response.statusText}`
+        );
       }
 
       const contentTypes = await response.json();
 
-      if (!contentTypes || contentTypes.length === 0) {
-        console.error("No content types received from API");
+      const contentTypesGrid = document.getElementById("content-types-grid");
+      const contentTypesError = document.getElementById("content-types-error");
+
+      if (!contentTypesGrid) {
+        console.error("Content types grid element not found in DOM");
         return;
       }
 
-      // Create content types selection UI
-      createContentTypesUI(contentTypes);
+      // Clear existing content
+      contentTypesGrid.innerHTML = "";
+
+      if (contentTypes.length === 0) {
+        contentTypesGrid.innerHTML =
+          "<p>No content types available for this library.</p>";
+        return;
+      }
+
+      // Create content type cards for single selection
+      contentTypes.forEach((contentType) => {
+        const card = document.createElement("div");
+        card.className = "content-type-card";
+        card.dataset.contentTypeId = contentType.id;
+        card.dataset.contentTypeCode =
+          contentType.code || contentType.subject_area;
+
+        card.innerHTML = `
+          <div class="content-type-title">${
+            contentType.display_name || contentType.name
+          }</div>
+          <div class="content-type-check">✓</div>
+        `;
+
+        card.addEventListener("click", function () {
+          handleContentTypeSelection(this);
+        });
+
+        contentTypesGrid.appendChild(card);
+      });
     } catch (error) {
       console.error("Error fetching content types:", error);
+      const contentTypesGrid = document.getElementById("content-types-grid");
+      const contentTypesError = document.getElementById("content-types-error");
+
+      if (contentTypesError) {
+        contentTypesError.textContent = "Error loading content types";
+        contentTypesError.style.display = "block";
+      }
+
+      if (contentTypesGrid) {
+        contentTypesGrid.innerHTML = "";
+      }
     }
   }
 
-  function createContentTypesUI(contentTypes) {
-    // Use existing content types grid from HTML template
-    const contentTypesGrid = document.getElementById("content-types-grid");
-    if (!contentTypesGrid) {
-      console.error("Content types grid not found in HTML template");
-      return;
+  function handleContentTypeSelection(clickedCard) {
+    // Remove selection from all cards
+    const allCards = document.querySelectorAll(".content-type-card");
+    allCards.forEach((card) => {
+      card.classList.remove("selected");
+    });
+
+    // Add selection to clicked card
+    clickedCard.classList.add("selected");
+
+    // Store the selected content type
+    selectedContentType = {
+      id: clickedCard.dataset.contentTypeId,
+      code: clickedCard.dataset.contentTypeCode,
+    };
+
+    // Hide error message if visible
+    const contentTypesError = document.getElementById("content-types-error");
+    if (contentTypesError) {
+      contentTypesError.style.display = "none";
     }
-
-    // Clear existing content types
-    contentTypesGrid.innerHTML = "";
-
-    // Add content types as checkboxes
-    contentTypes.forEach((contentType) => {
-      const checkboxWrapper = document.createElement("div");
-      checkboxWrapper.className = "content-type-item";
-      checkboxWrapper.innerHTML = `
-        <input type="checkbox" id="content-type-${
-          contentType.id
-        }" name="content_types" value="${
-        contentType.id
-      }" class="content-type-checkbox">
-        <label for="content-type-${contentType.id}" class="content-type-label">
-          <span class="content-type-name">${
-            contentType.display_name || contentType.name
-          }</span>
-        </label>
-      `;
-      contentTypesGrid.appendChild(checkboxWrapper);
-    });
-
-    // Add validation for 1-3 content types selection
-    const checkboxes = contentTypesGrid.querySelectorAll(
-      ".content-type-checkbox"
-    );
-
-    checkboxes.forEach((checkbox) => {
-      checkbox.addEventListener("change", handleContentTypeChange);
-    });
   }
 
   async function handleFormSubmit(e) {
@@ -462,7 +363,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Validate form fields before proceeding
     if (!validateForm()) {
-      alert("Please fill out all required fields: Title and Category.");
       return;
     }
 
@@ -583,27 +483,20 @@ document.addEventListener("DOMContentLoaded", function () {
       ? libraryInfo.getAttribute("data-library-id")
       : null;
 
-    // Get selected content types
-    const selectedContentTypes = Array.from(
-      document.querySelectorAll(".content-type-checkbox:checked")
-    ).map((checkbox) => checkbox.value);
-
     // Use FormData to send both file and text data
     const formData = new FormData();
     formData.append("title", titleInput.value.trim());
     formData.append("description", descriptionInput.value.trim());
-    formData.append("category", document.getElementById("category").value);
+    formData.append(
+      "content_type",
+      selectedContentType ? selectedContentType.id : ""
+    );
     formData.append("tags", selectedTags.join(","));
     formData.append("s3_key", s3Key);
     formData.append("library_id", libraryId);
     formData.append("duration", videoMetadata.duration);
     formData.append("file_size", videoMetadata.fileSize);
     formData.append("format", videoMetadata.format);
-
-    // Add content types (multiple values)
-    selectedContentTypes.forEach((contentTypeId) => {
-      formData.append("content_types", contentTypeId);
-    });
 
     // Append the thumbnail file if it exists
     const thumbnailFile = previewImageInput.files[0];
@@ -630,12 +523,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function validateForm() {
     const title = titleInput.value.trim();
-    const category = document.getElementById("category").value;
-
-    // Validate content types selection
-    const selectedContentTypes = document.querySelectorAll(
-      ".content-type-checkbox:checked"
-    );
     const contentTypesError = document.getElementById("content-types-error");
 
     if (!title) {
@@ -644,28 +531,12 @@ document.addEventListener("DOMContentLoaded", function () {
       return false;
     }
 
-    if (!category) {
-      alert("Please select a category");
-      document.getElementById("category").focus();
-      return false;
-    }
-
-    if (selectedContentTypes.length === 0) {
-      alert("Please select at least 1 content type");
+    if (!selectedContentType) {
       if (contentTypesError) {
-        contentTypesError.textContent =
-          "Please select at least 1 content type.";
+        contentTypesError.textContent = "Please select a content type";
         contentTypesError.style.display = "block";
-      }
-      return false;
-    }
-
-    if (selectedContentTypes.length > 3) {
-      alert("Please select no more than 3 content types");
-      if (contentTypesError) {
-        contentTypesError.textContent =
-          "Please select no more than 3 content types.";
-        contentTypesError.style.display = "block";
+      } else {
+        alert("Please select a content type");
       }
       return false;
     }

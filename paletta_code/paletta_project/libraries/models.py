@@ -19,7 +19,7 @@ class Library(models.Model):
         ('enterprise', 'Enterprise'),
     ]
     
-    CATEGORY_SOURCE_CHOICES = [
+    CONTENT_SOURCE_CHOICES = [
         ('paletta_style', 'Use Paletta Style Categories'),
         ('custom', 'Create My Own Categories'),
     ]
@@ -45,10 +45,10 @@ class Library(models.Model):
     videos = models.ManyToManyField(Video, related_name='libraries', blank=True)
     is_active = models.BooleanField(default=True)
     
-    # Category source selection
-    category_source = models.CharField(
+    # Content source selection
+    content_source = models.CharField(
         max_length=20, 
-        choices=CATEGORY_SOURCE_CHOICES, 
+        choices=CONTENT_SOURCE_CHOICES, 
         default='custom',
         help_text="Choose the source for video categories in this library"
     )
@@ -64,7 +64,7 @@ class Library(models.Model):
         """
         BACKEND/FRONTEND-READY: Check if this is the main Paletta library.
         MAPPED TO: Template context and API responses
-        USED BY: Category setup logic and template rendering
+        USED BY: Content setup logic and template rendering
         
         Returns True for libraries named 'paletta' (case-insensitive).
         """
@@ -74,12 +74,12 @@ class Library(models.Model):
     def uses_paletta_categories(self):
         """
         BACKEND/FRONTEND-READY: Check if library uses Paletta-style categories.
-        MAPPED TO: Category management logic
+        MAPPED TO: Content management logic
         USED BY: setup_default_categories() and admin interface
         
-        Returns True if category_source is 'paletta_style' or is main Paletta library.
+        Returns True if content_source is 'paletta_style' or is main Paletta library.
         """
-        return self.category_source == 'paletta_style' or self.is_paletta_library
+        return self.content_source == 'paletta_style' or self.is_paletta_library
     
     @property
     def storage_size_gb(self):
@@ -123,7 +123,7 @@ class Library(models.Model):
         MAPPED TO: Model save process
         USED BY: Django model validation system
         
-        Sets default color scheme and enforces Paletta library category rules.
+        Sets default color scheme and enforces Paletta library content rules.
         """
         # Set default color scheme if not provided
         if not self.color_scheme:
@@ -134,12 +134,12 @@ class Library(models.Model):
             }
         
         # Paletta library must use Paletta categories
-        if self.is_paletta_library and self.category_source != 'paletta_style':
-            self.category_source = 'paletta_style'
+        if self.is_paletta_library and self.content_source != 'paletta_style':
+            self.content_source = 'paletta_style'
 
     def save(self, *args, **kwargs):
         """
-        BACKEND-READY: Enhanced save method with automatic category setup.
+        BACKEND-READY: Enhanced save method with automatic content setup.
         MAPPED TO: Model creation/update process
         USED BY: All library create/update operations
         
@@ -155,60 +155,24 @@ class Library(models.Model):
     
     def setup_default_categories(self):
         """
-        BACKEND-READY: Initialize default categories based on library type.
+        BACKEND-READY: Initialize default content types for the library.
         MAPPED TO: Library creation process
         USED BY: save() method for new libraries
         
-        Creates appropriate default categories and content types for the library.
+        Creates library-specific content types based on the content type list.
         """
-        from videos.models import Category, PalettaCategory, ContentType
+        from videos.models import ContentType
         
-        # Always create all content types (they're global)
+        # Create library-specific content types
         content_types_data = [
-            'campus_life', 'teaching_learning', 'research_innovation', 
+            'private', 'campus_life', 'teaching_learning', 'research_innovation', 
             'city_environment', 'aerial_establishing', 'people_portraits',
             'culture_events', 'workspaces_facilities', 'cutaways_abstracts', 
             'historical_archive'
         ]
         
         for ct_code in content_types_data:
-            ContentType.objects.get_or_create(code=ct_code)
-        
-        # Create all Paletta categories (they're global) INCLUDING PRIVATE
-        paletta_categories_data = [
-            'private',  # ALWAYS CREATE PRIVATE CATEGORY
-            'people_community', 'buildings_architecture', 'classrooms_learning',
-            'field_trips_outdoor', 'events_conferences', 'research_innovation_spaces',
-            'technology_equipment', 'everyday_campus', 'urban_natural_environments',
-            'backgrounds_abstracts'
-        ]
-        
-        for pc_code in paletta_categories_data:
-            PalettaCategory.objects.get_or_create(code=pc_code)
-        
-        # Create Category objects for THIS specific library
-        if self.uses_paletta_categories:
-            # For Paletta-style libraries, create Category objects corresponding to PalettaCategories
-            for pc_code in paletta_categories_data:
-                paletta_cat = PalettaCategory.objects.get(code=pc_code)
-                Category.objects.get_or_create(
-                    subject_area=pc_code,
-                    library=self,
-                    defaults={
-                        'description': f'{paletta_cat.display_name} category for {self.name}',
-                        'is_active': True
-                    }
-                )
-        else:
-            # For custom libraries, only create the private category by default
-            Category.objects.get_or_create(
-                subject_area='private',
-                library=self,
-                defaults={
-                    'description': 'Private videos. Only you and library administrators can see these videos.',
-                    'is_active': True
-                }
-            )
+            ContentType.objects.get_or_create(subject_area=ct_code, library=self)
     
     def get_storage_display(self):
         """

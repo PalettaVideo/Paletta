@@ -23,8 +23,8 @@ class LibraryAdmin(admin.ModelAdmin):
     Provides comprehensive library management with filtering and custom displays.
     """
     form = LibraryAdminForm
-    list_display = ('name', 'owner', 'category_source', 'created_at', 'storage_tier', 'get_storage_display', 'is_active')
-    list_filter = ['owner', 'storage_tier', 'category_source', 'is_active']
+    list_display = ('name', 'owner', 'content_source', 'created_at', 'storage_tier', 'get_storage_display', 'is_active')
+    list_filter = ['owner', 'storage_tier', 'content_source', 'is_active']
     search_fields = ('name', 'description')
     readonly_fields = ('storage_size_display', 'is_paletta_library', 'uses_paletta_categories')
     list_per_page = 20
@@ -32,9 +32,9 @@ class LibraryAdmin(admin.ModelAdmin):
         (None, {
             'fields': ('name', 'description', 'owner', 'logo', 'is_active')
         }),
-        ('Category Settings', {
-            'fields': ('category_source', 'is_paletta_library', 'uses_paletta_categories'),
-            'description': 'Configure how categories are managed for this library.'
+        ('Content Source Settings', {
+            'fields': ('content_source', 'is_paletta_library', 'uses_paletta_categories'),
+            'description': 'Configure how content types are managed for this library.'
         }),
         ('Storage Settings', {
             'fields': ('storage_tier', 'storage_size_display',)

@@ -8,7 +8,7 @@ from django.core.exceptions import PermissionDenied
 import json
 import logging
 
-from ..models import Video, Tag, Category
+from ..models import Video, Tag, ContentType
 from libraries.models import UserLibraryRole
 
 logger = logging.getLogger(__name__)
@@ -68,15 +68,15 @@ class VideoEditView(TemplateView):
             else:
                 video.duration_formatted = "Unknown"
             
-            # Get available categories for the library - Include ALL categories
-            categories = Category.objects.filter(
+            # Get available content types for the library - Include ALL content types
+            content_types = ContentType.objects.filter(
                 library=video.library, 
                 is_active=True
             ).order_by('subject_area')
             
             # Add to context
             context['video'] = video
-            context['categories'] = categories
+            context['content_types'] = content_types
             
         except Video.DoesNotExist:
             context['video_not_found'] = True
@@ -117,10 +117,10 @@ class VideoEditView(TemplateView):
             title = request.POST.get('title')
             description = request.POST.get('description', '')
             
-            # Handle category
-            category_id = request.POST.get('category')
-            if category_id:
-                video.subject_area = get_object_or_404(Category, id=category_id)
+            # Handle content type
+            content_type_id = request.POST.get('content_type')
+            if content_type_id:
+                video.content_type = get_object_or_404(ContentType, id=content_type_id)
             
             # Update video fields
             video.title = title
