@@ -70,8 +70,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Hide the entire admin navigation section for unauthorized users
         adminNavSection.style.display = "none";
       } else {
-        // Show the admin navigation section for authorized users
-        adminNavSection.style.display = "block";
+        adminNavSection.style.display = "flex";
       }
     }
   }
