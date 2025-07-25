@@ -173,9 +173,9 @@ class DownloadRequestService:
   
   def send_manager_notification(self, download_requests):
     """
-    BACKEND-READY: Send manager notification for new download requests.
-    MAPPED TO: Manager notification system
-    USED BY: Download request processing, bulk request handling
+    BACKEND-READY: Send notification to manager for download request review.
+    MAPPED TO: Manager notification system for monetization review
+    USED BY: process_download_request, bulk processing
     
     Sends notification email to manager with customer details and video list.
     No download links are generated or sent to customers.
@@ -193,21 +193,90 @@ class DownloadRequestService:
       # Get the first request for customer info (assuming same customer for bulk)
       first_request = download_requests[0]
       
-      # Helper function to clean text for UTF-8 encoding
+      # Enhanced helper function to clean text for UTF-8 encoding
       def clean_text(text):
-          if not text:
-              return text
-          # Remove surrogate characters and other problematic Unicode
-          import unicodedata
-          # Replace surrogate characters with safe alternatives
-          cleaned = text.encode('utf-8', 'replace').decode('utf-8')
-          # Normalize Unicode characters
-          normalized = unicodedata.normalize('NFKC', cleaned)
-          return normalized
+          if text is None:
+              return ""
+          if not isinstance(text, str):
+              text = str(text)
+          try:
+              # First, try to identify problematic characters
+              logger.debug(f"Cleaning text: {repr(text)}")
+              
+              # Handle different encoding issues
+              import unicodedata
+              
+              # Remove/replace problematic Unicode characters
+              # Replace surrogates and other problematic chars
+              cleaned = ""
+              for char in text:
+                  try:
+                      # Check if character can be encoded to UTF-8
+                      char.encode('utf-8')
+                      # Check if it's a valid Unicode character
+                      unicodedata.name(char, None)
+                      cleaned += char
+                  except (UnicodeError, TypeError):
+                      # Replace problematic characters with safe alternatives
+                      cleaned += "?"
+              
+              # Normalize Unicode
+              normalized = unicodedata.normalize('NFKC', cleaned)
+              
+              # Final safety check
+              try:
+                  normalized.encode('utf-8')
+                  logger.debug(f"Cleaned text: {repr(normalized)}")
+                  return normalized
+              except UnicodeError:
+                  # Last resort: ASCII-only
+                  ascii_only = normalized.encode('ascii', 'replace').decode('ascii')
+                  logger.warning(f"Had to fall back to ASCII-only for text: {repr(text)}")
+                  return ascii_only
+                  
+          except Exception as e:
+              logger.error(f"Error cleaning text '{repr(text)}': {str(e)}")
+              # Ultimate fallback
+              return str(text).encode('ascii', 'replace').decode('ascii')
       
       # Clean all text fields that might contain problematic characters
       customer_name = clean_text(first_request.user.get_full_name() or first_request.user.email.split('@')[0])
       customer_email = clean_text(first_request.user.email)
+      sender_email = clean_text(self.sender_email)
+      manager_email = clean_text(self.manager_email)
+      
+      logger.debug(f"Manager notification emails - From: {repr(sender_email)}, To: {repr(manager_email)}")
+      
+      # Clean library name
+      library_name = None
+      if download_requests[0].video.library:
+          library_name = clean_text(download_requests[0].video.library.name)
+      
+      # Template-level robustness: Clean video objects before passing to template
+      cleaned_videos = []
+      for req in download_requests:
+          # Create a cleaned representation of each video
+          video_data = {
+              'id': req.video.id,
+              'title': clean_text(req.video.title),
+              'description': clean_text(req.video.description or ""),
+              'duration_formatted': clean_text(req.video.duration_formatted),
+              'file_size': req.video.file_size,  # Keep numeric as-is
+              'format': clean_text(req.video.format or ""),
+              'content_type': None
+          }
+          
+          # Safely handle content_type
+          if req.video.content_type:
+              try:
+                  video_data['content_type'] = {
+                      'display_name': clean_text(req.video.content_type.display_name)
+                  }
+              except Exception as e:
+                  logger.warning(f"Could not clean content_type for video {req.video.id}: {str(e)}")
+                  video_data['content_type'] = {'display_name': 'Unknown'}
+          
+          cleaned_videos.append(video_data)
       
       # Prepare email context with cleaned data
       context = {
@@ -216,26 +285,74 @@ class DownloadRequestService:
         'customer_id': first_request.user.id,
         'request_date': timezone.now(),
         'video_count': len(download_requests),
-        'videos': [req.video for req in download_requests],
-        'customer_library': clean_text(download_requests[0].video.library.name) if download_requests[0].video.library else None,
+        'videos': cleaned_videos,  # Use cleaned video data
+        'customer_library': library_name,
         'request_id': download_requests[0].id if len(download_requests) == 1 else 'Multiple requests'
       }
       
-      # Render email templates with cleaned data
+      # Create and validate subject with header injection protection
       subject = clean_text(f"New Video Download Request from {customer_email} ({len(download_requests)} video{'s' if len(download_requests) > 1 else ''})")
-      html_message = render_to_string('emails/manager_download_request.html', context)
-      plain_message = strip_tags(html_message)
       
-      # Clean the rendered content as well
-      html_message = clean_text(html_message)
-      plain_message = clean_text(plain_message)
+      # Header injection protection
+      if any('\n' in x or '\r' in x for x in [subject, sender_email, manager_email]):
+          logger.error("Header injection detected in email fields")
+          raise ValueError("Header injection detected in email headers")
+      
+      try:
+          html_message = render_to_string('emails/manager_download_request.html', context)
+          html_message = clean_text(html_message)
+          
+          # Escape HTML to prevent malformed HTML from breaking SES
+          from django.utils.html import escape
+          html_message = escape(html_message)
+          
+      except Exception as e:
+          logger.error(f"Error rendering HTML template: {str(e)}")
+          # Enhanced error logging for template rendering
+          try:
+              if hasattr(e, 'object') and hasattr(e, 'start'):
+                  snippet = repr(e.object[e.start:e.start+10])
+                  logger.error(f"Template rendering failed at: {snippet}")
+          except:
+              pass
+              
+          # Fallback to plain text
+          html_message = f"""
+          New Video Download Request
+          
+          Customer: {customer_name} ({customer_email})
+          Videos requested: {len(download_requests)}
+          Request ID: {context['request_id']}
+          
+          Please review this request in the admin panel.
+          """
+          html_message = clean_text(html_message)
+          html_message = escape(html_message)
+      
+      try:
+          plain_message = strip_tags(html_message)
+          plain_message = clean_text(plain_message)
+      except Exception as e:
+          logger.error(f"Error creating plain message: {str(e)}")
+          plain_message = html_message
+      
+      # Final encoding validation before sending
+      try:
+          subject.encode('utf-8')
+          html_message.encode('utf-8')
+          plain_message.encode('utf-8')
+          sender_email.encode('utf-8')
+          manager_email.encode('utf-8')
+      except UnicodeError as e:
+          logger.error(f"Final encoding validation failed: {str(e)}")
+          return False
       
       # Send email to manager
       send_mail(
         subject=subject,
         message=plain_message,
-        from_email=self.sender_email,
-        recipient_list=[self.manager_email],
+        from_email=sender_email,
+        recipient_list=[manager_email],
         html_message=html_message,
         fail_silently=False
       )
@@ -247,12 +364,60 @@ class DownloadRequestService:
         download_request.status = 'completed'  # Completed means notification sent to manager
         download_request.save(update_fields=['email_sent', 'email_sent_at', 'status'])
       
-      logger.info(f"Successfully sent manager notification for {len(download_requests)} download request(s) from {first_request.user.email}")
+      logger.info(f"Successfully sent manager notification for {len(download_requests)} download request(s) from {customer_email}")
       return True
       
     except Exception as e:
       error_message = str(e)
       logger.error(f"Failed to send manager notification: {error_message}")
+      
+      # Debug the exact character causing issues
+      try:
+          error_position = None
+          if "position" in error_message:
+              # Extract position from error message
+              import re
+              match = re.search(r'position (\d+)', error_message)
+              if match:
+                  error_position = int(match.group(1))
+          
+          # Enhanced error logging for encoding issues
+          if hasattr(e, 'object') and hasattr(e, 'start'):
+              snippet = repr(e.object[e.start:e.start+10])
+              logger.error(f"Encoding failed at: {snippet}")
+              # Try to identify specific problematic characters
+              if hasattr(e, 'object'):
+                  for i, char in enumerate(e.object[e.start:e.start+10]):
+                      try:
+                          char.encode('utf-8')
+                      except UnicodeError:
+                          logger.error(f"  Problematic character at relative position {i}: {repr(char)} (ord: {ord(char)})")
+                  
+          if error_position is not None:
+              # Try to identify the problematic text
+              test_strings = [
+                  self.sender_email,
+                  self.manager_email,
+                  first_request.user.email,
+                  first_request.user.get_full_name() or "",
+                  first_request.video.title,
+                  first_request.video.library.name if first_request.video.library else ""
+              ]
+              
+              for i, test_str in enumerate(test_strings):
+                  if test_str and len(test_str) > error_position:
+                      problematic_section = test_str[max(0, error_position-5):error_position+5]
+                      logger.error(f"Problematic text #{i} at position {error_position}: {repr(problematic_section)}")
+                      
+                      # Character-by-character analysis of the problematic section
+                      for j, char in enumerate(problematic_section):
+                          try:
+                              char.encode('utf-8')
+                          except UnicodeError:
+                              logger.error(f"  Bad character in text #{i} at offset {j}: {repr(char)} (ord: {ord(char)})")
+                      
+      except Exception as debug_e:
+          logger.error(f"Debug analysis failed: {str(debug_e)}")
       
       # Update requests with error
       for download_request in download_requests:
