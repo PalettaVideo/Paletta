@@ -193,58 +193,29 @@ class DownloadRequestService:
       # Get the first request for customer info (assuming same customer for bulk)
       first_request = download_requests[0]
       
-      # Enhanced helper function to clean text for UTF-8 encoding
+      # Simple text cleaning for email compatibility
       def clean_text(text):
           if text is None:
               return ""
           if not isinstance(text, str):
               text = str(text)
+          
+          # encode to ASCII and replace errors
           try:
-              # Replace common smart quotes and problematic Unicode characters
-              replacements = {
-                  '\u201c': '"',  # Left double quotation mark
-                  '\u201d': '"',  # Right double quotation mark
-                  '\u2018': "'",  # Left single quotation mark
-                  '\u2019': "'",  # Right single quotation mark
-                  '\u2013': '-',  # En dash
-                  '\u2014': '-',  # Em dash
-                  '\u2026': '...',  # Horizontal ellipsis
-              }
+              # First pass: replace common problematic characters
+              text = text.replace('\u201c', '"').replace('\u201d', '"')  # Smart quotes
+              text = text.replace('\u2018', "'").replace('\u2019', "'")  # Smart quotes
+              text = text.replace('\u2013', '-').replace('\u2014', '-')  # Dashes
+              text = text.replace('\u2026', '...')  # Ellipsis
               
-              for old_char, new_char in replacements.items():
-                  text = text.replace(old_char, new_char)
-              
-              # More robust surrogate character handling
-              cleaned = ""
-              for char in text:
-                  try:
-                      code_point = ord(char)
-                      # Skip surrogate characters and other problematic Unicode ranges
-                      if (0xD800 <= code_point <= 0xDFFF or    # Surrogate pairs
-                          code_point > 0x10FFFF or             # Beyond valid Unicode
-                          code_point == 0xFFFE or              # Invalid characters
-                          code_point == 0xFFFF):
-                          # Skip problematic characters
-                          continue
-                      # Additional check: try to encode the character
-                      char.encode('utf-8')
-                      cleaned += char
-                  except (ValueError, UnicodeError):
-                      # Skip any character that causes encoding issues
-                      continue
-              
-              # Final validation: ensure the cleaned text can be encoded
-              cleaned.encode('utf-8')
-              return cleaned
-          except UnicodeError:
-              # If there are still encoding issues, fall back to ASCII-safe version
-              logger.warning(f"Encoding issue with text: {repr(text[:50])}...")
-              try:
-                  # Try to encode as UTF-8, replacing errors
-                  return text.encode('utf-8', 'replace').decode('utf-8')
-              except:
-                  # Final fallback to ASCII
-                  return text.encode('ascii', 'replace').decode('ascii')
+              # encode to ASCII, replace errors, then back to UTF-8
+              # This will replace ANY problematic character with a safe placeholder
+              ascii_safe = text.encode('ascii', 'replace').decode('ascii')
+              return ascii_safe
+          except Exception as e:
+              logger.warning(f"Text cleaning failed for: {repr(text[:30])}... Error: {str(e)}")
+              # Ultimate fallback: return only printable ASCII characters
+              return ''.join(char for char in text if ord(char) < 128 and char.isprintable() or char.isspace())
       
       # Clean all text fields that might contain problematic characters
       customer_name = clean_text(first_request.user.get_full_name() or first_request.user.email.split('@')[0])
