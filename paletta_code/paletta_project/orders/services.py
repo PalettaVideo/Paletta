@@ -63,7 +63,7 @@ class DownloadRequestService:
     # Email configuration
     self.ses_enabled = getattr(settings, 'AWS_SES_ENABLED', False)
     self.sender_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'info@filmbright.com')
-    self.manager_email = getattr(settings, 'MANAGER_EMAIL', 'niklaas@filmbright.com')
+    self.manager_email = getattr(settings, 'MANAGER_EMAIL', 'vvomifares@gmail.com')
   
   def create_download_request(self, user, video, email=None):
     """
