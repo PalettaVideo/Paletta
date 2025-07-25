@@ -214,22 +214,37 @@ class DownloadRequestService:
               for old_char, new_char in replacements.items():
                   text = text.replace(old_char, new_char)
               
-              # Remove any remaining surrogate characters
+              # More robust surrogate character handling
               cleaned = ""
               for char in text:
-                  code_point = ord(char)
-                  if 0xD800 <= code_point <= 0xDFFF:
-                      # Skip surrogate characters
+                  try:
+                      code_point = ord(char)
+                      # Skip surrogate characters and other problematic Unicode ranges
+                      if (0xD800 <= code_point <= 0xDFFF or    # Surrogate pairs
+                          code_point > 0x10FFFF or             # Beyond valid Unicode
+                          code_point == 0xFFFE or              # Invalid characters
+                          code_point == 0xFFFF):
+                          # Skip problematic characters
+                          continue
+                      # Additional check: try to encode the character
+                      char.encode('utf-8')
+                      cleaned += char
+                  except (ValueError, UnicodeError):
+                      # Skip any character that causes encoding issues
                       continue
-                  cleaned += char
               
-              # Simple approach: just ensure valid UTF-8 encoding
+              # Final validation: ensure the cleaned text can be encoded
               cleaned.encode('utf-8')
               return cleaned
           except UnicodeError:
-              # If there are actual encoding issues, fall back to ASCII
-              logger.warning(f"Encoding issue with text: {repr(text)}")
-              return text.encode('ascii', 'replace').decode('ascii')
+              # If there are still encoding issues, fall back to ASCII-safe version
+              logger.warning(f"Encoding issue with text: {repr(text[:50])}...")
+              try:
+                  # Try to encode as UTF-8, replacing errors
+                  return text.encode('utf-8', 'replace').decode('utf-8')
+              except:
+                  # Final fallback to ASCII
+                  return text.encode('ascii', 'replace').decode('ascii')
       
       # Clean all text fields that might contain problematic characters
       customer_name = clean_text(first_request.user.get_full_name() or first_request.user.email.split('@')[0])
@@ -294,9 +309,8 @@ class DownloadRequestService:
           html_message = render_to_string('emails/manager_download_request.html', context)
           html_message = clean_text(html_message)
           
-          # Escape HTML to prevent malformed HTML from breaking SES
-          from django.utils.html import escape
-          html_message = escape(html_message)
+          # Don't escape HTML for email templates - they need to remain as valid HTML
+          # The clean_text function already handles problematic characters
           
       except Exception as e:
           logger.error(f"Error rendering HTML template: {str(e)}")
@@ -308,25 +322,37 @@ class DownloadRequestService:
           except:
               pass
               
-          # Fallback to plain text
+          # Fallback to plain text formatted as simple HTML
           html_message = f"""
-          New Video Download Request
-          
-          Customer: {customer_name} ({customer_email})
-          Videos requested: {len(download_requests)}
-          Request ID: {context['request_id']}
-          
-          Please review this request in the admin panel.
+          <!DOCTYPE html>
+          <html>
+          <body>
+          <h2>New Video Download Request</h2>
+          <p><strong>Customer:</strong> {customer_name} ({customer_email})</p>
+          <p><strong>Videos requested:</strong> {len(download_requests)}</p>
+          <p><strong>Request ID:</strong> {context['request_id']}</p>
+          <p>Please review this request in the admin panel.</p>
+          </body>
+          </html>
           """
           html_message = clean_text(html_message)
-          html_message = escape(html_message)
       
       try:
           plain_message = strip_tags(html_message)
           plain_message = clean_text(plain_message)
       except Exception as e:
           logger.error(f"Error creating plain message: {str(e)}")
-          plain_message = html_message
+          # Fallback to simple plain text
+          plain_message = f"""
+New Video Download Request
+
+Customer: {customer_name} ({customer_email})
+Videos requested: {len(download_requests)}
+Request ID: {context['request_id']}
+
+Please review this request in the admin panel.
+          """.strip()
+          plain_message = clean_text(plain_message)
       
       # Final encoding validation before sending
       try:
