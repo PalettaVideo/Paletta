@@ -63,14 +63,14 @@ class DownloadRequestSystemTest:
         )
         
         # Create test user
-        self.test_user, created = User.objects.get_or_create(
-            email='test@example.com',
-            defaults={
-                'first_name': 'Test',
-                'last_name': 'User',
-                'is_active': True
-            }
-        )
+        try:
+            self.test_user = User.objects.get(email='test@example.com')
+        except User.DoesNotExist:
+            self.test_user = User.objects.create_user(
+                email='test@example.com',
+                first_name='Test',
+                last_name='User'
+            )
         
         # Create test video
         self.test_video, created = Video.objects.get_or_create(
