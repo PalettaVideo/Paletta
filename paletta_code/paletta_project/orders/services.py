@@ -353,6 +353,30 @@ class DownloadRequestService:
           logger.error(f"Final encoding validation failed: {str(e)}")
           return False
       
+      # FINAL SAFEGUARD: Remove any surrogate characters that might have been introduced
+      def remove_surrogates(text):
+          """Remove surrogate characters that cause django-ses to fail"""
+          if not text:
+              return text
+          cleaned = ""
+          for char in text:
+              code_point = ord(char)
+              if 0xD800 <= code_point <= 0xDFFF:
+                  # Skip surrogate characters
+                  logger.warning(f"Removing surrogate character: {repr(char)} (ord: {ord(char)})")
+                  continue
+              cleaned += char
+          return cleaned
+      
+      # Apply final cleaning to all text fields
+      subject = remove_surrogates(subject)
+      html_message = remove_surrogates(html_message)
+      plain_message = remove_surrogates(plain_message)
+      sender_email = remove_surrogates(sender_email)
+      manager_email = remove_surrogates(manager_email)
+      
+      logger.error(f"FINAL: About to send email with subject: {repr(subject[:60])}")
+      
       # Send email to manager
       send_mail(
         subject=subject,

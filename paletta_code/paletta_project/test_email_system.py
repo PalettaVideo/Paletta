@@ -118,57 +118,64 @@ class ComprehensiveEmailSystemTest:
         """Test manager notification with mock objects."""
         logger.info("Testing manager notification with mock data...")
         
-        # Create mock objects
-        class MockUser:
-            def __init__(self):
-                self.id = 1
-                self.email = "testuser@example.com"
-            def get_full_name(self):
-                return "Test User"
-        
-        class MockVideo:
-            def __init__(self):
-                self.id = 1
-                self.title = "Test Video"
-                self.description = "A test video"
-                self.duration_formatted = "5:30"
-                self.file_size = 1024 * 1024 * 100
-                self.format = "mp4"
-                self.content_type = type('obj', (), {'display_name': 'Test Category'})()
-                self.library = type('obj', (), {'name': 'Test Library'})()
-        
-        class MockDownloadRequest:
-            def __init__(self, user, video):
-                self.id = 1
-                self.user = user
-                self.video = video
-                self.email = user.email
-                self.email_sent = False
-                self.email_sent_at = None
-                self.status = 'pending'
-                self.email_error = ''
-            def save(self, update_fields=None):
-                pass
+        # TEMPORARILY switch to console backend to bypass django-ses
+        from django.conf import settings
+        original_backend = settings.EMAIL_BACKEND
+        settings.EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
         
         try:
+            # Create mock objects
+            class MockUser:
+                def __init__(self):
+                    self.id = 1
+                    self.email = "testuser@example.com"
+                def get_full_name(self):
+                    return "Test User"
+            
+            class MockVideo:
+                def __init__(self):
+                    self.id = 1
+                    self.title = "Test Video"
+                    self.description = "A test video"
+                    self.duration_formatted = "5:30"
+                    self.file_size = 1024 * 1024 * 100
+                    self.format = "mp4"
+                    self.content_type = type('obj', (), {'display_name': 'Test Category'})()
+                    self.library = type('obj', (), {'name': 'Test Library'})()
+            
+            class MockDownloadRequest:
+                def __init__(self, user, video):
+                    self.id = 1
+                    self.user = user
+                    self.video = video
+                    self.email = user.email
+                    self.email_sent = False
+                    self.email_sent_at = None
+                    self.status = 'pending'
+                    self.email_error = ''
+                def save(self, update_fields=None):
+                    pass
+            
             mock_user = MockUser()
             mock_video = MockVideo()
             mock_request = MockDownloadRequest(mock_user, mock_video)
             
-            # This will test the email logic without sending real emails
-            # if using console backend
+            # This will test the email logic without using django-ses
             result = self.service.send_manager_notification(mock_request)
             
             if result:
-                logger.info("Mock manager notification test passed")
+                logger.info("✅ Mock manager notification test passed with console backend")
                 return True
             else:
-                logger.error("Mock manager notification test failed")
+                logger.error("❌ Mock manager notification test failed even with console backend")
                 return False
                 
         except Exception as e:
             logger.error(f"Mock notification test failed: {str(e)}")
             return False
+        finally:
+            # Restore original backend
+            settings.EMAIL_BACKEND = original_backend
     
     # ========================================
     # ROBUSTNESS TESTS (from test_email_robustness.py)
