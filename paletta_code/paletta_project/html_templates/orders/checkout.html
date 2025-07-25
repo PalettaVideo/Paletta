@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - Request Downloads</title>
+  <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - Submit Video Request</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token }}">
@@ -25,7 +25,7 @@
   
   <div class="layout">
     <main class="content">
-      <h1>Request Downloads</h1>
+      <h1>Submit Video Request</h1>
       
       <div class="checkout-container">
         <div class="checkout-details">
@@ -62,33 +62,32 @@
           
           <div class="checkout-section">
             <div class="download-info">
-              <h3>📧 How Download Requests Work</h3>
+              <h3>🎬 How Video Requests Work</h3>
               <ul>
-                <li><strong>Email Delivery:</strong> Download links will be sent to your email address</li>
-                <li><strong>48-Hour Access:</strong> Links remain valid for 48 hours from generation</li>
-                <li><strong>Secure Downloads:</strong> Each link is unique and expires automatically</li>
+                <li><strong>Manager Review:</strong> Your request will be reviewed by our FilmBright team</li>
+                <li><strong>Personal Contact:</strong> We'll contact you directly to discuss licensing and pricing</li>
                 <li><strong>High Quality:</strong> Videos are delivered in their original uploaded quality</li>
               </ul>
             </div>
             
             <div class="email-input-group">
-              <label for="download-email">Email Address for Download Links:</label>
+              <label for="download-email">Your Contact Email:</label>
               <input type="email" id="download-email" value="{{ user.email }}" required>
-              <small>Download links will be sent to this email address</small>
+              <small>We'll use this email to contact you about your video request</small>
             </div>
             
             <div class="download-actions">
               <button type="button" id="request-downloads" class="download-button">
-                📥 Request Download Links
+                Submit Video Request
               </button>
               
               <div class="loading" id="loading-indicator">
                 <div class="loading-spinner"></div>
-                <p>Processing your download request...</p>
+                <p>Submitting your video request...</p>
               </div>
               
               <div class="success-message" id="success-message">
-                <strong>Success!</strong> Download links have been sent to your email address.
+                <strong>Success!</strong> Your video request has been submitted and our team will contact you soon.
               </div>
               
               <div class="error-message" id="error-message">

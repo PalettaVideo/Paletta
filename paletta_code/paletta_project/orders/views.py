@@ -622,8 +622,9 @@ def bulk_download_request(request):
         
         download_service = DownloadRequestService()
         results = []
-        successful_requests = 0
+        download_requests = []
         
+        # First pass: create download requests for valid videos
         for video_id in video_ids:
             try:
                 video = Video.objects.get(id=video_id)
@@ -647,31 +648,21 @@ def bulk_download_request(request):
                     })
                     continue
                 
-                # Create and process download request
+                # Create download request (don't process individually)
                 download_request = download_service.create_download_request(
                     user=request.user,
                     video=video,
                     email=email
                 )
                 
-                success = download_service.process_download_request(download_request)
-                
-                if success:
-                    successful_requests += 1
-                    results.append({
-                        'video_id': video_id,
-                        'video_title': video.title,
-                        'success': True,
-                        'request_id': download_request.id,
-                        'expiry_date': download_request.expiry_date.isoformat()
-                    })
-                else:
-                    results.append({
-                        'video_id': video_id,
-                        'video_title': video.title,
-                        'success': False,
-                        'error': 'Failed to process download request'
-                    })
+                download_requests.append(download_request)
+                results.append({
+                    'video_id': video_id,
+                    'video_title': video.title,
+                    'success': True,
+                    'request_id': download_request.id,
+                    'status': 'pending_manager_review'
+                })
                     
             except Video.DoesNotExist:
                 results.append({
@@ -680,20 +671,43 @@ def bulk_download_request(request):
                     'error': 'Video not found'
                 })
             except Exception as e:
-                logger.error(f"Error processing bulk download for video {video_id}: {str(e)}")
+                logger.error(f"Error creating download request for video {video_id}: {str(e)}")
                 results.append({
                     'video_id': video_id,
                     'success': False,
                     'error': 'Internal error processing request'
                 })
         
+        # Second pass: send single manager notification for all valid requests
+        successful_requests = len(download_requests)
+        if download_requests:
+            try:
+                bulk_success = download_service.process_bulk_download_request(download_requests)
+                if not bulk_success:
+                    logger.error(f"Failed to send bulk manager notification for {len(download_requests)} requests")
+                    # Mark all as failed in results
+                    for result in results:
+                        if result.get('success'):
+                            result['success'] = False
+                            result['error'] = 'Failed to notify manager'
+                    successful_requests = 0
+            except Exception as e:
+                logger.error(f"Error in bulk download processing: {str(e)}")
+                # Mark all as failed in results
+                for result in results:
+                    if result.get('success'):
+                        result['success'] = False
+                        result['error'] = 'Failed to process bulk request'
+                successful_requests = 0
+        
         return Response({
             'success': successful_requests > 0,
-            'message': f'Successfully processed {successful_requests} of {len(video_ids)} download requests',
+            'message': f'Successfully submitted {successful_requests} of {len(video_ids)} video download requests for manager review',
             'email': email,
             'results': results,
             'successful_count': successful_requests,
-            'total_count': len(video_ids)
+            'total_count': len(video_ids),
+            'manager_notification': successful_requests > 0
         }, status=status.HTTP_200_OK if successful_requests > 0 else status.HTTP_400_BAD_REQUEST)
         
     except Exception as e:

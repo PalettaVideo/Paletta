@@ -102,7 +102,10 @@ SEND_UPLOAD_CONFIRMATION_EMAIL = os.environ.get('SEND_UPLOAD_CONFIRMATION_EMAIL'
 # AWS SES Configuration for email automation
 AWS_SES_ENABLED = os.environ.get('AWS_SES_ENABLED', 'False') == 'True'
 AWS_SES_REGION = os.environ.get('AWS_SES_REGION', AWS_REGION)
-AWS_SES_SENDER_EMAIL = os.environ.get('AWS_SES_SENDER_EMAIL', 'automatic-video-request@paletta.io')
+AWS_SES_SENDER_EMAIL = os.environ.get('AWS_SES_SENDER_EMAIL', 'info@filmbright.com')
+
+# Manager notification email settings
+MANAGER_EMAIL = os.environ.get('MANAGER_EMAIL', 'vvomifares@gmail.com')
 
 # Celery Configuration
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
@@ -136,7 +139,7 @@ EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@paletta.com')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'info@filmbright.com')
 
 # Logging Configuration
 LOGGING = {

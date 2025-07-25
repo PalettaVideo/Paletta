@@ -18,9 +18,9 @@ class DownloadRequestService:
   MAPPED TO: Download request system
   USED BY: Download request API, Celery tasks, admin operations
   
-  Handles S3 presigned URL generation (48h expiry), email automation, and request tracking.
-  Integrates with AWS S3 for secure file access and SES for email delivery.
-  Required config: AWS credentials, S3 bucket settings, email configuration
+  Handles download request notifications to managers for monetization decisions.
+  Integrates with AWS SES for email delivery to Paletta management.
+  Required config: AWS credentials, email configuration
   """
   
   def __init__(self):
@@ -29,7 +29,7 @@ class DownloadRequestService:
     MAPPED TO: Service instantiation
     USED BY: All download request operations
     
-    Sets up S3 client for presigned URL generation and validates configuration.
+    Sets up email service for manager notifications.
     Auto-disables features if credentials missing or connection fails.
     """
     # Load AWS configuration
@@ -62,7 +62,8 @@ class DownloadRequestService:
     
     # Email configuration
     self.ses_enabled = getattr(settings, 'AWS_SES_ENABLED', False)
-    self.sender_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'automatic-video-request@paletta.io')
+    self.sender_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'info@filmbright.com')
+    self.manager_email = getattr(settings, 'MANAGER_EMAIL', 'niklaas@filmbright.com')
   
   def create_download_request(self, user, video, email=None):
     """
@@ -71,7 +72,7 @@ class DownloadRequestService:
     USED BY: Download request API views
     
     Creates DownloadRequest record, validates user permissions, checks video availability.
-    Sets up 48-hour expiry and initializes request status tracking.
+    Sets up request status tracking for manager review.
     Required fields: user (User), video (Video), email (str, optional)
     """
     if not email:
@@ -97,7 +98,7 @@ class DownloadRequestService:
       logger.info(f"Found existing download request {existing_request.id} for user {user.email}")
       return existing_request
     
-    # Create new download request
+    # Create new download request (no expiry for manager review process)
     download_request = DownloadRequest.objects.create(
       user=user,
       video=video,
@@ -113,7 +114,7 @@ class DownloadRequestService:
     """
     BACKEND-READY: Generate S3 presigned URL with 48-hour expiry.
     MAPPED TO: Download link generation
-    USED BY: Process download request workflow
+    USED BY: Manager-initiated download link generation
     
     Creates secure S3 GET URL valid for exactly 48 hours (172800 seconds).
     Updates DownloadRequest with URL and AWS metadata for tracking.
@@ -159,91 +160,99 @@ class DownloadRequestService:
       download_request.aws_request_id = aws_request_id
       download_request.save(update_fields=['download_url', 'aws_request_id'])
       
-      logger.info(f"Generated presigned URL for download request {download_request.id} (AWS ID: {aws_request_id})")
+      logger.info(f"Generated presigned URL for download request {download_request.id}")
       return presigned_url
-        
+      
     except ClientError as e:
-      error_code = e.response.get('Error', {}).get('Code', 'Unknown')
-      error_message = f"AWS S3 error ({error_code}): {str(e)}"
-      logger.error(f"Failed to generate presigned URL for download request {download_request.id}: {error_message}")
-      
-      # Update request status
-      download_request.status = 'failed'
-      download_request.email_error = error_message
-      download_request.save(update_fields=['status', 'email_error'])
-      
+      error_code = e.response['Error']['Code']
+      logger.error(f"AWS S3 error generating presigned URL for request {download_request.id}: {error_code}")
       return None
     except Exception as e:
-      error_message = f"Unexpected error: {str(e)}"
-      logger.error(f"Failed to generate presigned URL for download request {download_request.id}: {error_message}")
-      
-      # Update request status
-      download_request.status = 'failed'
-      download_request.email_error = error_message
-      download_request.save(update_fields=['status', 'email_error'])
-      
+      logger.error(f"Failed to generate presigned URL for request {download_request.id}: {str(e)}")
       return None
   
-  def send_download_email(self, download_request):
+  def send_manager_notification(self, download_requests):
     """
-    BACKEND-READY: Send download link email with SES integration.
-    MAPPED TO: Email automation system
-    USED BY: Download request processing, email resend functionality
+    BACKEND-READY: Send manager notification for new download requests.
+    MAPPED TO: Manager notification system
+    USED BY: Download request processing, bulk request handling
     
-    Sends templated email with download link and 48-hour expiry notice.
-    Updates DownloadRequest with email delivery status and error tracking.
-    Required fields: download_request.email, download_request.download_url
+    Sends notification email to manager with customer details and video list.
+    No download links are generated or sent to customers.
+    Required fields: download_requests (list of DownloadRequest instances)
     """
-    if not download_request.download_url:
-      logger.error(f"Download request {download_request.id} has no download URL")
+    if not download_requests:
+      logger.error("No download requests provided for manager notification")
       return False
     
+    # Handle single request or list of requests
+    if not isinstance(download_requests, list):
+      download_requests = [download_requests]
+    
     try:
+      # Get the first request for customer info (assuming same customer for bulk)
+      first_request = download_requests[0]
+      
       # Prepare email context
       context = {
-        'user_name': download_request.user.get_full_name() or download_request.user.email.split('@')[0],
-        'video_title': download_request.video.title,
-        'download_url': download_request.download_url,
-        'expiry_date': download_request.expiry_date,
-        'expiry_hours': 48,
-        'library_name': download_request.video.library.name if download_request.video.library else 'Paletta',
-        'support_email': 'support@paletta.io'
+        'customer_name': first_request.user.get_full_name() or first_request.user.email.split('@')[0],
+        'customer_email': first_request.user.email,
+        'customer_id': first_request.user.id,
+        'request_date': timezone.now(),
+        'video_count': len(download_requests),
+        'videos': [req.video for req in download_requests],
+        'customer_library': download_requests[0].video.library.name if download_requests[0].video.library else None,
+        'request_id': download_requests[0].id if len(download_requests) == 1 else 'Multiple requests'
       }
       
       # Render email templates
-      subject = f"Download link for {download_request.video.title} - Valid for 48 hours"
-      html_message = render_to_string('emails/download_link.html', context)
+      subject = f"New Video Download Request from {first_request.user.email} ({len(download_requests)} video{'s' if len(download_requests) > 1 else ''})"
+      html_message = render_to_string('emails/manager_download_request.html', context)
       plain_message = strip_tags(html_message)
       
-      # Send email
+      # Send email to manager
       send_mail(
         subject=subject,
         message=plain_message,
         from_email=self.sender_email,
-        recipient_list=[download_request.email],
+        recipient_list=[self.manager_email],
         html_message=html_message,
         fail_silently=False
       )
       
-      # Update download request
-      download_request.email_sent = True
-      download_request.email_sent_at = timezone.now()
-      download_request.status = 'completed'
-      download_request.save(update_fields=['email_sent', 'email_sent_at', 'status'])
+      # Update download requests status
+      for download_request in download_requests:
+        download_request.email_sent = True
+        download_request.email_sent_at = timezone.now()
+        download_request.status = 'completed'  # Completed means notification sent to manager
+        download_request.save(update_fields=['email_sent', 'email_sent_at', 'status'])
       
-      logger.info(f"Successfully sent download email for request {download_request.id} to {download_request.email}")
+      logger.info(f"Successfully sent manager notification for {len(download_requests)} download request(s) from {first_request.user.email}")
       return True
       
     except Exception as e:
       error_message = str(e)
-      logger.error(f"Failed to send download email for request {download_request.id}: {error_message}")
+      logger.error(f"Failed to send manager notification: {error_message}")
       
-      # Update request with error
-      download_request.status = 'failed'
-      download_request.email_error = error_message
-      download_request.save(update_fields=['status', 'email_error'])
+      # Update requests with error
+      for download_request in download_requests:
+        download_request.status = 'failed'
+        download_request.email_error = error_message
+        download_request.save(update_fields=['status', 'email_error'])
       
       return False
+
+  def send_download_email(self, download_request):
+    """
+    DEPRECATED: This method has been replaced by send_manager_notification.
+    BACKEND-READY: Send download link email with SES integration.
+    MAPPED TO: Email automation system
+    USED BY: Download request processing, email resend functionality
+    
+    This method is kept for compatibility but redirects to manager notification.
+    """
+    logger.warning(f"send_download_email called for request {download_request.id} - redirecting to manager notification")
+    return self.send_manager_notification(download_request)
 
   def process_download_request(self, download_request):
     """
@@ -251,26 +260,20 @@ class DownloadRequestService:
     MAPPED TO: Main request processing pipeline
     USED BY: API endpoints, Celery tasks, admin actions
     
-    Orchestrates full download request: URL generation → email sending → status tracking.
-    Handles errors at each step and updates request status accordingly.
+    Orchestrates download request: manager notification → status tracking.
+    No download links are generated for customers - manager handles monetization.
     Required fields: download_request (DownloadRequest instance)
     """
     logger.info(f"Processing download request {download_request.id} for video '{download_request.video.title}'")
     
     try:
-      # Step 1: Generate presigned URL
-      presigned_url = self.generate_presigned_url(download_request)
-      if not presigned_url:
-        logger.error(f"Failed to generate presigned URL for download request {download_request.id}")
+      # Send manager notification instead of generating download links
+      notification_sent = self.send_manager_notification(download_request)
+      if not notification_sent:
+        logger.error(f"Failed to send manager notification for download request {download_request.id}")
         return False
       
-      # Step 2: Send email
-      email_sent = self.send_download_email(download_request)
-      if not email_sent:
-        logger.error(f"Failed to send email for download request {download_request.id}")
-        return False
-      
-      logger.info(f"Successfully processed download request {download_request.id}")
+      logger.info(f"Successfully processed download request {download_request.id} - manager notified")
       return True
         
     except Exception as e:
@@ -281,6 +284,44 @@ class DownloadRequestService:
       download_request.status = 'failed'
       download_request.email_error = error_message
       download_request.save(update_fields=['status', 'email_error'])
+      
+      return False
+
+  def process_bulk_download_request(self, download_requests):
+    """
+    BACKEND-READY: Process multiple download requests as a single manager notification.
+    MAPPED TO: Bulk download request processing
+    USED BY: Cart checkout flow, bulk download operations
+    
+    Sends a single manager notification email with all requested videos.
+    More efficient than individual notifications for cart-based workflows.
+    Required fields: download_requests (list of DownloadRequest instances)
+    """
+    if not download_requests:
+      logger.error("No download requests provided for bulk processing")
+      return False
+    
+    logger.info(f"Processing bulk download request with {len(download_requests)} videos")
+    
+    try:
+      # Send single manager notification for all requests
+      notification_sent = self.send_manager_notification(download_requests)
+      if not notification_sent:
+        logger.error(f"Failed to send bulk manager notification for {len(download_requests)} requests")
+        return False
+      
+      logger.info(f"Successfully processed bulk download request with {len(download_requests)} videos - manager notified")
+      return True
+        
+    except Exception as e:
+      error_message = str(e)
+      logger.error(f"Failed to process bulk download request: {error_message}")
+      
+      # Update all request statuses
+      for download_request in download_requests:
+        download_request.status = 'failed'
+        download_request.email_error = error_message
+        download_request.save(update_fields=['status', 'email_error'])
       
       return False
   

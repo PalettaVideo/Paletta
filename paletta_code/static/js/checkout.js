@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Show loading state
   function showLoading() {
     requestDownloadsBtn.disabled = true;
-    requestDownloadsBtn.innerText = "Processing...";
+    requestDownloadsBtn.innerText = "Submitting Request...";
     loadingIndicator.style.display = "block";
     successMessage.style.display = "none";
     errorMessage.style.display = "none";
@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Hide loading state
   function hideLoading() {
     requestDownloadsBtn.disabled = false;
-    requestDownloadsBtn.innerText = "Request Download Links";
+    requestDownloadsBtn.innerText = "Submit Video Request";
     loadingIndicator.style.display = "none";
   }
 
@@ -87,7 +87,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Check if video IDs are available
     if (!window.videoIds || window.videoIds.length === 0) {
-      showError("No videos selected for download");
+      showError("No videos selected for request");
       return;
     }
 
@@ -114,20 +114,20 @@ document.addEventListener("DOMContentLoaded", function () {
         hideLoading();
 
         if (data.success) {
-          const message = `Download links have been sent to ${email}. 
-                          ${data.successful_count} of ${data.total_count} videos processed successfully.
-                          Please check your email for download links (valid for 48 hours).`;
+          const message = `Your video request has been submitted successfully! 
+                          ${data.successful_count} of ${data.total_count} videos submitted for review.
+                          Our FilmBright team will contact you at ${email} to discuss licensing and pricing.`;
           showSuccess(message);
 
           // Log detailed results for debugging
-          console.log("Download request results:", data.results);
+          console.log("Video request results:", data.results);
 
-          // Optional: Redirect to orders page after 3 seconds
+          // Optional: Redirect to orders page after 5 seconds
           setTimeout(() => {
             window.location.href = "/orders/";
-          }, 3000);
-        } else {
-          let errorMsg = data.message || "Failed to process download request";
+          }, 5000);
+                  } else {
+            let errorMsg = data.message || "Failed to submit video request";
 
           // Show specific errors if available
           if (data.results && data.results.length > 0) {
@@ -144,9 +144,9 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .catch((error) => {
         hideLoading();
-        console.error("Download request error:", error);
+        console.error("Video request error:", error);
         showError(
-          "An error occurred while processing your download request. Please try again."
+          "An error occurred while submitting your video request. Please try again."
         );
       });
   }
