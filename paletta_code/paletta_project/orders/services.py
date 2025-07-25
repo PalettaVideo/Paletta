@@ -193,22 +193,42 @@ class DownloadRequestService:
       # Get the first request for customer info (assuming same customer for bulk)
       first_request = download_requests[0]
       
-      # Prepare email context
+      # Helper function to clean text for UTF-8 encoding
+      def clean_text(text):
+          if not text:
+              return text
+          # Remove surrogate characters and other problematic Unicode
+          import unicodedata
+          # Replace surrogate characters with safe alternatives
+          cleaned = text.encode('utf-8', 'replace').decode('utf-8')
+          # Normalize Unicode characters
+          normalized = unicodedata.normalize('NFKC', cleaned)
+          return normalized
+      
+      # Clean all text fields that might contain problematic characters
+      customer_name = clean_text(first_request.user.get_full_name() or first_request.user.email.split('@')[0])
+      customer_email = clean_text(first_request.user.email)
+      
+      # Prepare email context with cleaned data
       context = {
-        'customer_name': first_request.user.get_full_name() or first_request.user.email.split('@')[0],
-        'customer_email': first_request.user.email,
+        'customer_name': customer_name,
+        'customer_email': customer_email,
         'customer_id': first_request.user.id,
         'request_date': timezone.now(),
         'video_count': len(download_requests),
         'videos': [req.video for req in download_requests],
-        'customer_library': download_requests[0].video.library.name if download_requests[0].video.library else None,
+        'customer_library': clean_text(download_requests[0].video.library.name) if download_requests[0].video.library else None,
         'request_id': download_requests[0].id if len(download_requests) == 1 else 'Multiple requests'
       }
       
-      # Render email templates
-      subject = f"New Video Download Request from {first_request.user.email} ({len(download_requests)} video{'s' if len(download_requests) > 1 else ''})"
+      # Render email templates with cleaned data
+      subject = clean_text(f"New Video Download Request from {customer_email} ({len(download_requests)} video{'s' if len(download_requests) > 1 else ''})")
       html_message = render_to_string('emails/manager_download_request.html', context)
       plain_message = strip_tags(html_message)
+      
+      # Clean the rendered content as well
+      html_message = clean_text(html_message)
+      plain_message = clean_text(plain_message)
       
       # Send email to manager
       send_mail(

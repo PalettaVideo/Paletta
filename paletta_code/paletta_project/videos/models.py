@@ -286,6 +286,15 @@ class Video(models.Model):
       return "No content type assigned"
   
   @property
+  def duration_formatted(self):
+      """Get formatted duration string (MM:SS format)"""
+      if self.duration:
+          minutes = self.duration // 60
+          seconds = self.duration % 60
+          return f"{minutes}:{seconds:02d}"
+      return "Unknown"
+  
+  @property
   def is_private(self):
       """Check if this video is in a private content type"""
       if self.content_type and self.content_type.subject_area == 'private':
