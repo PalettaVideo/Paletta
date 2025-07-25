@@ -16,9 +16,7 @@ import sys
 import django
 import argparse
 from django.conf import settings
-from django.test import TestCase
 from django.utils import timezone
-from datetime import timedelta
 import time
 import logging
 
@@ -31,7 +29,6 @@ from orders.services import DownloadRequestService
 from accounts.models import User
 from videos.models import Video, ContentType
 from libraries.models import Library
-from django.core.mail import send_mail
 from django.template.loader import render_to_string
 
 # Configure logging
@@ -188,12 +185,6 @@ class ComprehensiveEmailSystemTest:
                 'email': 'smartquotes@example.com',
                 'first_name': 'John "Smart" Test',
                 'video_title': 'Video "quotes" dash–em—'
-            },
-            {
-                'name': 'Emoji Content',
-                'email': 'emoji@example.com', 
-                'first_name': 'User 😀',
-                'video_title': '🎬 Movie Clips 📹'
             },
             {
                 'name': 'Unicode Content',

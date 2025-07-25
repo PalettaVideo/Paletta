@@ -200,44 +200,14 @@ class DownloadRequestService:
           if not isinstance(text, str):
               text = str(text)
           try:
-              # First, try to identify problematic characters
-              logger.debug(f"Cleaning text: {repr(text)}")
-              
-              # Handle different encoding issues
-              import unicodedata
-              
-              # Remove/replace problematic Unicode characters
-              # Replace surrogates and other problematic chars
-              cleaned = ""
-              for char in text:
-                  try:
-                      # Check if character can be encoded to UTF-8
-                      char.encode('utf-8')
-                      # Check if it's a valid Unicode character
-                      unicodedata.name(char, None)
-                      cleaned += char
-                  except (UnicodeError, TypeError):
-                      # Replace problematic characters with safe alternatives
-                      cleaned += "?"
-              
-              # Normalize Unicode
-              normalized = unicodedata.normalize('NFKC', cleaned)
-              
-              # Final safety check
-              try:
-                  normalized.encode('utf-8')
-                  logger.debug(f"Cleaned text: {repr(normalized)}")
-                  return normalized
-              except UnicodeError:
-                  # Last resort: ASCII-only
-                  ascii_only = normalized.encode('ascii', 'replace').decode('ascii')
-                  logger.warning(f"Had to fall back to ASCII-only for text: {repr(text)}")
-                  return ascii_only
-                  
-          except Exception as e:
-              logger.error(f"Error cleaning text '{repr(text)}': {str(e)}")
-              # Ultimate fallback
-              return str(text).encode('ascii', 'replace').decode('ascii')
+              # Simple approach: just ensure valid UTF-8 encoding
+              # Try to encode/decode to catch any real encoding issues
+              text.encode('utf-8')
+              return text
+          except UnicodeError:
+              # If there are actual encoding issues, fall back to ASCII
+              logger.warning(f"Encoding issue with text: {repr(text)}")
+              return text.encode('ascii', 'replace').decode('ascii')
       
       # Clean all text fields that might contain problematic characters
       customer_name = clean_text(first_request.user.get_full_name() or first_request.user.email.split('@')[0])
