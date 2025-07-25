@@ -199,15 +199,26 @@ class DownloadRequestService:
               return ""
           if not isinstance(text, str):
               text = str(text)
+          
+          # Debug: Check for surrogates before processing
+          for i, char in enumerate(text):
+              if 0xD800 <= ord(char) <= 0xDFFF:
+                  logger.error(f"FOUND SURROGATE in input at position {i}: {repr(char)} (ord: {ord(char)})")
+                  logger.error(f"Input text around surrogate: {repr(text[max(0,i-5):i+10])}")
+          
           try:
               # Simple approach: just ensure valid UTF-8 encoding
               # Try to encode/decode to catch any real encoding issues
               text.encode('utf-8')
+              logger.debug(f"clean_text: UTF-8 OK for {repr(text[:50])}")
               return text
-          except UnicodeError:
+          except UnicodeError as e:
               # If there are actual encoding issues, fall back to ASCII
-              logger.warning(f"Encoding issue with text: {repr(text)}")
-              return text.encode('ascii', 'replace').decode('ascii')
+              logger.error(f"clean_text: Encoding issue with text: {repr(text)}")
+              logger.error(f"clean_text: UnicodeError: {e}")
+              cleaned = text.encode('ascii', 'replace').decode('ascii')
+              logger.error(f"clean_text: Cleaned to: {repr(cleaned[:50])}")
+              return cleaned
       
       # Clean all text fields that might contain problematic characters
       customer_name = clean_text(first_request.user.get_full_name() or first_request.user.email.split('@')[0])
@@ -261,7 +272,32 @@ class DownloadRequestService:
       }
       
       # Create and validate subject with header injection protection
-      subject = clean_text(f"New Video Download Request from {customer_email} ({len(download_requests)} video{'s' if len(download_requests) > 1 else ''})")
+      logger.error(f"DEBUG: About to create subject line")
+      logger.error(f"DEBUG: customer_email = {repr(customer_email)}")
+      logger.error(f"DEBUG: len(download_requests) = {len(download_requests)}")
+      
+      # Check each component for surrogates before f-string
+      for i, char in enumerate(customer_email):
+          if 0xD800 <= ord(char) <= 0xDFFF:
+              logger.error(f"SURROGATE in customer_email at {i}: {repr(char)} (ord: {ord(char)})")
+      
+      raw_subject = f"New Video Download Request from {customer_email} ({len(download_requests)} video{'s' if len(download_requests) > 1 else ''})"
+      logger.error(f"DEBUG: raw_subject before clean_text = {repr(raw_subject)}")
+      
+      # Check raw subject for surrogates before clean_text
+      for i, char in enumerate(raw_subject):
+          if 0xD800 <= ord(char) <= 0xDFFF:
+              logger.error(f"SURROGATE in raw_subject at {i}: {repr(char)} (ord: {ord(char)})")
+              logger.error(f"Context: {repr(raw_subject[max(0,i-10):i+15])}")
+      
+      subject = clean_text(raw_subject)
+      logger.error(f"DEBUG: subject after clean_text = {repr(subject)}")
+      
+      # Check final subject for surrogates after clean_text
+      for i, char in enumerate(subject):
+          if 0xD800 <= ord(char) <= 0xDFFF:
+              logger.error(f"SURROGATE in final subject at {i}: {repr(char)} (ord: {ord(char)})")
+              logger.error(f"Context: {repr(subject[max(0,i-10):i+15])}")
       
       # Header injection protection
       if any('\n' in x or '\r' in x for x in [subject, sender_email, manager_email]):
