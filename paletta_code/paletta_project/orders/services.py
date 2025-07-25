@@ -199,26 +199,14 @@ class DownloadRequestService:
               return ""
           if not isinstance(text, str):
               text = str(text)
-          
-          # Debug: Check for surrogates before processing
-          for i, char in enumerate(text):
-              if 0xD800 <= ord(char) <= 0xDFFF:
-                  logger.error(f"FOUND SURROGATE in input at position {i}: {repr(char)} (ord: {ord(char)})")
-                  logger.error(f"Input text around surrogate: {repr(text[max(0,i-5):i+10])}")
-          
           try:
               # Simple approach: just ensure valid UTF-8 encoding
-              # Try to encode/decode to catch any real encoding issues
               text.encode('utf-8')
-              logger.debug(f"clean_text: UTF-8 OK for {repr(text[:50])}")
               return text
-          except UnicodeError as e:
+          except UnicodeError:
               # If there are actual encoding issues, fall back to ASCII
-              logger.error(f"clean_text: Encoding issue with text: {repr(text)}")
-              logger.error(f"clean_text: UnicodeError: {e}")
-              cleaned = text.encode('ascii', 'replace').decode('ascii')
-              logger.error(f"clean_text: Cleaned to: {repr(cleaned[:50])}")
-              return cleaned
+              logger.warning(f"Encoding issue with text: {repr(text)}")
+              return text.encode('ascii', 'replace').decode('ascii')
       
       # Clean all text fields that might contain problematic characters
       customer_name = clean_text(first_request.user.get_full_name() or first_request.user.email.split('@')[0])
@@ -272,32 +260,7 @@ class DownloadRequestService:
       }
       
       # Create and validate subject with header injection protection
-      logger.error(f"DEBUG: About to create subject line")
-      logger.error(f"DEBUG: customer_email = {repr(customer_email)}")
-      logger.error(f"DEBUG: len(download_requests) = {len(download_requests)}")
-      
-      # Check each component for surrogates before f-string
-      for i, char in enumerate(customer_email):
-          if 0xD800 <= ord(char) <= 0xDFFF:
-              logger.error(f"SURROGATE in customer_email at {i}: {repr(char)} (ord: {ord(char)})")
-      
-      raw_subject = f"New Video Download Request from {customer_email} ({len(download_requests)} video{'s' if len(download_requests) > 1 else ''})"
-      logger.error(f"DEBUG: raw_subject before clean_text = {repr(raw_subject)}")
-      
-      # Check raw subject for surrogates before clean_text
-      for i, char in enumerate(raw_subject):
-          if 0xD800 <= ord(char) <= 0xDFFF:
-              logger.error(f"SURROGATE in raw_subject at {i}: {repr(char)} (ord: {ord(char)})")
-              logger.error(f"Context: {repr(raw_subject[max(0,i-10):i+15])}")
-      
-      subject = clean_text(raw_subject)
-      logger.error(f"DEBUG: subject after clean_text = {repr(subject)}")
-      
-      # Check final subject for surrogates after clean_text
-      for i, char in enumerate(subject):
-          if 0xD800 <= ord(char) <= 0xDFFF:
-              logger.error(f"SURROGATE in final subject at {i}: {repr(char)} (ord: {ord(char)})")
-              logger.error(f"Context: {repr(subject[max(0,i-10):i+15])}")
+      subject = clean_text(f"New Video Download Request from {customer_email} ({len(download_requests)} video{'s' if len(download_requests) > 1 else ''})")
       
       # Header injection protection
       if any('\n' in x or '\r' in x for x in [subject, sender_email, manager_email]):
@@ -353,30 +316,6 @@ class DownloadRequestService:
           logger.error(f"Final encoding validation failed: {str(e)}")
           return False
       
-      # FINAL SAFEGUARD: Remove any surrogate characters that might have been introduced
-      def remove_surrogates(text):
-          """Remove surrogate characters that cause django-ses to fail"""
-          if not text:
-              return text
-          cleaned = ""
-          for char in text:
-              code_point = ord(char)
-              if 0xD800 <= code_point <= 0xDFFF:
-                  # Skip surrogate characters
-                  logger.warning(f"Removing surrogate character: {repr(char)} (ord: {ord(char)})")
-                  continue
-              cleaned += char
-          return cleaned
-      
-      # Apply final cleaning to all text fields
-      subject = remove_surrogates(subject)
-      html_message = remove_surrogates(html_message)
-      plain_message = remove_surrogates(plain_message)
-      sender_email = remove_surrogates(sender_email)
-      manager_email = remove_surrogates(manager_email)
-      
-      logger.error(f"FINAL: About to send email with subject: {repr(subject[:60])}")
-      
       # Send email to manager
       send_mail(
         subject=subject,
@@ -400,54 +339,6 @@ class DownloadRequestService:
     except Exception as e:
       error_message = str(e)
       logger.error(f"Failed to send manager notification: {error_message}")
-      
-      # Debug the exact character causing issues
-      try:
-          error_position = None
-          if "position" in error_message:
-              # Extract position from error message
-              import re
-              match = re.search(r'position (\d+)', error_message)
-              if match:
-                  error_position = int(match.group(1))
-          
-          # Enhanced error logging for encoding issues
-          if hasattr(e, 'object') and hasattr(e, 'start'):
-              snippet = repr(e.object[e.start:e.start+10])
-              logger.error(f"Encoding failed at: {snippet}")
-              # Try to identify specific problematic characters
-              if hasattr(e, 'object'):
-                  for i, char in enumerate(e.object[e.start:e.start+10]):
-                      try:
-                          char.encode('utf-8')
-                      except UnicodeError:
-                          logger.error(f"  Problematic character at relative position {i}: {repr(char)} (ord: {ord(char)})")
-                  
-          if error_position is not None:
-              # Try to identify the problematic text
-              test_strings = [
-                  self.sender_email,
-                  self.manager_email,
-                  first_request.user.email,
-                  first_request.user.get_full_name() or "",
-                  first_request.video.title,
-                  first_request.video.library.name if first_request.video.library else ""
-              ]
-              
-              for i, test_str in enumerate(test_strings):
-                  if test_str and len(test_str) > error_position:
-                      problematic_section = test_str[max(0, error_position-5):error_position+5]
-                      logger.error(f"Problematic text #{i} at position {error_position}: {repr(problematic_section)}")
-                      
-                      # Character-by-character analysis of the problematic section
-                      for j, char in enumerate(problematic_section):
-                          try:
-                              char.encode('utf-8')
-                          except UnicodeError:
-                              logger.error(f"  Bad character in text #{i} at offset {j}: {repr(char)} (ord: {ord(char)})")
-                      
-      except Exception as debug_e:
-          logger.error(f"Debug analysis failed: {str(debug_e)}")
       
       # Update requests with error
       for download_request in download_requests:
