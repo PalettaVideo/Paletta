@@ -200,9 +200,32 @@ class DownloadRequestService:
           if not isinstance(text, str):
               text = str(text)
           try:
+              # Replace common smart quotes and problematic Unicode characters
+              replacements = {
+                  '\u201c': '"',  # Left double quotation mark
+                  '\u201d': '"',  # Right double quotation mark
+                  '\u2018': "'",  # Left single quotation mark
+                  '\u2019': "'",  # Right single quotation mark
+                  '\u2013': '-',  # En dash
+                  '\u2014': '-',  # Em dash
+                  '\u2026': '...',  # Horizontal ellipsis
+              }
+              
+              for old_char, new_char in replacements.items():
+                  text = text.replace(old_char, new_char)
+              
+              # Remove any remaining surrogate characters
+              cleaned = ""
+              for char in text:
+                  code_point = ord(char)
+                  if 0xD800 <= code_point <= 0xDFFF:
+                      # Skip surrogate characters
+                      continue
+                  cleaned += char
+              
               # Simple approach: just ensure valid UTF-8 encoding
-              text.encode('utf-8')
-              return text
+              cleaned.encode('utf-8')
+              return cleaned
           except UnicodeError:
               # If there are actual encoding issues, fall back to ASCII
               logger.warning(f"Encoding issue with text: {repr(text)}")
