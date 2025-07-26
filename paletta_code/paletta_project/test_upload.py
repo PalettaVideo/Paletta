@@ -97,7 +97,7 @@ class ComprehensiveUploadTestSuite:
         
         # Create test library
         self.test_library, created = Library.objects.get_or_create(
-            name='Comprehensive Test Library',
+            name='Test Lib', 
             defaults={
                 'description': 'Test library for comprehensive upload validation',
                 'owner': admin_user,
@@ -142,7 +142,13 @@ class ComprehensiveUploadTestSuite:
                 logger.error(f"❌ Test setup failed: title '{title}' exceeds database limit")
                 raise ValueError(f"Title '{title}' exceeds 25 character limit")
         
-        logger.info("✅ Comprehensive test environment setup completed")
+        # Validate library name length
+        library_name = 'Test Lib'
+        if len(library_name) > 25:
+            logger.error(f"❌ Test setup failed: library name '{library_name}' exceeds database limit")
+            raise ValueError(f"Library name '{library_name}' exceeds 25 character limit")
+        
+        logger.info("✅ test environment setup completed")
     
     # ========================================
     # UPLOAD FIXES VERIFICATION TESTS
