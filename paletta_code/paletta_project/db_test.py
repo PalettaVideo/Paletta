@@ -9,6 +9,52 @@ from django.db.utils import OperationalError
 project_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, project_dir)
 
+def check_env_file():
+    """Check if the .env file exists and is accessible."""
+    env_path = '/home/ssm-user/Paletta/.env'
+    if os.path.exists(env_path):
+        print(f".env file found at: {env_path}")
+        try:
+            with open(env_path, 'r') as f:
+                lines = f.readlines()
+                print(f"   Contains {len(lines)} lines")
+                # Show first few lines for debugging
+                for i, line in enumerate(lines[:3]):
+                    if line.strip() and not line.strip().startswith('#'):
+                        key = line.split('=')[0] if '=' in line else 'unknown'
+                        print(f"   Line {i+1}: {key}=...")
+            return True
+        except Exception as e:
+            print(f"Error reading .env file: {e}")
+            return False
+    else:
+        print(f".env file not found at: {env_path}")
+        return False
+
+# Load environment variables from .env file BEFORE Django setup
+print("Loading environment variables...")
+check_env_file()
+
+try:
+    from dotenv import load_dotenv
+    env_path = '/home/ssm-user/Paletta/.env'
+    load_dotenv(dotenv_path=env_path)
+    print(f"Loaded environment variables from: {env_path}")
+except ImportError:
+    print("python-dotenv not installed, trying to load .env manually")
+    # Fallback: manually load .env file
+    env_path = '/home/ssm-user/Paletta/.env'
+    if os.path.exists(env_path):
+        with open(env_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ[key] = value
+        print(f"Loaded environment variables from: {env_path}")
+    else:
+        print(f"Warning: .env file not found at {env_path}")
+
 def test_database_connection():
     """Test the database connection and print the result."""
     try:
@@ -86,15 +132,25 @@ def check_environment():
     ]
     
     missing_vars = []
+    found_vars = []
+    
     for var in required_vars:
-        if not os.environ.get(var):
+        value = os.environ.get(var)
+        if value:
+            found_vars.append(var)
+            # Show first few characters of the value for debugging
+            display_value = value[:10] + "..." if len(value) > 10 else value
+            print(f"  {var}: {display_value}")
+        else:
             missing_vars.append(var)
+            print(f" {var}: Not set")
     
     if missing_vars:
-        print(f"Missing environment variables: {', '.join(missing_vars)}")
+        print(f"\nMissing environment variables: {', '.join(missing_vars)}")
+        print(f"Found {len(found_vars)}/{len(required_vars)} required variables")
         return False
     else:
-        print("All required environment variables are set")
+        print(f"\n All {len(required_vars)} required environment variables are set")
         return True
 
 if __name__ == "__main__":
