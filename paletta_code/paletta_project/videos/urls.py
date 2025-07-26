@@ -8,16 +8,13 @@ Groups related functionality for better maintainability.
 """
 
 from django.urls import path
-from .views.viewsets import ContentTypeViewSet
 from .views.upload_view import UploadHistoryView
 from .views.download_view import DownloadRequestView
-from .views.api_views import VideoListAPIView, VideoDetailAPIView, PopularTagsAPIView, VideoAPIUploadView, ContentTypeVideosAPIView
-from .views.tag_views import assign_tags, TagsAPIView
-from .views.video_management_views import VideoEditView, VideoDeleteView, TagSuggestionsAPIView
-from .views.thumbnail_view import VideoThumbnailAPIView
+from .views.tag_views import assign_tags
+from .views.video_management_views import VideoEditView, VideoDeleteView
 from .views.page_views import UploadPageView
 
-# URL patterns for the videos app
+# URL patterns for the videos app (frontend only)
 urlpatterns = [
     # Frontend Pages - User-facing HTML pages
     path('upload/', UploadPageView.as_view(), name='upload'),
@@ -28,21 +25,4 @@ urlpatterns = [
     
     # Tag Management - Video tagging operations
     path('videos/<int:video_id>/tags/', assign_tags, name='assign_tags'),
-    
-    # Core API - Video CRUD operations
-    path('api/videos/', VideoListAPIView.as_view(), name='api_videos_list'),
-    path('api/videos/<int:video_id>/', VideoDetailAPIView.as_view(), name='api_video_detail'),
-    path('api/upload/', VideoAPIUploadView.as_view(), name='api_upload'),
-    
-    # Content Type APIs - Library-specific content type system  
-    path('api/content-types/', ContentTypeViewSet.as_view({'get': 'list'}), name='api_content_types'),
-    path('api/content-type-videos/', ContentTypeVideosAPIView.as_view(), name='api_content_type_videos'),
-    
-    # Media & Metadata APIs - File and thumbnail handling
-    path('api/clip/<int:clip_id>/thumbnail/', VideoThumbnailAPIView.as_view(), name='api_clip_thumbnail'),
-    
-    # Tag & Search APIs - Tagging and discovery
-    path('api/videos/<int:video_id>/tags/', TagsAPIView.as_view(), name='api_video_tags'),
-    path('api/popular-tags/', PopularTagsAPIView.as_view(), name='api_popular_tags'),
-    path('api/tag-suggestions/', TagSuggestionsAPIView.as_view(), name='api_tag_suggestions'),
 ]

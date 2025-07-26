@@ -144,7 +144,7 @@ function fetchThumbnailForClip(clipId) {
   // Try different possible paths to the thumbnail API
   const urls = [
     `/api/clip/${clipId}/thumbnail/`, // Direct API path
-    `/api/api/clip/${clipId}/thumbnail/`, // Through videos app
+          `/api/clip/${clipId}/thumbnail/`, // Through videos app
   ];
 
   // Try the first URL, if it fails, try the second

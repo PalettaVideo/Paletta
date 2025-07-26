@@ -200,7 +200,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Store library ID for later use
     document.getElementById("categoriesModal").dataset.libraryId = libraryId;
 
-    fetch(`/api/api/categories/?library=${libraryId}`)
+    fetch(`/api/content-types/?library=${libraryId}`)
       .then((response) => response.json())
       .then((data) => {
         if (data.length === 0) {
@@ -265,7 +265,7 @@ document.addEventListener("DOMContentLoaded", function () {
     ];
 
     // Get current categories to exclude them
-    fetch(`/api/api/categories/?library=${libraryId}`)
+    fetch(`/api/content-types/?library=${libraryId}`)
       .then((response) => response.json())
       .then((currentCategories) => {
         const existingAreas = currentCategories.map(
@@ -330,36 +330,11 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  // Remove category
+  // DISABLED: Remove category - endpoint /api/videos/categories/ does not exist
+  // ContentTypeViewSet is ReadOnly, DELETE operations not supported
   window.removeCategory = function (categoryId, categoryName) {
-    showConfirmModal(
-      "Remove Category",
-      `Are you sure you want to remove "${categoryName}"? This will affect all videos in this category.`,
-      () => {
-        fetch(`/api/videos/categories/${categoryId}/`, {
-          method: "DELETE",
-          headers: {
-            "X-CSRFToken": csrftoken,
-          },
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.status === "success") {
-              alert("Category removed successfully");
-              const libraryId =
-                document.getElementById("categoriesModal").dataset.libraryId;
-              loadLibraryCategories(libraryId);
-              loadAvailableSubjectAreas(libraryId);
-            } else {
-              alert("Error: " + (data.message || "Failed to remove category"));
-            }
-          })
-          .catch((error) => {
-            console.error("Error removing category:", error);
-            alert("An error occurred while removing the category");
-          });
-      }
-    );
+    alert("Category removal is not implemented. ContentTypes cannot be deleted via API.");
+    return;
   };
 
   // Confirmation modal functions

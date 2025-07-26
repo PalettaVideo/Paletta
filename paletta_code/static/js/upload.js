@@ -253,7 +253,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .getAttribute("content");
 
       // Use the content types API with library filtering
-      let apiUrl = `/api/api/content-types/`;
+      let apiUrl = `/api/content-types/`;
       if (libraryId) {
         apiUrl += `?library=${libraryId}`;
       }
@@ -504,7 +504,7 @@ document.addEventListener("DOMContentLoaded", function () {
       formData.append("thumbnail", thumbnailFile);
     }
 
-    const response = await fetch("/api/api/upload/", {
+    const response = await fetch("/api/uploads/", {
       method: "POST",
       headers: {
         // 'Content-Type' is set automatically by the browser for FormData

@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status, permissions, generics, parsers
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Count, Q
+from django.db import IntegrityError
 from ..models import Video, ContentType, Tag, VideoTag
 from ..serializers import VideoSerializer, TagSerializer
 from libraries.models import Library
@@ -76,7 +77,7 @@ class VideoFilterMixin:
 class VideoAPIUploadView(APIView):
     """
     FRONTEND-READY: Main video upload endpoint for metadata creation.
-    MAPPED TO: /api/upload/
+    MAPPED TO: /api/uploads/
     USED BY: upload.js line 635
     
     Creates video database record after successful S3 upload completes.
@@ -126,6 +127,35 @@ class VideoAPIUploadView(APIView):
             format_type = request.data.get('format')
             thumbnail = request.FILES.get('thumbnail')
             
+            # VALIDATION FIX 1: Title validation
+            if not title or not title.strip():
+                return Response({'message': 'Title is required and cannot be empty.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if len(title) > 25:  # Match Video model CharField max_length
+                return Response({'message': 'Title cannot exceed 25 characters.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # VALIDATION FIX 2: Duration validation
+            if duration is not None:
+                try:
+                    duration = int(duration)
+                    if duration < 0:
+                        return Response({'message': 'Duration cannot be negative.'}, status=status.HTTP_400_BAD_REQUEST)
+                    if duration > 86400:  # 24 hours in seconds - reasonable max for video duration
+                        return Response({'message': 'Duration cannot exceed 24 hours (86400 seconds).'}, status=status.HTTP_400_BAD_REQUEST)
+                except (ValueError, TypeError):
+                    return Response({'message': 'Duration must be a valid integer.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # VALIDATION FIX 3: File size validation
+            if file_size is not None:
+                try:
+                    file_size = int(file_size)
+                    if file_size < 0:
+                        return Response({'message': 'File size cannot be negative.'}, status=status.HTTP_400_BAD_REQUEST)
+                    if file_size > 10737418240:  # 10GB in bytes - reasonable max for video file
+                        return Response({'message': 'File size cannot exceed 10GB.'}, status=status.HTTP_400_BAD_REQUEST)
+                except (ValueError, TypeError):
+                    return Response({'message': 'File size must be a valid integer.'}, status=status.HTTP_400_BAD_REQUEST)
+            
             # Content type validation (1 required)
             if not content_type_id:
                 return Response({'message': 'Content type is required.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -136,11 +166,17 @@ class VideoAPIUploadView(APIView):
             except Library.DoesNotExist:
                 return Response({'message': 'Library not found'}, status=status.HTTP_404_NOT_FOUND)
             
-            # Validate content type belongs to the library
+            # Validate content type belongs to the same library (SECURITY FIX)
             try:
-                content_type = ContentType.objects.get(id=content_type_id, library=library, is_active=True)
+                content_type = ContentType.objects.get(
+                    id=content_type_id, 
+                    library=library, 
+                    is_active=True
+                )
             except ContentType.DoesNotExist:
-                return Response({'message': f"Content type with id {content_type_id} not found in this library"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({
+                    'message': f"Content type with id {content_type_id} not found in library '{library.name}' or is inactive"
+                }, status=status.HTTP_404_NOT_FOUND)
             
             # Create video record
             video = Video.objects.create(
@@ -162,12 +198,23 @@ class VideoAPIUploadView(APIView):
                 video.thumbnail = thumbnail
                 video.save(update_fields=['thumbnail'])
                 
-            # Handle tags
+            # Handle tags with race condition protection
             if tags_str:
                 tag_names = [name.strip() for name in tags_str.split(',') if name.strip()]
                 for tag_name in tag_names:
-                    tag, _ = Tag.objects.get_or_create(name=tag_name, library=library)
-                    VideoTag.objects.create(video=video, tag=tag)
+                    try:
+                        # Try to get existing tag first
+                        tag = Tag.objects.get(name=tag_name, library=library)
+                    except Tag.DoesNotExist:
+                        try:
+                            # Create new tag with race condition protection
+                            tag = Tag.objects.create(name=tag_name, library=library)
+                        except IntegrityError:
+                            # Another request created it, get the existing one
+                            tag = Tag.objects.get(name=tag_name, library=library)
+                    
+                    # Create VideoTag relationship if it doesn't exist
+                    VideoTag.objects.get_or_create(video=video, tag=tag)
                     
             serializer = VideoSerializer(video, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -402,12 +449,3 @@ class ContentTypeVideosAPIView(generics.ListAPIView, VideoFilterMixin):
         queryset = self.apply_video_filters(queryset, self.request)
         
         return queryset
-
-
-# ==============================================================================
-# COMPATIBILITY ALIASES (For existing URL patterns)
-# ==============================================================================
-
-# These maintain backward compatibility with existing URLs
-VideoListAPIView = UnifiedVideoListAPIView
-ContentTypeVideosAPIView = UnifiedVideoListAPIView 

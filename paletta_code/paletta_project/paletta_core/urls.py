@@ -36,17 +36,17 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/accounts/', include('accounts.urls')),
     
-    # Include videos app URLs with API prefix
-    path('api/', include('videos.urls')),
+    # Include videos API URLs with API prefix
+    path('api/', include('videos.api_urls')),
     
-    # Include videos app URLs without API prefix for frontend pages
+    # Include videos frontend URLs without API prefix for frontend pages
     path('videos/', include('videos.urls')),
     
     # Include libraries app URLs with API prefix
     path('api/libraries/', include('libraries.urls')),
     
-    # Include orders app URLs with API prefix for download requests
-    path('api/orders/', include('orders.urls')),
+    # Include orders app API URLs with API prefix for download requests
+    path('api/orders/', include('orders.api_urls')),
     
     # HTML page routes
     path('', CustomLoginView.as_view(), name='login'),
@@ -55,24 +55,34 @@ urlpatterns = [
     path('home/', HomeView.as_view(), name='home'),
     path('logout/', LogoutView.as_view(), name='logout'),
     
-    # LIBRARY-SCOPED FRONTEND ROUTES  
-    # Note: These create library context via middleware
+    # LIBRARY-SCOPED ROUTES
+    # Library context is set by middleware and maintained through these routes
     path('library/<str:library_slug>/', HomeView.as_view(), name='library_home'),
+    
+    # Video Content & Navigation                                                            
     path('library/<str:library_slug>/category/clip-store/', CategoryClipView.as_view(), name='library_clip_store'),
     path('library/<str:library_slug>/category/<str:category_slug>/', CategoryClipView.as_view(), name='library_category'),
     path('library/<str:library_slug>/video/<int:video_id>/', VideoDetailView.as_view(), name='library_video_detail'),
+    
+    # Video Management                                                                      
     path('library/<str:library_slug>/videos/edit/<int:video_id>/', VideoEditView.as_view(), name='library_video_edit'),
     path('library/<str:library_slug>/videos/delete/<int:video_id>/', VideoDeleteView.as_view(), name='library_video_delete'),
+    
+    # Upload System                                                                         
     path('library/<str:library_slug>/upload/', UploadPageView.as_view(), name='library_upload'),
     path('library/<str:library_slug>/upload/history/', UploadHistoryView.as_view(), name='library_upload_history'),
+    
+    # User Profile & Collection                                                                
     path('library/<str:library_slug>/profile/', ProfileView.as_view(), name='library_profile'),
     path('library/<str:library_slug>/collection/', CollectionView.as_view(), name='library_collection'),
+    
+    # Commerce & Orders                                                                      
     path('library/<str:library_slug>/cart/', CartView.as_view(), name='library_cart'),
     path('library/<str:library_slug>/checkout/', CheckoutView.as_view(), name='library_checkout'),
     path('library/<str:library_slug>/orders/', OrdersListView.as_view(), name='library_orders_list'),
     path('library/<str:library_slug>/orders/<int:pk>/', OrderDetailView.as_view(), name='library_order_detail'),
     
-    # order management routes - include the orders app URLs
+    # order management frontend pages
     path('', include('orders.urls')),
     
     # additional page routes

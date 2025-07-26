@@ -127,7 +127,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       // Fetch tag suggestions (replace with actual API endpoint)
-      fetch(`/api/api/tag-suggestions/?query=${encodeURIComponent(query)}`)
+      fetch(`/api/tag-suggestions/?query=${encodeURIComponent(query)}`)
         .then((response) => response.json())
         .then((data) => {
           if (data.tags && data.tags.length > 0) {

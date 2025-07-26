@@ -1,10 +1,10 @@
 """
-BACKEND/FRONTEND-READY: URL routing configuration for orders app.
-MAPPED TO: /orders/ base path for HTML pages, /api/ for API endpoints
-USED BY: Django URL dispatcher, frontend AJAX calls, cart/checkout flows
+FRONTEND-READY: URL routing configuration for orders app frontend pages.
+MAPPED TO: /orders/ base path for HTML pages only
+USED BY: Django URL dispatcher for order management frontend
 
-Organizes order-related endpoints: cart management, checkout, order history, download requests.
-Follows same pattern as videos app with mixed HTML pages and API endpoints.
+Organizes order-related frontend pages: cart, checkout, order history.
+API endpoints are now in api_urls.py for clean separation.
 """
 
 from django.urls import path
@@ -16,18 +16,4 @@ urlpatterns = [
     path('checkout/', views.CheckoutView.as_view(), name='checkout'),
     path('orders/', views.OrdersListView.as_view(), name='orders_list'),
     path('orders/<int:pk>/', views.OrderDetailView.as_view(), name='order_detail'),
-    
-    # Cart Management - AJAX endpoints for cart operations
-    path('add-to-cart/', views.AddToCartView.as_view(), name='add_to_cart'),
-    path('remove-from-cart/', views.RemoveFromCartView.as_view(), name='remove_from_cart'),
-    
-    # Collection Management - User collection operations  
-    path('add-to-collection/', views.AddToCollectionView.as_view(), name='add_to_collection'),
-    path('remove-from-collection/', views.RemoveFromCollectionView.as_view(), name='remove_from_collection'),
-    
-    # Download Request APIs - Video download system
-    path('request-download/', views.DownloadRequestAPIView.as_view(), name='api_request_download'),
-    path('download-requests/', views.DownloadRequestStatusAPIView.as_view(), name='api_download_requests_status'),
-    path('download-requests/<int:request_id>/resend/', views.ResendDownloadEmailAPIView.as_view(), name='api_resend_download_email'),
-    path('bulk-download-request/', views.bulk_download_request, name='api_bulk_download_request'),
 ] 
