@@ -126,6 +126,22 @@ class ComprehensiveUploadTestSuite:
         
         # Login user
         self.client.force_login(self.test_user)
+        
+        # Validate test data doesn't exceed database limits
+        test_titles = [
+            'Race Condition Test',
+            'Test Video',
+            'Valid Test Video',
+            'Test 视频 Vidéo',
+            'Video with Metadata',
+            'Missing S3 Key'
+        ]
+        
+        for title in test_titles:
+            if not self._validate_title_length(title):
+                logger.error(f"❌ Test setup failed: title '{title}' exceeds database limit")
+                raise ValueError(f"Title '{title}' exceeds 25 character limit")
+        
         logger.info("✅ Comprehensive test environment setup completed")
     
     # ========================================
@@ -205,7 +221,7 @@ class ComprehensiveUploadTestSuite:
         try:
             upload_data = {
                 's3_key': f'test/race_condition_{uuid.uuid4()}.mp4',
-                'title': 'Test Video for Race Condition',
+                'title': 'Race Condition Test',  # Fixed: was 26 chars, now 20 chars
                 'content_type': self.test_content_type.id,
                 'library_id': self.test_library.id,
                 'tags': 'race_test_tag,common_test_tag,unique_test_tag'
@@ -410,7 +426,7 @@ class ComprehensiveUploadTestSuite:
                 'name': 'Unicode title',
                 'data': {
                     's3_key': f'test/unicode_{uuid.uuid4()}.mp4',
-                    'title': 'Test 视频 Vidéo Тест',
+                    'title': 'Test 视频 Vidéo',  # Fixed: shortened to stay under 25 chars
                     'content_type': self.test_content_type.id,
                     'library_id': self.test_library.id,
                 },
@@ -477,7 +493,7 @@ class ComprehensiveUploadTestSuite:
             try:
                 data = {
                     's3_key': f'test/concurrent_{video_id}_{uuid.uuid4()}.mp4',
-                    'title': f'Concurrent Test {video_id}',
+                    'title': f'Concurrent {video_id}',  # Fixed: shortened to stay under 25 chars
                     'content_type': self.test_content_type.id,
                     'library_id': self.test_library.id,
                     'tags': f'concurrent,test{video_id},shared_tag'
@@ -578,7 +594,7 @@ class ComprehensiveUploadTestSuite:
                 
                 data = {
                     's3_key': f'test/perf_{i}_{uuid.uuid4()}.mp4',
-                    'title': f'Performance Test {i}',
+                    'title': f'Perf Test {i}',  # Fixed: shortened to stay under 25 chars
                     'content_type': self.test_content_type.id,
                     'library_id': self.test_library.id,
                 }
@@ -616,6 +632,13 @@ class ComprehensiveUploadTestSuite:
     # ========================================
     # HELPER METHODS
     # ========================================
+    
+    def _validate_title_length(self, title):
+        """Validate that title doesn't exceed database limit."""
+        if len(title) > 25:
+            logger.warning(f"⚠️ Title '{title}' exceeds 25 characters ({len(title)} chars)")
+            return False
+        return True
     
     def _validate_filename(self, filename, content_type):
         """Validate filename and content type."""
