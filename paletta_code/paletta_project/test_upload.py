@@ -139,16 +139,16 @@ class ComprehensiveUploadTestSuite:
         
         for title in test_titles:
             if not self._validate_title_length(title):
-                logger.error(f"❌ Test setup failed: title '{title}' exceeds database limit")
+                logger.error(f" Test setup failed: title '{title}' exceeds database limit")
                 raise ValueError(f"Title '{title}' exceeds 25 character limit")
         
         # Validate library name length
         library_name = 'Test Lib'
         if len(library_name) > 25:
-            logger.error(f"❌ Test setup failed: library name '{library_name}' exceeds database limit")
+            logger.error(f"Test setup failed: library name '{library_name}' exceeds database limit")
             raise ValueError(f"Library name '{library_name}' exceeds 25 character limit")
         
-        logger.info("✅ test environment setup completed")
+        logger.info("test environment setup completed")
     
     # ========================================
     # UPLOAD FIXES VERIFICATION TESTS
@@ -162,13 +162,13 @@ class ComprehensiveUploadTestSuite:
             response = self.client.get('/admin/')
             # Should not get 400 DisallowedHost error
             if response.status_code == 400:
-                logger.error("❌ ALLOWED_HOSTS fix failed - still getting 400 error")
+                logger.error("ALLOWED_HOSTS fix failed - still getting 400 error")
                 return False
             else:
-                logger.info("✅ ALLOWED_HOSTS fix working - no DisallowedHost error")
+                logger.info("ALLOWED_HOSTS fix working - no DisallowedHost error")
                 return True
         except Exception as e:
-            logger.error(f"❌ ALLOWED_HOSTS test failed: {str(e)}")
+            logger.error(f"ALLOWED_HOSTS test failed: {str(e)}")
             return False
     
     def test_url_routing_fix(self):
@@ -188,12 +188,12 @@ class ComprehensiveUploadTestSuite:
                 response = self.client.get(endpoint)
                 # Should not get 404 (not found) - other status codes are acceptable
                 if response.status_code == 404:
-                    logger.error(f"❌ URL routing issue: {endpoint} returns 404")
+                    logger.error(f"URL routing issue: {endpoint} returns 404")
                     routing_success = False
                 else:
-                    logger.info(f"✅ URL routing OK: {endpoint} returns {response.status_code}")
+                    logger.info(f"URL routing OK: {endpoint} returns {response.status_code}")
             except Exception as e:
-                logger.error(f"❌ URL routing test failed for {endpoint}: {str(e)}")
+                logger.error(f"URL routing test failed for {endpoint}: {str(e)}")
                 routing_success = False
                 
         return routing_success
@@ -208,16 +208,16 @@ class ComprehensiveUploadTestSuite:
             if response.status_code == 200:
                 data = response.json()
                 if isinstance(data, list):
-                    logger.info(f"✅ Content-types API working: returned {len(data)} content types")
+                    logger.info(f"Content-types API working: returned {len(data)} content types")
                     return True
                 else:
-                    logger.error("❌ Content-types API returned invalid format")
+                    logger.error("Content-types API returned invalid format")
                     return False
             else:
-                logger.error(f"❌ Content-types API failed: status {response.status_code}")
+                logger.error(f"Content-types API failed: status {response.status_code}")
                 return False
         except Exception as e:
-            logger.error(f"❌ Content-types API test failed: {str(e)}")
+            logger.error(f"Content-types API test failed: {str(e)}")
             return False
     
     def test_race_condition_fix(self):
@@ -239,16 +239,16 @@ class ComprehensiveUploadTestSuite:
                 # Check that tags were created properly
                 test_tag = Tag.objects.filter(name='race_test_tag', library=self.test_library).first()
                 if test_tag:
-                    logger.info("✅ Tag race condition fix working - tags created successfully")
+                    logger.info("Tag race condition fix working - tags created successfully")
                     return True
                 else:
-                    logger.error("❌ Tags not created - race condition fix may not be working")
+                    logger.error("Tags not created - race condition fix may not be working")
                     return False
             else:
-                logger.error(f"❌ Upload failed: status {response.status_code}")
+                logger.error(f"Upload failed: status {response.status_code}")
                 return False
         except Exception as e:
-            logger.error(f"❌ Race condition test failed: {str(e)}")
+            logger.error(f"Race condition test failed: {str(e)}")
             return False
     
     def test_backend_validation_improvements(self):
@@ -282,12 +282,12 @@ class ComprehensiveUploadTestSuite:
             try:
                 response = self.client.post('/api/uploads/', data=test_case['data'])
                 if response.status_code == test_case['expected_status']:
-                    logger.info(f"✅ {test_case['name']}: Validation working correctly")
+                    logger.info(f"{test_case['name']}: Validation working correctly")
                     passed_tests += 1
                 else:
-                    logger.error(f"❌ {test_case['name']}: Expected {test_case['expected_status']}, got {response.status_code}")
+                    logger.error(f"{test_case['name']}: Expected {test_case['expected_status']}, got {response.status_code}")
             except Exception as e:
-                logger.error(f"❌ {test_case['name']} test failed: {str(e)}")
+                logger.error(f"{test_case['name']} test failed: {str(e)}")
         
         return passed_tests == len(validation_tests)
     
@@ -333,18 +333,18 @@ class ComprehensiveUploadTestSuite:
                 
                 if test_case['should_pass']:
                     if result['valid']:
-                        logger.info(f"✅ {test_case['name']}: Passed as expected")
+                        logger.info(f"{test_case['name']}: Passed as expected")
                         passed_tests += 1
                     else:
-                        logger.error(f"❌ {test_case['name']}: Should have passed but failed")
+                        logger.error(f"{test_case['name']}: Should have passed but failed")
                 else:
                     if not result['valid']:
-                        logger.info(f"✅ {test_case['name']}: Failed as expected")
+                        logger.info(f"{test_case['name']}: Failed as expected")
                         passed_tests += 1
                     else:
-                        logger.error(f"❌ {test_case['name']}: Should have failed but passed")
+                        logger.error(f"{test_case['name']}: Should have failed but passed")
             except Exception as e:
-                logger.error(f"❌ {test_case['name']} test failed: {str(e)}")
+                logger.error(f"{test_case['name']} test failed: {str(e)}")
         
         success_rate = passed_tests / len(test_cases)
         self.results['frontend_simulation']['file_validation'] = {
@@ -388,18 +388,18 @@ class ComprehensiveUploadTestSuite:
                 
                 if test_case['should_pass']:
                     if result['valid']:
-                        logger.info(f"✅ {test_case['name']}: Validation passed")
+                        logger.info(f"{test_case['name']}: Validation passed")
                         passed_tests += 1
                     else:
-                        logger.error(f"❌ {test_case['name']}: Should have passed")
+                        logger.error(f"{test_case['name']}: Should have passed")
                 else:
                     if not result['valid']:
-                        logger.info(f"✅ {test_case['name']}: Validation failed as expected")
+                        logger.info(f"{test_case['name']}: Validation failed as expected")
                         passed_tests += 1
                     else:
-                        logger.error(f"❌ {test_case['name']}: Should have failed")
+                        logger.error(f"{test_case['name']}: Should have failed")
             except Exception as e:
-                logger.error(f"❌ {test_case['name']} test failed: {str(e)}")
+                logger.error(f"{test_case['name']} test failed: {str(e)}")
         
         success_rate = passed_tests / len(test_cases)
         self.results['frontend_simulation']['metadata_extraction'] = {
@@ -470,10 +470,10 @@ class ComprehensiveUploadTestSuite:
                 response = self.client.post('/api/uploads/', data=test_case['data'])
                 
                 if response.status_code == test_case['expected_status']:
-                    logger.info(f"✅ {test_case['name']}: Got expected status {response.status_code}")
+                    logger.info(f"{test_case['name']}: Got expected status {response.status_code}")
                     passed_tests += 1
                 else:
-                    logger.error(f"❌ {test_case['name']}: Expected {test_case['expected_status']}, got {response.status_code}")
+                    logger.error(f"{test_case['name']}: Expected {test_case['expected_status']}, got {response.status_code}")
                     if response.status_code >= 400:
                         try:
                             error_data = response.json()
@@ -481,7 +481,7 @@ class ComprehensiveUploadTestSuite:
                         except:
                             logger.error(f"   Response content: {response.content}")
             except Exception as e:
-                logger.error(f"❌ {test_case['name']} test failed: {str(e)}")
+                logger.error(f"{test_case['name']} test failed: {str(e)}")
         
         success_rate = passed_tests / len(test_cases)
         self.results['backend_validation']['upload_api'] = {
@@ -530,9 +530,9 @@ class ComprehensiveUploadTestSuite:
         # Check for race conditions in tag creation
         shared_tag_count = Tag.objects.filter(name='shared_tag', library=self.test_library).count()
         if shared_tag_count <= 1:
-            logger.info("✅ No race condition detected in tag creation")
+            logger.info("No race condition detected in tag creation")
         else:
-            logger.warning(f"⚠️ Potential race condition: shared tag created {shared_tag_count} times")
+            logger.warning(f"Potential race condition: shared tag created {shared_tag_count} times")
             success_rate *= 0.8  # Reduce score for race condition
         
         self.results['backend_validation']['concurrent_uploads'] = {
@@ -561,7 +561,7 @@ class ComprehensiveUploadTestSuite:
             # Test bucket access
             bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', 'test-bucket')
             self.s3_client.head_bucket(Bucket=bucket_name)
-            logger.info("✅ S3 bucket access successful")
+            logger.info("S3 bucket access successful")
             
             # Test presigned URL generation
             test_key = f"test/{uuid.uuid4()}.mp4"
@@ -572,14 +572,14 @@ class ComprehensiveUploadTestSuite:
             )
             
             if presigned_url:
-                logger.info("✅ Presigned URL generation successful")
+                logger.info("Presigned URL generation successful")
                 return True
             else:
-                logger.error("❌ Presigned URL generation failed")
+                logger.error("Presigned URL generation failed")
                 return False
                 
         except Exception as e:
-            logger.error(f"❌ S3 integration test failed: {str(e)}")
+            logger.error(f"S3 integration test failed: {str(e)}")
             return False
     
     # ========================================
@@ -611,7 +611,7 @@ class ComprehensiveUploadTestSuite:
                 upload_times.append(upload_end - upload_start)
                 
                 if response.status_code != 201:
-                    logger.error(f"❌ Performance test upload {i} failed: {response.status_code}")
+                    logger.error(f"Performance test upload {i} failed: {response.status_code}")
             
             total_time = time.time() - start_time
             avg_time = sum(upload_times) / len(upload_times) if upload_times else 0
@@ -632,7 +632,7 @@ class ComprehensiveUploadTestSuite:
             return success
             
         except Exception as e:
-            logger.error(f"❌ Performance test failed: {str(e)}")
+            logger.error(f"Performance test failed: {str(e)}")
             return False
     
     # ========================================
@@ -642,7 +642,7 @@ class ComprehensiveUploadTestSuite:
     def _validate_title_length(self, title):
         """Validate that title doesn't exceed database limit."""
         if len(title) > 25:
-            logger.warning(f"⚠️ Title '{title}' exceeds 25 characters ({len(title)} chars)")
+            logger.warning(f"Title '{title}' exceeds 25 characters ({len(title)} chars)")
             return False
         return True
     
@@ -692,7 +692,7 @@ class ComprehensiveUploadTestSuite:
             Tag.objects.filter(library=self.test_library).delete()
             
             # Don't delete library and user as they might be reused
-            logger.info("✅ Test environment cleaned up")
+            logger.info("Test environment cleaned up")
             
         except Exception as e:
             logger.error(f"Cleanup failed: {str(e)}")
@@ -784,19 +784,19 @@ class ComprehensiveUploadTestSuite:
             # Detailed breakdown
             logger.info("\nFixes Verification:")
             for test_name, result in fixes_results.items():
-                status = "✅ PASS" if result else "❌ FAIL"
+                status = "PASS" if result else "FAIL"
                 logger.info(f"  {test_name}: {status}")
             
             logger.info("\nPipeline Tests:")
             for test_name, result in pipeline_results.items():
-                status = "✅ PASS" if result else "❌ FAIL"
+                status = "PASS" if result else "FAIL"
                 logger.info(f"  {test_name}: {status}")
             
             if passed_tests == total_tests:
-                logger.info("\n🎉 All tests passed! Upload system is working correctly.")
+                logger.info("\nAll tests passed! Upload system is working correctly.")
                 return True
             else:
-                logger.warning(f"\n⚠️ {total_tests - passed_tests} tests failed. Issues need attention.")
+                logger.warning(f"\n{total_tests - passed_tests} tests failed. Issues need attention.")
                 return False
                 
         finally:
@@ -831,18 +831,18 @@ def main():
             success = test_suite.run_comprehensive_test()
         
         if success:
-            print("\n✅ All selected tests passed!")
+            print("\nAll selected tests passed!")
             sys.exit(0)
         else:
-            print("\n❌ Some tests failed. Please review the logs.")
+            print("\nSome tests failed. Please review the logs.")
             sys.exit(1)
             
     except KeyboardInterrupt:
-        print("\n\n⚠️ Tests interrupted by user")
+        print("\n\nTests interrupted by user")
         test_suite.cleanup_test_environment()
         sys.exit(1)
     except Exception as e:
-        print(f"\n💥 Test suite crashed: {str(e)}")
+        print(f"\nTest suite crashed: {str(e)}")
         test_suite.cleanup_test_environment()
         sys.exit(1)
 
