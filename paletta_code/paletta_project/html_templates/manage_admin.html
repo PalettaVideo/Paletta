@@ -40,31 +40,32 @@
                 <h3 style="color: #6c757d; margin-bottom: 10px;">No Libraries Owned</h3>
                 <p style="color: #6c757d; margin: 0;">You do not own any libraries currently. Reach out to us to setup a plan to store your video content.</p>
             </div>
+
+                
+                <div id="adminList">
+                    {% if admins %}
+                        {% for admin in admins %}
+                        <div class="admin-card" data-id="{{ admin.id }}">
+                            <p><strong>Institution:</strong> {{ admin.institution|default:"Not specified" }}</p>
+                            <p><strong>Email:</strong> {{ admin.email }}</p>
+                            <p><strong>Name:</strong> {{ admin.name }}</p>
+                            <p><strong>Library Name:</strong> 
+                                {% if admin.libraries.all %}
+                                    {% for library in admin.libraries.all %}
+                                        {{ library.name }}{% if not forloop.last %}; {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </p>
+                            <button class="revoke" data-admin-id="{{ admin.id }}">Revoke Admin Privileges</button>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-admins">No administrators found.</p>
+                    {% endif %}
+                </div>
             {% endif %}
-            
-            <div id="adminList">
-                {% if admins %}
-                    {% for admin in admins %}
-                    <div class="admin-card" data-id="{{ admin.id }}">
-                        <p><strong>Institution:</strong> {{ admin.institution|default:"Not specified" }}</p>
-                        <p><strong>Email:</strong> {{ admin.email }}</p>
-                        <p><strong>Name:</strong> {{ admin.name }}</p>
-                        <p><strong>Library Name:</strong> 
-                            {% if admin.libraries.all %}
-                                {% for library in admin.libraries.all %}
-                                    {{ library.name }}{% if not forloop.last %}; {% endif %}
-                                {% endfor %}
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        </p>
-                        <button class="revoke" data-admin-id="{{ admin.id }}">Revoke Admin Privileges</button>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <p class="no-admins">No administrators found.</p>
-                {% endif %}
-            </div>
         </section>
     </main>
 </div>
