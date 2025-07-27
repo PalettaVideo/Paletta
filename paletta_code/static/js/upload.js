@@ -142,6 +142,12 @@ document.addEventListener("DOMContentLoaded", function () {
         <p><strong>Size:</strong> ${fileSizeMB}MB (${fileSizeGB}GB)</p>
         <p><strong>Type:</strong> ${file.type}</p>
         <p><strong>Upload Method:</strong> ${uploadMethod}</p>
+        <div class="video-preview">
+          <video controls preload="metadata" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+            <source src="${URL.createObjectURL(file)}" type="${file.type}">
+            Your browser does not support the video tag.
+          </video>
+        </div>
         <div class="progress-bar" style="display: none;">
           <div class="progress-fill"></div>
         </div>
