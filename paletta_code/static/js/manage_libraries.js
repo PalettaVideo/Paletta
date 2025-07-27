@@ -158,7 +158,6 @@ document.addEventListener("DOMContentLoaded", function () {
         method = "DELETE";
         break;
       default:
-        console.error("Unknown action:", action);
         return;
     }
 
@@ -186,8 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
           alert("Error: " + message);
         }
       })
-      .catch((error) => {
-        console.error("Error:", error);
+      .catch(() => {
         alert("An error occurred while performing the action");
       });
   }
@@ -230,8 +228,7 @@ document.addEventListener("DOMContentLoaded", function () {
         html += "</div>";
         categoriesContent.innerHTML = html;
       })
-      .catch((error) => {
-        console.error("Error loading categories:", error);
+      .catch(() => {
         categoriesContent.innerHTML =
           "<p>Error loading categories. Please try again.</p>";
       });
@@ -292,8 +289,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         container.innerHTML = html;
       })
-      .catch((error) => {
-        console.error("Error loading available subject areas:", error);
+      .catch(() => {
         container.innerHTML = "<p>Error loading available options.</p>";
       });
   }
@@ -324,8 +320,7 @@ document.addEventListener("DOMContentLoaded", function () {
           alert("Error: " + (data.message || "Failed to add categories"));
         }
       })
-      .catch((error) => {
-        console.error("Error adding categories:", error);
+      .catch(() => {
         alert("An error occurred while adding categories");
       });
   }
@@ -344,8 +339,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const messageElement = document.getElementById("confirmMessage");
     const confirmBtn = document.getElementById("confirmBtn");
 
-    if (!confirmBtn) {
-      console.error("Confirm button not found");
+    if (!confirmBtn) {  
       return;
     }
 

@@ -154,8 +154,7 @@ document.addEventListener("DOMContentLoaded", function () {
             tagSuggestions.style.display = "none";
           }
         })
-        .catch((error) => {
-          console.error("Error fetching tag suggestions:", error);
+        .catch(() => {
           tagSuggestions.style.display = "none";
         });
     });
@@ -231,8 +230,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
           }
         })
-        .catch((error) => {
-          console.error("Error:", error);
+        .catch(() => {
           showToast("An error occurred while updating the video");
         });
     });

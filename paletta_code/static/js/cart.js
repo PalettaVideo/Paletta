@@ -138,8 +138,7 @@ document.addEventListener("DOMContentLoaded", function () {
           alert("Error removing item: " + data.message);
         }
       })
-      .catch((error) => {
-        console.error("Error:", error);
+      .catch(() => {
         alert("An error occurred while removing the item from cart.");
       });
   }

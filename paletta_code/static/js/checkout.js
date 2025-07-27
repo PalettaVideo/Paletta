@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     // Make API request
-    fetch("/bulk-download-request/", {
+    fetch("/api/orders/bulk-download-request/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -119,15 +119,12 @@ document.addEventListener("DOMContentLoaded", function () {
                           Our FilmBright team will contact you at ${email} to discuss licensing and pricing.`;
           showSuccess(message);
 
-          // Log detailed results for debugging
-          console.log("Video request results:", data.results);
-
           // Optional: Redirect to orders page after 5 seconds
           setTimeout(() => {
             window.location.href = "/orders/";
           }, 5000);
-                  } else {
-            let errorMsg = data.message || "Failed to submit video request";
+        } else {
+          let errorMsg = data.message || "Failed to submit video request";
 
           // Show specific errors if available
           if (data.results && data.results.length > 0) {
@@ -142,9 +139,8 @@ document.addEventListener("DOMContentLoaded", function () {
           showError(errorMsg);
         }
       })
-      .catch((error) => {
+      .catch(() => {
         hideLoading();
-        console.error("Video request error:", error);
         showError(
           "An error occurred while submitting your video request. Please try again."
         );

@@ -221,17 +221,7 @@ document.addEventListener("DOMContentLoaded", function () {
             "custom_categories_json",
             JSON.stringify(selectedSubjectAreas)
           );
-          console.log(
-            `Adding ${selectedSubjectAreas.length} custom categories:`,
-            selectedSubjectAreas
-          );
         }
-      }
-
-      // Debug form data
-      console.log("Form submission data:");
-      for (let pair of formData.entries()) {
-        console.log(`${pair[0]}: ${pair[1]}`);
       }
 
       try {
@@ -241,20 +231,15 @@ document.addEventListener("DOMContentLoaded", function () {
             method: "POST",
             headers: {
               "X-CSRFToken": csrftoken,
-              // Don't set Content-Type here, FormData will set it with boundary
             },
             body: formData,
           }
         );
 
-        // Debug response
-        console.log("Response status:", response.status);
-
         if (
           response.headers.get("content-type")?.includes("application/json")
         ) {
           const data = await response.json();
-          console.log("Response data:", data);
 
           if (data.status === "success") {
             // Show success message
@@ -272,14 +257,12 @@ document.addEventListener("DOMContentLoaded", function () {
             window.location.href = "/libraries/manage/";
           } else {
             const text = await response.text();
-            console.error("Server response:", text);
             alert(
               "An error occurred while creating the library. Please check your input and try again."
             );
           }
         }
       } catch (error) {
-        console.error("Error:", error);
         alert(
           "An error occurred while creating the library. Please try again."
         );

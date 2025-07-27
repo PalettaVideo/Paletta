@@ -175,8 +175,7 @@ document.addEventListener("DOMContentLoaded", function () {
           showNotification("Error: " + (data.message || data.error), "error");
         }
       })
-      .catch((error) => {
-        console.error("Error:", error);
+      .catch(() => {
         // Try to update cache anyway for offline functionality
         updateCartCache(videoId, resolution, price);
         showNotification("Added to local cart (offline mode)", "info");
@@ -236,8 +235,7 @@ document.addEventListener("DOMContentLoaded", function () {
           );
         }
       })
-      .catch((error) => {
-        console.error("Error adding to collection:", error);
+      .catch(() => {
         // Still try to update cache anyway for offline functionality
         updateCollectionCache(videoId);
         showNotification("Added to local collection (offline mode)", "info");

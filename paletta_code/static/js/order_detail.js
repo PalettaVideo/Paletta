@@ -12,11 +12,13 @@ function confirmRequest() {
   const detailId = document.getElementById("detail-id").value;
   const reason = document.querySelector("textarea").value;
   // Get CSRF token from the form or meta tag
-  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
-                    document.querySelector('meta[name="csrf-token"]')?.content || "";
+  const csrfToken =
+    document.querySelector("[name=csrfmiddlewaretoken]")?.value ||
+    document.querySelector('meta[name="csrf-token"]')?.content ||
+    "";
 
   // Get URL by constructing it with the detail ID
-      const url = `/request-download/${detailId}/`;
+  const url = `/api/orders/request-download/`;
 
   // Send request to server to reprocess the download
   fetch(url, {
@@ -39,8 +41,7 @@ function confirmRequest() {
         alert("Error: " + data.message);
       }
     })
-    .catch((error) => {
-      console.error("Error:", error);
+    .catch(() => {
       alert("An error occurred while submitting your request.");
     });
 }

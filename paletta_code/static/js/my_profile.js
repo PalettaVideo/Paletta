@@ -59,8 +59,7 @@ function getUserData() {
       throw new Error("User data element not found");
     }
     return JSON.parse(userDataElement.textContent);
-  } catch (error) {
-    console.error("Error parsing user data:", error);
+  } catch {
     return null;
   }
 }
@@ -78,11 +77,9 @@ function initializeProfile() {
     if (userData) {
       populateProfile(userData);
     } else {
-      console.error("User data not found or invalid");
       alert("Failed to load user profile.");
     }
-  } catch (error) {
-    console.error("Error loading user data:", error);
+  } catch {
     alert("Failed to load user profile.");
   }
 

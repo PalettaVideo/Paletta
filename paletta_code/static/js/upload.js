@@ -269,10 +269,6 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       if (!response.ok) {
-        console.error(
-          "Failed to fetch content types. Status:",
-          response.status
-        );
         throw new Error(
           `Failed to fetch content types: ${response.statusText}`
         );
@@ -318,8 +314,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         contentTypesGrid.appendChild(card);
       });
-    } catch (error) {
-      console.error("Error fetching content types:", error);
+    } catch {
       const contentTypesGrid = document.getElementById("content-types-grid");
       const contentTypesError = document.getElementById("content-types-error");
 
@@ -431,8 +426,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Fallback or display a message
         window.location.href = "/"; // Redirect to home page as a fallback
       }
-    } catch (error) {
-      console.error("Upload process failed:", error);
+    } catch {
       alert(`An error occurred: ${error.message}`);
       uploadButton.textContent = "Upload Clip";
       uploadButton.disabled = false;
