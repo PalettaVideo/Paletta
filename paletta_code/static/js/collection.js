@@ -309,7 +309,7 @@ function renderCollection() {
           <img src="${clip.thumbnail}" alt="${clip.title || "Video"}">
           <div class="clip-details">
             <h2>${clip.title || "Untitled Video"}</h2>
-            <a href="/clip/${clip.id}/">
+            <a href="/library/${getCurrentLibrarySlug()}/video/${clip.id}/">
               <button class="view-details">View Details</button>
             </a>
             <button class="remove" data-clip-id="${clip.id}">Remove</button>

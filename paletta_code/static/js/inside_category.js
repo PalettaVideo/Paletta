@@ -314,7 +314,7 @@ document.addEventListener("DOMContentLoaded", function () {
     formData.append("price", price);
 
     // Fetch request to add to cart
-    fetch("/cart/add/", {
+    fetch("/api/orders/add-to-cart/", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -370,7 +370,7 @@ document.addEventListener("DOMContentLoaded", function () {
     formData.append("clip_id", videoId);
 
     // Fetch request to add to favorites
-    fetch("/collection/add/", {
+    fetch("/api/orders/add-to-collection/", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",

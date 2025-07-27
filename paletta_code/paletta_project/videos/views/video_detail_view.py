@@ -53,15 +53,7 @@ class VideoDetailView(TemplateView):
                     'id': vt.tag.id
                 })
             context['tags'] = tags
-            
-            # Format duration for display
-            duration_formatted = "Unknown"
-            if clip.duration:
-                minutes = clip.duration // 60
-                seconds = clip.duration % 60
-                duration_formatted = f"{minutes}:{seconds:02d}"
-            context['duration_formatted'] = duration_formatted
-            
+           
             # Get related clips (same content type, excluding current)
             context['related_clips'] = Video.objects.filter(
                 content_type=clip.content_type

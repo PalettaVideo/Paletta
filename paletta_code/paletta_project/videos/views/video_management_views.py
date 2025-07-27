@@ -59,15 +59,7 @@ class VideoEditView(TemplateView):
                         video.file_size_formatted = f"{size_mb:.1f} MB"
                     else:
                         video.file_size_formatted = f"{size_mb / 1024:.2f} GB"
-            
-            # Format duration for display
-            if video.duration:
-                minutes = video.duration // 60
-                seconds = video.duration % 60
-                video.duration_formatted = f"{minutes}:{seconds:02d}"
-            else:
-                video.duration_formatted = "Unknown"
-            
+                   
             # Get available content types for the library - Include ALL content types
             content_types = ContentType.objects.filter(
                 library=video.library, 

@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
       document.querySelector('meta[name="clip-store-url"]')?.content || "/";
 
     // Send AJAX request to remove item
-    fetch("/cart/remove/", {
+    fetch("/api/orders/remove-from-cart/", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",

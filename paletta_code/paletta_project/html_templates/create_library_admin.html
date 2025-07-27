@@ -67,7 +67,7 @@
                     <div class="error-message">{{ form.description.errors }}</div>
                 {% endif %}
                 
-                <label for="id_storage_tier">Storage Tier</label>
+                <label for="id_storage_tier">Storage Tier (to be implemented as functionality)</label>
                 <select id="id_storage_tier" name="storage_tier">
                     <option value="basic">Basic (up to 100GB)</option>
                     <option value="pro">Professional (up to 1TB)</option>
@@ -98,11 +98,9 @@
                         <div class="category-option">
                             <input type="radio" id="custom" name="category_source" value="custom">
                             <label for="custom">
-                                <strong>Create My Own Categories</strong>
+                                <strong>Select Subject Area Categories</strong>
                                 <p class="option-description">
-                                    Uses academic subject areas (Engineering Sciences, Medical Sciences, etc.) 
-                                    combined with content types. Ideal for specialized academic or research institutions 
-                                    that need subject-specific organization.
+                                    Select from a list of academic subject areas
                                 </p>
                             </label>
                         </div>
@@ -110,7 +108,7 @@
                     
                     <!-- Custom Categories Creation Interface -->
                     <div id="custom-categories-interface" class="custom-categories-interface" style="display: none;">
-                        <h4>Create Your Subject Area Categories</h4>
+                        <h4>Select Subject Area Categories</h4>
                         <p class="interface-description">
                             Select the subject areas that are relevant to your institution. You can always add more later.
                         </p>
@@ -199,7 +197,7 @@
                     <div class="error-message">{{ form.category_source.errors }}</div>
                 {% endif %}
 
-                <label for="id_theme_color">Theme Colour</label>
+                <label for="id_theme_color">Theme Colour (to be implemented as frontend functionality)</label>
                 <div id="colorPickerContainer">
                     <div id="colorPreview" onclick="toggleColorPicker()"></div>
                     <input type="color" id="themeColor" name="primary_color" onchange="updateColor()" value="#86B049">
