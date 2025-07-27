@@ -18,7 +18,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'paletta_project.settings_produc
 import django
 django.setup()
 
-from paletta_project.videos.services import AWSCloudStorageService
+from videos.services import AWSCloudStorageService
 from django.core.files.base import ContentFile
 
 # Configure logging
