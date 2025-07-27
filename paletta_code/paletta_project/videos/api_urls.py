@@ -5,7 +5,10 @@ Used exclusively for API endpoints under /api/ prefix.
 
 from django.urls import path
 from .views.viewsets import ContentTypeViewSet
-from .views.api_views import UnifiedVideoListAPIView, VideoDetailAPIView, PopularTagsAPIView, VideoAPIUploadView
+from .views.api_views import (
+    UnifiedVideoListAPIView, VideoDetailAPIView, PopularTagsAPIView, VideoAPIUploadView,
+    S3MultipartUploadView, S3UploadPartView, S3CompleteMultipartUploadView, S3AbortMultipartUploadView
+)
 from .views.tag_views import TagsAPIView
 from .views.video_management_views import TagSuggestionsAPIView
 from .views.thumbnail_view import VideoThumbnailAPIView
@@ -20,6 +23,12 @@ urlpatterns = [
     # Content Type APIs - Library-specific content type system  
     path('content-types/', ContentTypeViewSet.as_view({'get': 'list'}), name='api_content_types'),
     path('content-type-videos/', UnifiedVideoListAPIView.as_view(), name='api_content_type_videos'),
+    
+    # S3 Multipart Upload APIs - For large file uploads
+    path('s3/create-multipart-upload/', S3MultipartUploadView.as_view(), name='api_s3_create_multipart'),
+    path('s3/get-upload-part-url/', S3UploadPartView.as_view(), name='api_s3_upload_part'),
+    path('s3/complete-multipart-upload/', S3CompleteMultipartUploadView.as_view(), name='api_s3_complete_multipart'),
+    path('s3/abort-multipart-upload/', S3AbortMultipartUploadView.as_view(), name='api_s3_abort_multipart'),
     
     # Media & Metadata APIs - File and thumbnail handling
     path('clip/<int:clip_id>/thumbnail/', VideoThumbnailAPIView.as_view(), name='api_clip_thumbnail'),

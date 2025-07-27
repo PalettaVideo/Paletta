@@ -95,50 +95,60 @@ document.addEventListener("DOMContentLoaded", function () {
     const file = e.target.files[0];
     if (!file) return;
 
-    // check file size
-    if (file.size > MAX_FILE_SIZE) {
-      showUploadLimitModal();
-      fileInput.value = "";
-      return;
-    }
-
-    // check file type
-    const validTypes = [
-      "video/mp4",
-      "video/mpeg",
-      "video/quicktime",
-      "video/x-msvideo",
-      "video/x-flv",
-      "video/x-matroska",
-    ];
-    if (!validTypes.includes(file.type)) {
+    // File size validation - 10GB limit
+    const maxFileSize = 10 * 1024 * 1024 * 1024; // 10GB in bytes
+    if (file.size > maxFileSize) {
+      const fileSizeGB = (file.size / (1024 * 1024 * 1024)).toFixed(2);
       alert(
-        "Invalid file type. Please upload a video file (MP4, MOV, AVI, etc.)"
+        `File size (${fileSizeGB}GB) exceeds the maximum allowed size of 10GB. Please select a smaller file.`
       );
       fileInput.value = "";
       return;
     }
 
-    // create video preview
-    videoPreviewContainer.innerHTML = "";
-    const video = document.createElement("video");
-    video.controls = true;
-    video.src = URL.createObjectURL(file);
-    videoPreviewContainer.appendChild(video);
+    // File type validation
+    const allowedTypes = [
+      "video/mp4",
+      "video/mpeg",
+      "video/quicktime",
+      "video/x-msvideo",
+      "video/webm",
+      "video/ogg",
+      "video/x-ms-wmv",
+      "video/x-flv",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please select a valid video file (MP4, MOV, AVI, etc.).");
+      fileInput.value = "";
+      return;
+    }
 
-    // update file name display
-    const fileNameDisplay = document.createElement("div");
-    fileNameDisplay.className = "file-name";
-    fileNameDisplay.textContent = file.name;
-    videoPreviewContainer.appendChild(fileNameDisplay);
+    // Display file info
+    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+    const fileSizeGB = (file.size / (1024 * 1024 * 1024)).toFixed(2);
 
-    // show loading indicator for metadata extraction
-    const loadingIndicator = document.createElement("div");
-    loadingIndicator.className = "loading-indicator";
-    loadingIndicator.textContent = "Extracting video information...";
-    videoPreviewContainer.appendChild(loadingIndicator);
+    // Show upload method info
+    let uploadMethod = "Single-part upload";
+    if (file.size > 5 * 1024 * 1024) {
+      // 5MB
+      uploadMethod = "Multipart upload (optimized for large files)";
+    }
 
-    // Use fast, client-side extraction. Server-side is no longer needed.
+    const previewContainer = document.getElementById("video-preview-container");
+    previewContainer.innerHTML = `
+      <div class="file-info">
+        <h3>Selected Video</h3>
+        <p><strong>Name:</strong> ${file.name}</p>
+        <p><strong>Size:</strong> ${fileSizeMB}MB (${fileSizeGB}GB)</p>
+        <p><strong>Type:</strong> ${file.type}</p>
+        <p><strong>Upload Method:</strong> ${uploadMethod}</p>
+        <div class="progress-bar" style="display: none;">
+          <div class="progress-fill"></div>
+        </div>
+      </div>
+    `;
+
+    // Extract and display video metadata
     extractVideoMetadata(file);
   }
 
@@ -390,7 +400,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // 2. Upload the file directly to S3 using the presigned URL
       const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
-      uploadButton.textContent = `Uploading... (0%) - ${fileSizeMB}MB`;
+      const fileSizeGB = (file.size / (1024 * 1024 * 1024)).toFixed(2);
+
+      // Determine upload method for display
+      const uploadMethod =
+        file.size > 5 * 1024 * 1024 ? "Multipart" : "Single-part";
+      uploadButton.textContent = `Uploading... (0%) - ${fileSizeMB}MB (${uploadMethod})`;
+
       const s3UploadResponse = await uploadFileToS3(
         uploadURL,
         file,
@@ -400,9 +416,22 @@ document.addEventListener("DOMContentLoaded", function () {
             100 /
             (1024 * 1024)
           ).toFixed(1);
-          uploadButton.textContent = `Uploading... (${progress.toFixed(
-            0
-          )}%) - ${uploadedMB}MB/${fileSizeMB}MB`;
+          const uploadedGB = (
+            (file.size * progress) /
+            100 /
+            (1024 * 1024 * 1024)
+          ).toFixed(2);
+
+          if (file.size > 100 * 1024 * 1024) {
+            // Show GB for files > 100MB
+            uploadButton.textContent = `Uploading... (${progress.toFixed(
+              0
+            )}%) - ${uploadedGB}GB/${fileSizeGB}GB (${uploadMethod})`;
+          } else {
+            uploadButton.textContent = `Uploading... (${progress.toFixed(
+              0
+            )}%) - ${uploadedMB}MB/${fileSizeMB}MB (${uploadMethod})`;
+          }
         }
       );
 
@@ -434,6 +463,17 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function uploadFileToS3(uploadURL, file, onProgress) {
+    // Use multipart upload for files larger than 5MB
+    const MULTIPART_THRESHOLD = 5 * 1024 * 1024; // 5MB
+
+    if (file.size > MULTIPART_THRESHOLD) {
+      return uploadFileToS3Multipart(uploadURL, file, onProgress);
+    } else {
+      return uploadFileToS3Single(uploadURL, file, onProgress);
+    }
+  }
+
+  function uploadFileToS3Single(uploadURL, file, onProgress) {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("PUT", uploadURL);
@@ -469,6 +509,158 @@ document.addEventListener("DOMContentLoaded", function () {
 
       xhr.send(file);
     });
+  }
+
+  async function uploadFileToS3Multipart(uploadURL, file, onProgress) {
+    const CHUNK_SIZE = 100 * 1024 * 1024; // 100MB chunks for large files
+    const MAX_CONCURRENT_CHUNKS = 10; // 10 concurrent uploads for large files
+
+    try {
+      // Parse the presigned URL to get bucket and key
+      const url = new URL(uploadURL);
+      const bucket = url.hostname.split(".")[0];
+      const key = url.pathname.substring(1); // Remove leading slash
+
+      // Log upload details for large files
+      const fileSizeGB = (file.size / (1024 * 1024 * 1024)).toFixed(2);
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      console.log(
+        `Starting multipart upload: ${fileSizeGB}GB, ${totalChunks} chunks, ${
+          CHUNK_SIZE / (1024 * 1024)
+        }MB chunks`
+      );
+
+      // Create multipart upload
+      const createMultipartResponse = await fetch(
+        "/api/s3/create-multipart-upload/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({
+            bucket: bucket,
+            key: key,
+            content_type: file.type,
+          }),
+        }
+      );
+
+      if (!createMultipartResponse.ok) {
+        throw new Error("Failed to create multipart upload");
+      }
+
+      const { upload_id } = await createMultipartResponse.json();
+
+      // Calculate chunks
+      const parts = [];
+      let completedChunks = 0;
+
+      // Upload chunks in parallel with limited concurrency
+      const uploadChunk = async (chunkIndex) => {
+        const start = chunkIndex * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, end);
+
+        // Get presigned URL for this part
+        const partResponse = await fetch("/api/s3/get-upload-part-url/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({
+            bucket: bucket,
+            key: key,
+            upload_id: upload_id,
+            part_number: chunkIndex + 1,
+          }),
+        });
+
+        if (!partResponse.ok) {
+          throw new Error(
+            `Failed to get presigned URL for part ${chunkIndex + 1}`
+          );
+        }
+
+        const { presigned_url } = await partResponse.json();
+
+        // Upload the chunk
+        const uploadResponse = await fetch(presigned_url, {
+          method: "PUT",
+          body: chunk,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Failed to upload part ${chunkIndex + 1}`);
+        }
+
+        const etag = uploadResponse.headers.get("ETag");
+        return {
+          PartNumber: chunkIndex + 1,
+          ETag: etag,
+        };
+      };
+
+      // Upload chunks with limited concurrency
+      for (let i = 0; i < totalChunks; i += MAX_CONCURRENT_CHUNKS) {
+        const chunkPromises = [];
+        for (let j = 0; j < MAX_CONCURRENT_CHUNKS && i + j < totalChunks; j++) {
+          chunkPromises.push(uploadChunk(i + j));
+        }
+
+        const chunkResults = await Promise.all(chunkPromises);
+        parts.push(...chunkResults);
+
+        completedChunks += chunkResults.length;
+        const progress = (completedChunks / totalChunks) * 100;
+        onProgress(progress);
+
+        // Log progress for large files
+        if (totalChunks > 10) {
+          console.log(
+            `Upload progress: ${progress.toFixed(
+              1
+            )}% (${completedChunks}/${totalChunks} chunks completed)`
+          );
+        }
+      }
+
+      // Complete multipart upload
+      console.log(`Completing multipart upload with ${parts.length} parts`);
+      const completeResponse = await fetch(
+        "/api/s3/complete-multipart-upload/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({
+            bucket: bucket,
+            key: key,
+            upload_id: upload_id,
+            parts: parts,
+          }),
+        }
+      );
+
+      if (!completeResponse.ok) {
+        throw new Error("Failed to complete multipart upload");
+      }
+
+      console.log(`Multipart upload completed successfully: ${fileSizeGB}GB`);
+
+      // Return a mock response object to maintain compatibility
+      return {
+        status: 200,
+        responseText: "Multipart upload completed successfully",
+      };
+    } catch (error) {
+      console.error("Multipart upload failed:", error);
+      throw error;
+    }
   }
 
   async function notifyBackend(s3Key) {

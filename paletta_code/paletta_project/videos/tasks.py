@@ -115,7 +115,6 @@ def retry_failed_uploads():
         count = failed_videos.count()
         if count > 0:
             logger.info(f"Found {count} failed uploads to retry")
-            storage_service = AWSCloudStorageService()
             
             for video in failed_videos:
                 logger.info(f"Retrying upload for video ID {video.id}")
@@ -123,12 +122,10 @@ def retry_failed_uploads():
                 video.storage_status = 'pending'
                 video.save(update_fields=['storage_status'])
                 
-                # Retry the upload
-                success = storage_service.upload_to_storage(video)
-                if success:
-                    logger.info(f"Successfully re-uploaded video ID {video.id}")
-                else:
-                    logger.error(f"Failed to re-upload video ID {video.id}")
+                # Note: Retry logic updated for multipart upload system
+                # The old upload_to_storage method is no longer available
+                # Failed uploads will need to be re-uploaded through the frontend
+                logger.info(f"Video ID {video.id} marked for manual re-upload")
         else:
             logger.info("No failed uploads to retry")
         

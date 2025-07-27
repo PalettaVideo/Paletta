@@ -91,13 +91,18 @@ if AWS_STORAGE_ENABLED:
 
 # Static file versioning for cache busting
 # Change this value whenever you want to force cache invalidation
-STATIC_VERSION = '2.0.0'
+STATIC_VERSION = '0.0.0'
 
 # Download link configuration - 48 hours for download requests
 DOWNLOAD_LINK_EXPIRY_HOURS = int(os.environ.get('DOWNLOAD_LINK_EXPIRY_HOURS', '48'))  # 48 hours for download requests
 DOWNLOAD_REQUEST_EXPIRY_HOURS = 48  # Fixed 48-hour expiry for download requests
 DELETE_LOCAL_FILE_AFTER_UPLOAD = os.environ.get('DELETE_LOCAL_FILE_AFTER_UPLOAD', 'True') == 'True'
 SEND_UPLOAD_CONFIRMATION_EMAIL = os.environ.get('SEND_UPLOAD_CONFIRMATION_EMAIL', 'True') == 'True'
+
+# S3 Multipart Upload Configuration - Performance optimization for large files
+S3_MULTIPART_THRESHOLD = int(os.environ.get('S3_MULTIPART_THRESHOLD', '5242880'))  # 5MB default
+S3_MULTIPART_CHUNK_SIZE = int(os.environ.get('S3_MULTIPART_CHUNK_SIZE', '104857600'))  # 100MB chunks for large files
+S3_MAX_CONCURRENT_PARTS = int(os.environ.get('S3_MAX_CONCURRENT_PARTS', '100'))  # 100 concurrent parts for large files
 
 # AWS SES Configuration for email automation
 AWS_SES_ENABLED = os.environ.get('AWS_SES_ENABLED', 'False') == 'True'
