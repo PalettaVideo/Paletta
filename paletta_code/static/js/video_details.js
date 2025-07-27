@@ -117,9 +117,8 @@ document.addEventListener("DOMContentLoaded", function () {
    * Handle adding to cart
    */
   function handleAddToCart() {
-    // Use default resolution and price (no popup needed)
+    // Use default resolution (no popup needed)
     const resolution = "HD";
-    const price = "5.00";
 
     // Get video ID using the same approach as inside_category.js
     const videoId = getVideoId();
@@ -139,7 +138,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const formData = new URLSearchParams();
     formData.append("video_id", videoId);
     formData.append("resolution", resolution);
-    formData.append("price", price);
 
     // Send AJAX request to add to cart (correct endpoint)
     fetch("/api/orders/add-to-cart/", {
@@ -160,7 +158,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((data) => {
         if (data.success) {
           // Update client-side cart cache
-          updateCartCache(videoId, resolution, price);
+          updateCartCache(videoId, resolution);
 
           // Display success message
           const clipTitle = document.querySelector("h1").textContent;
@@ -176,8 +174,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       })
       .catch(() => {
-        // Try to update cache anyway for offline functionality
-        updateCartCache(videoId, resolution, price);
+        updateCartCache(videoId, resolution);
         showNotification("Added to local cart (offline mode)", "info");
       });
   }
@@ -281,7 +278,7 @@ document.addEventListener("DOMContentLoaded", function () {
    * Update the client-side cart cache
    * Taking the best of both implementations
    */
-  function updateCartCache(videoId, resolution, price) {
+  function updateCartCache(videoId, resolution) {
     try {
       // Get current cart from localStorage
       const cart = JSON.parse(localStorage.getItem(getCartStorageKey())) || [];
@@ -300,7 +297,6 @@ document.addEventListener("DOMContentLoaded", function () {
           ...cart[existingItemIndex],
           ...videoDetails,
           resolution: resolution,
-          price: price,
           updated: new Date().toISOString(),
           quantity: (cart[existingItemIndex].quantity || 1) + 1,
         };
@@ -310,7 +306,6 @@ document.addEventListener("DOMContentLoaded", function () {
           id: videoId,
           ...videoDetails,
           resolution: resolution,
-          price: price,
           added: new Date().toISOString(),
           quantity: 1,
         });
