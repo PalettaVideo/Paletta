@@ -11,4 +11,5 @@ class OrdersConfig(AppConfig):
     """
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'orders'
-    verbose_name = 'Orders' 
+    verbose_name = 'Orders'
+    path = '/home/ssm-user/Paletta/paletta_code/paletta_project/orders' 

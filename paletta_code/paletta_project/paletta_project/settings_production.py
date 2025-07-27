@@ -59,6 +59,31 @@ if not API_GATEWAY_URL:
     # In production, we require the API Gateway URL to be set.
     raise ValueError("API_GATEWAY_URL environment variable not set.")
 
+# Override INSTALLED_APPS to use proper app configurations
+INSTALLED_APPS = [
+    # Local apps with proper configurations
+    'accounts.apps.AccountsConfig',
+    'videos.apps.VideosConfig',
+    'libraries.apps.LibrariesConfig',
+    'orders.apps.OrdersConfig',
+    
+    # Django built-in apps
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    
+    # Third-party apps
+    'rest_framework',
+    'rest_framework.authtoken',
+
+    # AWS S3 and storage
+    'storages',
+    'django_ses',
+]
+
 # AWS S3 Storage Configuration
 AWS_STORAGE_ENABLED = True
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
