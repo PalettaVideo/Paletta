@@ -33,9 +33,13 @@
     </aside>
     <main class="content">
         <section>
-            <h1>Manage Administrators <button id="addAdmin">Add</button></h1>
+            <h1>Manage Administrators 
+                {% if user.role == 'admin' or user.role == 'owner' or user.is_superuser %}
+                <button id="addAdmin">Add</button>
+                {% endif %}
+            </h1>
             
-            {% if not user_owns_libraries %}
+            {% if not user_owns_libraries and not user.role == 'admin' and not user.role == 'owner' and not user.is_superuser %}
             <div class="no-libraries-message" style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
                 <h3 style="color: #6c757d; margin-bottom: 10px;">No Libraries Owned</h3>
                 <p style="color: #6c757d; margin: 0;">You do not own any libraries currently. Reach out to us to setup a plan to store your video content.</p>
@@ -57,7 +61,9 @@
                                 N/A
                             {% endif %}
                         </p>
+                        {% if user.role == 'admin' or user.role == 'owner' or user.is_superuser %}
                         <button class="revoke" data-admin-id="{{ admin.id }}">Revoke Admin Privileges</button>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 {% else %}
@@ -67,34 +73,36 @@
             {% endif %}
         </section>
     </main>
-</div>
 
-<!-- Popup Modal -->
-<div id="adminModal" class="modal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2>Add an Administrator</h2>
-        <form id="addAdminForm" method="post">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="adminEmail">Email</label>
-                <input type="email" id="adminEmail" name="email" placeholder="Enter registered user's email" required>
-                <span class="error-message" id="emailError"></span>
-            </div>
-            <div id="confirmationSection" style="display: none;" class="confirmation-section">
-                <p id="confirmationMessage"></p>
-                <div class="confirmation-buttons">
-                    <button type="button" id="confirmYes" class="btn-primary">Yes</button>
-                    <button type="button" id="confirmNo" class="btn-cancel">No</button>
+    {% if user.role == 'admin' or user.role == 'owner' or user.is_superuser %}
+    <!-- Popup Modal -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add an Administrator</h2>
+            <form id="addAdminForm" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="adminEmail">Email</label>
+                    <input type="email" id="adminEmail" name="email" placeholder="Enter registered user's email" required>
+                    <span class="error-message" id="emailError"></span>
                 </div>
-            </div>
-            <div class="form-actions" id="initialActions">
-                <button type="button" id="checkEmail" class="btn-primary">Check Email</button>
-                <button type="button" class="btn-cancel close-btn">Cancel</button>
-            </div>
-        </form>
+                <div id="confirmationSection" style="display: none;" class="confirmation-section">
+                    <p id="confirmationMessage"></p>
+                    <div class="confirmation-buttons">
+                        <button type="button" id="confirmYes" class="btn-primary">Yes</button>
+                        <button type="button" id="confirmNo" class="btn-cancel">No</button>
+                    </div>
+                </div>
+                <div class="form-actions" id="initialActions">
+                    <button type="button" id="checkEmail" class="btn-primary">Check Email</button>
+                    <button type="button" class="btn-cancel close-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>      
+    {% endif %}
+</div>
 
 {% include "html_reusables/footer_reusable.html" %}
 </body>
