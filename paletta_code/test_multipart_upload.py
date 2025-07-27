@@ -5,13 +5,20 @@ This script compares single-part vs multipart upload performance for large files
 """
 
 import os
+import sys
 import time
-import tempfile
 import logging
-from django.conf import settings
-from django.test import TestCase
-from videos.services import AWSCloudStorageService
-from videos.models import Video, User, Library, ContentType
+
+# Add Django project path to sys.path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'paletta_project'))
+
+# Setup Django environment
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'paletta_project.settings_production')
+
+import django
+django.setup()
+
+from paletta_project.videos.services import AWSCloudStorageService
 from django.core.files.base import ContentFile
 
 # Configure logging
