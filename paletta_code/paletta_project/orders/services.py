@@ -239,8 +239,9 @@ class DownloadRequestService:
               'title': clean_text(req.video.title),
               'description': clean_text(req.video.description or ""),
               'duration_formatted': clean_text(req.video.duration_formatted),
-              'file_size': req.video.file_size,  # Keep numeric as-is
+              'file_size': req.video.file_size, 
               'format': clean_text(req.video.format or ""),
+              'download_url': req.download_url,
               'content_type': None
           }
           
@@ -402,6 +403,7 @@ Please review this request in the admin panel.
         'total_videos': len(download_requests),
         'expiry_hours': 48,  # Fixed 48-hour expiry
         'support_email': 'support@paletta.io',
+        'request_date': timezone.now(),
       }
       
       # Add each video's information
@@ -420,12 +422,12 @@ Please review this request in the admin panel.
       html_message = render_to_string('emails/manager_download_request.html', context)
       plain_message = strip_tags(html_message)
       
-      # Send email
+      # Send email to manager with download links
       send_mail(
-        subject=f'Your Download Links are Ready - {len(download_requests)} Videos',
+        subject=f'Download Links Generated - {len(download_requests)} Videos from {download_requests[0].user.email}',
         message=plain_message,
         from_email=self.sender_email,
-        recipient_list=[download_requests[0].email],
+        recipient_list=[self.manager_email],
         html_message=html_message,
         fail_silently=False,
       )
@@ -499,8 +501,10 @@ Please review this request in the admin panel.
       for download_request in download_requests:
         try:
           # Generate download link using the existing AWS service
+          logger.info(f"Generating download link for video {download_request.video.id} (title: {download_request.video.title})")
           download_url = storage_service.generate_download_link(download_request.video)
           if download_url:
+            logger.info(f"Successfully generated download URL for video {download_request.video.id}: {download_url[:50]}...")
             # Update request with download URL
             download_request.download_url = download_url
             download_request.status = 'completed'
@@ -510,28 +514,25 @@ Please review this request in the admin panel.
             
             successful_requests.append(download_request)
           else:
+            logger.error(f"Failed to generate download URL for video {download_request.video.id}")
             failed_requests.append(download_request)
         except Exception as e:
           logger.error(f"Failed to generate download link for request {download_request.id}: {str(e)}")
           failed_requests.append(download_request)
       
-      # Send download email to user with all successful links
-      if successful_requests:
-        email_sent = self.send_bulk_download_email(successful_requests)
-        if not email_sent:
-          logger.error(f"Failed to send bulk download email for {len(successful_requests)} requests")
-          # Mark as failed
-          for request in successful_requests:
-            request.status = 'failed'
-            request.email_error = 'Failed to send download email'
-            request.save(update_fields=['status', 'email_error'])
-          return False
-      
-      # Send manager notification for all requests (including failed ones for review)
+      # Send manager notification with download links for all requests
+      logger.info(f"Sending manager notification for {len(download_requests)} requests")
       notification_sent = self.send_manager_notification(download_requests)
       if not notification_sent:
-        logger.warning(f"Failed to send manager notification for {len(download_requests)} requests")
-        # Don't fail the whole process if manager notification fails
+        logger.error(f"Failed to send manager notification for {len(download_requests)} requests")
+        # Mark all as failed
+        for download_request in download_requests:
+          download_request.status = 'failed'
+          download_request.email_error = 'Failed to notify manager'
+          download_request.save(update_fields=['status', 'email_error'])
+        return False
+      else:
+        logger.info(f"Successfully sent manager notification for {len(download_requests)} requests")
       
       logger.info(f"Successfully processed bulk download request: {len(successful_requests)} successful, {len(failed_requests)} failed")
       return len(successful_requests) > 0
