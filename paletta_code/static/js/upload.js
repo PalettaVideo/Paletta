@@ -138,16 +138,14 @@ document.addEventListener("DOMContentLoaded", function () {
     previewContainer.innerHTML = `
       <div class="file-info">
         <h3>Selected Video</h3>
-        <p><strong>Name:</strong> ${file.name}</p>
-        <p><strong>Size:</strong> ${fileSizeMB}MB (${fileSizeGB}GB)</p>
-        <p><strong>Type:</strong> ${file.type}</p>
-        <p><strong>Upload Method:</strong> ${uploadMethod}</p>
         <div class="video-preview">
           <video controls preload="metadata" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
             <source src="${URL.createObjectURL(file)}" type="${file.type}">
             Your browser does not support the video tag.
           </video>
         </div>
+        <p><strong>Name:</strong> ${file.name}</p>
+
         <div class="progress-bar" style="display: none;">
           <div class="progress-fill"></div>
         </div>
