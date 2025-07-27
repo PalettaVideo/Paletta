@@ -35,9 +35,9 @@
               {% for detail in order_details %}
               <div class="cart-item" data-video-id="{{ detail.video.id }}">
                 {% if detail.video.thumbnail %}
-                  <img src="{{ detail.video.thumbnail.url }}" alt="{{ detail.video.title }}">
+                  <img src="{{ detail.video.thumbnail.url }}" alt="{{ detail.video.title }}" style="max-width: 200px; max-height: 150px; object-fit: cover; border-radius: 8px;">
                 {% else %}
-                  <img src="{% static 'picture/default_thumbnail.png' %}" alt="{{ detail.video.title }}">
+                  <img src="{% static 'picture/default_thumbnail.png' %}" alt="{{ detail.video.title }}" style="max-width: 200px; max-height: 150px; object-fit: cover; border-radius: 8px;">
                 {% endif %}
                 
                 <div class="cart-item-details">

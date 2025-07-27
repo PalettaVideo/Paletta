@@ -139,7 +139,7 @@ document.addEventListener("DOMContentLoaded", function () {
       <div class="file-info">
         <h3>Selected Video</h3>
         <div class="video-preview">
-          <video controls preload="metadata" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+          <video controls preload="metadata" style="max-width: 100%; max-height: 350px; border-radius: 8px;">
             <source src="${URL.createObjectURL(file)}" type="${file.type}">
             Your browser does not support the video tag.
           </video>
@@ -406,9 +406,13 @@ document.addEventListener("DOMContentLoaded", function () {
       const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
       const fileSizeGB = (file.size / (1024 * 1024 * 1024)).toFixed(2);
 
-      // Determine upload method for display
+      // Determine upload method and calculate chunks for multipart
       const uploadMethod =
         file.size > 5 * 1024 * 1024 ? "Multipart" : "Single-part";
+      const CHUNK_SIZE = 100 * 1024 * 1024; // 100MB chunks
+      const totalChunks =
+        file.size > 5 * 1024 * 1024 ? Math.ceil(file.size / CHUNK_SIZE) : 1;
+
       uploadButton.textContent = `Uploading... (0%) - ${fileSizeMB}MB (${uploadMethod})`;
 
       const s3UploadResponse = await uploadFileToS3(
@@ -426,15 +430,20 @@ document.addEventListener("DOMContentLoaded", function () {
             (1024 * 1024 * 1024)
           ).toFixed(2);
 
+          // Show chunk progress for multipart uploads
+          let progressText = `Uploading... (${progress.toFixed(0)}%)`;
+
+          if (file.size > 5 * 1024 * 1024) {
+            // Multipart upload - show chunk progress
+            const completedChunks = Math.floor((progress / 100) * totalChunks);
+            progressText += ` - Chunk ${completedChunks}/${totalChunks}`;
+          }
+
           if (file.size > 100 * 1024 * 1024) {
             // Show GB for files > 100MB
-            uploadButton.textContent = `Uploading... (${progress.toFixed(
-              0
-            )}%) - ${uploadedGB}GB/${fileSizeGB}GB (${uploadMethod})`;
+            uploadButton.textContent = `${progressText} - ${uploadedGB}GB/${fileSizeGB}GB (${uploadMethod})`;
           } else {
-            uploadButton.textContent = `Uploading... (${progress.toFixed(
-              0
-            )}%) - ${uploadedMB}MB/${fileSizeMB}MB (${uploadMethod})`;
+            uploadButton.textContent = `${progressText} - ${uploadedMB}MB/${fileSizeMB}MB (${uploadMethod})`;
           }
         }
       );

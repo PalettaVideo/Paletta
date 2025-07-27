@@ -27,10 +27,13 @@ document.addEventListener("DOMContentLoaded", function () {
     // Calculate totals
     let subtotal = 0;
     cartItems.forEach((item) => {
-      const priceText = item.querySelector(".cart-item-price").textContent;
-      const price = parseFloat(priceText.replace("£", ""));
-      if (!isNaN(price)) {
-        subtotal += price;
+      const priceElement = item.querySelector(".cart-item-price");
+      if (priceElement) {
+        const priceText = priceElement.textContent;
+        const price = parseFloat(priceText.replace("£", ""));
+        if (!isNaN(price)) {
+          subtotal += price;
+        }
       }
     });
 

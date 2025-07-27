@@ -380,6 +380,64 @@ Please review this request in the admin panel.
     logger.warning(f"send_download_email called for request {download_request.id} - redirecting to manager notification")
     return self.send_manager_notification(download_request)
 
+  def send_bulk_download_email(self, download_requests):
+    """
+    BACKEND-READY: Send bulk download email with multiple presigned URLs to user.
+    MAPPED TO: Bulk download request email automation
+    USED BY: Cart checkout flow, bulk download operations
+    
+    Sends email with multiple 48-hour download links and instructions.
+    Includes video metadata and expiry information for all videos.
+    Required fields: download_requests (list of DownloadRequest instances)
+    """
+    try:
+      from django.core.mail import send_mail
+      from django.template.loader import render_to_string
+      from django.utils.html import strip_tags
+      
+      # Prepare email context with multiple videos
+      context = {
+        'user_name': download_requests[0].user.get_full_name() or download_requests[0].user.email,
+        'videos': [],
+        'total_videos': len(download_requests),
+        'expiry_hours': 48,  # Fixed 48-hour expiry
+        'support_email': 'support@paletta.io',
+      }
+      
+      # Add each video's information
+      for download_request in download_requests:
+        video_info = {
+          'title': download_request.video.title,
+          'download_url': download_request.download_url,
+          'expiry_date': download_request.expiry_date,
+          'library_name': download_request.video.library.name if download_request.video.library else None,
+          'duration': download_request.video.duration_formatted if hasattr(download_request.video, 'duration_formatted') else 'Unknown',
+          'file_size': download_request.video.file_size,
+        }
+        context['videos'].append(video_info)
+      
+      # Render email templates using the existing manager template
+      html_message = render_to_string('emails/manager_download_request.html', context)
+      plain_message = strip_tags(html_message)
+      
+      # Send email
+      send_mail(
+        subject=f'Your Download Links are Ready - {len(download_requests)} Videos',
+        message=plain_message,
+        from_email=self.sender_email,
+        recipient_list=[download_requests[0].email],
+        html_message=html_message,
+        fail_silently=False,
+      )
+      
+      logger.info(f"Bulk download email sent successfully for {len(download_requests)} videos")
+      return True
+      
+    except Exception as e:
+      error_message = str(e)
+      logger.error(f"Failed to send bulk download email for {len(download_requests)} videos: {error_message}")
+      return False
+
   def process_download_request(self, download_request):
     """
     BACKEND-READY: Complete download request processing workflow.
@@ -415,12 +473,12 @@ Please review this request in the admin panel.
 
   def process_bulk_download_request(self, download_requests):
     """
-    BACKEND-READY: Process multiple download requests as a single manager notification.
+    BACKEND-READY: Process multiple download requests with download links.
     MAPPED TO: Bulk download request processing
     USED BY: Cart checkout flow, bulk download operations
     
-    Sends a single manager notification email with all requested videos.
-    More efficient than individual notifications for cart-based workflows.
+    Generates download links for all requests and sends them to the user.
+    Also sends manager notification for review.
     Required fields: download_requests (list of DownloadRequest instances)
     """
     if not download_requests:
@@ -430,14 +488,49 @@ Please review this request in the admin panel.
     logger.info(f"Processing bulk download request with {len(download_requests)} videos")
     
     try:
-      # Send single manager notification for all requests
+      # Generate download links for all requests
+      successful_requests = []
+      failed_requests = []
+      
+      for download_request in download_requests:
+        try:
+          # Generate presigned URL
+          download_url = self.generate_presigned_url(download_request)
+          if download_url:
+            # Update request with download URL
+            download_request.download_url = download_url
+            download_request.status = 'completed'
+            download_request.email_sent = True
+            download_request.email_sent_at = timezone.now()
+            download_request.save(update_fields=['download_url', 'status', 'email_sent', 'email_sent_at'])
+            
+            successful_requests.append(download_request)
+          else:
+            failed_requests.append(download_request)
+        except Exception as e:
+          logger.error(f"Failed to generate download link for request {download_request.id}: {str(e)}")
+          failed_requests.append(download_request)
+      
+      # Send download email to user with all successful links
+      if successful_requests:
+        email_sent = self.send_bulk_download_email(successful_requests)
+        if not email_sent:
+          logger.error(f"Failed to send bulk download email for {len(successful_requests)} requests")
+          # Mark as failed
+          for request in successful_requests:
+            request.status = 'failed'
+            request.email_error = 'Failed to send download email'
+            request.save(update_fields=['status', 'email_error'])
+          return False
+      
+      # Send manager notification for all requests (including failed ones for review)
       notification_sent = self.send_manager_notification(download_requests)
       if not notification_sent:
-        logger.error(f"Failed to send bulk manager notification for {len(download_requests)} requests")
-        return False
+        logger.warning(f"Failed to send manager notification for {len(download_requests)} requests")
+        # Don't fail the whole process if manager notification fails
       
-      logger.info(f"Successfully processed bulk download request with {len(download_requests)} videos - manager notified")
-      return True
+      logger.info(f"Successfully processed bulk download request: {len(successful_requests)} successful, {len(failed_requests)} failed")
+      return len(successful_requests) > 0
         
     except Exception as e:
       error_message = str(e)

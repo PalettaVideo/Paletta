@@ -215,25 +215,56 @@
 
         <div class="action-needed">
             <h4>Action Required</h4>
-            <p><strong>Customer is waiting for download links!</strong></p>
+            <p><strong>Customer has received download links!</strong></p>
             <p>Please review this request and determine the appropriate monetization strategy.</p>
-            <p>The customer has <strong>NOT</strong> received any download links yet - you have full control over the process.</p>
+            <p>The customer has <strong>ALREADY</strong> received 48-hour download links - you can still contact them for monetization.</p>
+        </div>
+
+        <div style="background-color: #e8f4fd; padding: 20px; border-radius: 6px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #2c3e50; font-size: 16px;">Download Links Sent to Customer:</h3>
+            {% for video in videos %}
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 10px 0; border-left: 4px solid #28a745;">
+                <div style="font-weight: 600; color: #2c3e50; margin-bottom: 8px;">{{ video.title }}</div>
+                <div style="color: #6c757d; font-size: 14px;">
+                    <span style="display: inline-block; margin-right: 15px;"><strong>ID:</strong> {{ video.id }}</span>
+                    <span style="display: inline-block; margin-right: 15px;"><strong>Duration:</strong> {{ video.duration_formatted|default:"Unknown" }}</span>
+                    <span style="display: inline-block; margin-right: 15px;"><strong>Size:</strong> {{ video.file_size|filesizeformat|default:"Unknown" }}</span>
+                    {% if video.content_type %}
+                    <span style="display: inline-block; margin-right: 15px;"><strong>Category:</strong> {{ video.content_type.display_name }}</span>
+                    {% endif %}
+                </div>
+                <div style="margin-top: 10px;">
+                    <a href="{{ video.download_url }}" style="display: inline-block; background-color: #28a745; color: #ffffff; text-decoration: none; padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 600;" target="_blank">
+                        Download Link (48h)
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="background-color: #fff3cd; padding: 20px; border-radius: 6px; margin: 20px 0;">
+            <h4 style="margin-top: 0; color: #856404;">Download Link Details:</h4>
+            <ul style="margin: 10px 0; padding-left: 20px; color: #856404;">
+                <li><strong>Expiry:</strong> 48 hours from request time</li>
+                <li><strong>Access:</strong> Direct S3 download links</li>
+                <li><strong>Security:</strong> Presigned URLs with time-limited access</li>
+                <li><strong>Customer Email:</strong> {{ customer_email }}</li>
+            </ul>
         </div>
 
         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0;">
             <h3 style="margin-top: 0; color: #2c3e50; font-size: 16px;">Next Steps:</h3>
             <ul style="margin: 10px 0; padding-left: 20px;">
                 <li><strong>Review customer details</strong> and video selection</li>
-                <li><strong>Determine pricing strategy</strong> for this download request</li>
                 <li><strong>Contact customer directly</strong> to discuss payment/licensing terms</li>
-                <li><strong>Generate download links manually</strong> once monetization is agreed upon</li>
+                <li><strong>Monitor download activity</strong> through admin panel</li>
             </ul>
         </div>
 
         <div class="footer">
             <p>This is an automated notification from the Paletta video request system.</p>
             <p>Generated at {{ request_date|date:"F j, Y" }} {{ request_date|time:"g:i A" }}</p>
-            <p><strong>Important:</strong> No download links have been sent to the customer.</p>
+            <p><strong>Status:</strong> Download links have been sent to the customer.</p>
         </div>
     </div>
 </body>
