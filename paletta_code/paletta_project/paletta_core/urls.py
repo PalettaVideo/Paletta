@@ -23,7 +23,7 @@ from accounts.views.signup import SignupView
 from accounts.views.forgot_password import ForgotPasswordView
 from accounts.views.home_view import HomeView, LogoutView, AboutUsView, ContactUsView, QAndAView, TermsConditionsView, PrivacyView
 from accounts.views.update_profile import ProfileView, CollectionView, ProfileUpdateView
-from accounts.views.admin_view import ManageAdministratorsView
+from accounts.views.admin_view import ManageAdministratorsView, PasswordResetManagementView
 from videos.views.clip_store_view import CategoryClipView
 from videos.views.video_detail_view import VideoDetailView
 from videos.views.video_management_views import VideoEditView, VideoDeleteView
@@ -102,6 +102,7 @@ urlpatterns = [
    
     # admin management routes
     path('admins/manage/', login_required(ManageAdministratorsView.as_view()), name='manage_administrators'),
+    path('admin/password-resets/', login_required(PasswordResetManagementView.as_view()), name='password_reset_management'),
     # contributor application route - TODO: discuss with the team if we need this! - currently unused
     path('contributor/apply/', TemplateView.as_view(template_name='contributor_form.html'), name='contributor_apply'),
     # health check endpoint
