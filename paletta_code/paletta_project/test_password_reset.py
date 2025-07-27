@@ -150,14 +150,25 @@ def test_forgot_password_view():
     """Test the forgot password view functionality."""
     print("\nTesting Forgot Password View...")
     
-    from django.test import RequestFactory
+    from django.test import RequestFactory, TestCase
+    from django.contrib.messages.middleware import MessageMiddleware
+    from django.contrib.sessions.middleware import SessionMiddleware
     from accounts.views.forgot_password import ForgotPasswordView
     
-    # Create a mock request
+    # Create a mock request with proper middleware
     factory = RequestFactory()
     
     # Test GET request
     request = factory.get('/forgot-password/')
+    
+    # Add middleware manually for testing
+    session_middleware = SessionMiddleware(lambda req: None)
+    message_middleware = MessageMiddleware(lambda req: None)
+    
+    # Apply middleware to request
+    session_middleware.process_request(request)
+    message_middleware.process_request(request)
+    
     view = ForgotPasswordView()
     
     try:
@@ -172,6 +183,10 @@ def test_forgot_password_view():
     if test_user:
         request = factory.post('/forgot-password/', {'email': test_user.email})
         
+        # Apply middleware to request
+        session_middleware.process_request(request)
+        message_middleware.process_request(request)
+        
         try:
             response = view.post(request)
             print("POST request with valid email works")
@@ -181,6 +196,10 @@ def test_forgot_password_view():
     
     # Test POST request with invalid email
     request = factory.post('/forgot-password/', {'email': 'nonexistent@example.com'})
+    
+    # Apply middleware to request
+    session_middleware.process_request(request)
+    message_middleware.process_request(request)
     
     try:
         response = view.post(request)
