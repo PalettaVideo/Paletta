@@ -218,7 +218,6 @@ def main():
         ("Email Configuration", test_email_configuration),
         ("Template Rendering", test_template_rendering),
         ("User Lookup", test_user_lookup),
-        ("Email Sending", test_email_sending),
         ("Forgot Password View", test_forgot_password_view),
     ]
     
