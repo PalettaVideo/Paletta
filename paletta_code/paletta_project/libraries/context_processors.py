@@ -24,7 +24,12 @@ def library_context(request):
             user_role = 'contributor'
         
         context['user_role'] = user_role
+        
+        # Check if user owns any libraries (for sidebar admin buttons)
+        user_owns_libraries = request.user.owned_libraries.filter(is_active=True).exists()
+        context['user_owns_libraries'] = user_owns_libraries
     else:
         context['user_role'] = 'user'  # For unauthenticated users
+        context['user_owns_libraries'] = False
     
     return context 
