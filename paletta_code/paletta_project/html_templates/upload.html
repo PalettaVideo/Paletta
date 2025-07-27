@@ -28,6 +28,8 @@
 
 <body>
     {% include "html_reusables/header_reusable.html" %}
+    
+    {% if user.role == 'admin' or user.role == 'owner' or user.is_superuser %}
     <div class="layout">
         <aside class="sidebar">
             <ul>
@@ -139,16 +141,26 @@
           </form>
         </main>
     </div>
-</body>
 
-<!-- Modal for upload limit warning -->
-<div id="upload-limit-modal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <span class="close-button">&times;</span>
-        <h2>Upload Limit Exceeded</h2>
-        <p id="modal-message"></p>
+    <!-- Modal for upload limit warning -->
+    <div id="upload-limit-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Upload Limit Exceeded</h2>
+            <p id="modal-message"></p>
+        </div>
     </div>
-</div>
+    {% else %}
+    <div class="layout">
+        <main class="content">
+            <div class="no-upload-access" style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 40px; margin: 40px; text-align: center;">
+                <h2 style="color: #6c757d; margin-bottom: 20px;">Upload Access Restricted</h2>
+                <p style="color: #6c757d; margin: 0; font-size: 18px;">Only Admin level users can upload videos to the platform.</p>
+            </div>
+        </main>
+    </div>
+    {% endif %}
+</body>
 
 {% include "html_reusables/footer_reusable.html" %}
 
