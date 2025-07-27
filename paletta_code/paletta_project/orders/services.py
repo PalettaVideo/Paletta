@@ -409,7 +409,7 @@ Please review this request in the admin panel.
         video_info = {
           'title': download_request.video.title,
           'download_url': download_request.download_url,
-          'expiry_date': download_request.expiry_date,
+          'expiry_date': download_request.video.download_link_expiry,  # Use video's download link expiry
           'library_name': download_request.video.library.name if download_request.video.library else None,
           'duration': download_request.video.duration_formatted if hasattr(download_request.video, 'duration_formatted') else 'Unknown',
           'file_size': download_request.video.file_size,
@@ -488,14 +488,18 @@ Please review this request in the admin panel.
     logger.info(f"Processing bulk download request with {len(download_requests)} videos")
     
     try:
+      # Import the AWS storage service for download link generation
+      from videos.services import AWSCloudStorageService
+      storage_service = AWSCloudStorageService()
+      
       # Generate download links for all requests
       successful_requests = []
       failed_requests = []
       
       for download_request in download_requests:
         try:
-          # Generate presigned URL
-          download_url = self.generate_presigned_url(download_request)
+          # Generate download link using the existing AWS service
+          download_url = storage_service.generate_download_link(download_request.video)
           if download_url:
             # Update request with download URL
             download_request.download_url = download_url
