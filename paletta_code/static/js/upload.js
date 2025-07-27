@@ -149,6 +149,9 @@ document.addEventListener("DOMContentLoaded", function () {
         <div class="progress-bar" style="display: none;">
           <div class="progress-fill"></div>
         </div>
+        <div class="upload-progress" style="display: none;">
+          <div class="progress-text">0%</div>
+        </div>
       </div>
     `;
 
@@ -415,6 +418,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
       uploadButton.textContent = `Uploading... (0%) - ${fileSizeMB}MB (${uploadMethod})`;
 
+      // Show progress bar
+      const progressBar = document.querySelector(".progress-bar");
+      const progressFill = document.querySelector(".progress-fill");
+      const uploadProgress = document.querySelector(".upload-progress");
+      const progressTextElement = document.querySelector(".progress-text");
+
+      if (progressBar && progressFill) {
+        progressBar.style.display = "block";
+        progressFill.style.width = "0%";
+      }
+
+      if (uploadProgress && progressTextElement) {
+        uploadProgress.style.display = "block";
+        progressTextElement.textContent = "0%";
+      }
+
       const s3UploadResponse = await uploadFileToS3(
         uploadURL,
         file,
@@ -445,6 +464,24 @@ document.addEventListener("DOMContentLoaded", function () {
           } else {
             uploadButton.textContent = `${progressText} - ${uploadedMB}MB/${fileSizeMB}MB (${uploadMethod})`;
           }
+
+          // Update progress bar
+          const progressBar = document.querySelector(".progress-bar");
+          const progressFill = document.querySelector(".progress-fill");
+          const uploadProgress = document.querySelector(".upload-progress");
+          const progressTextElement = document.querySelector(".progress-text");
+
+          if (progressBar && progressFill) {
+            progressBar.style.display = "block";
+            progressFill.style.width = `${progress}%`;
+          }
+
+          if (uploadProgress && progressTextElement) {
+            uploadProgress.style.display = "block";
+            progressTextElement.textContent = `${progress.toFixed(0)}%`;
+          }
+
+          console.log(`Button text updated: ${uploadButton.textContent}`);
         }
       );
 
@@ -500,12 +537,14 @@ document.addEventListener("DOMContentLoaded", function () {
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
           const progress = (event.loaded / event.total) * 100;
+          console.log(`Single-part progress: ${progress.toFixed(1)}%`);
           onProgress(progress);
         }
       };
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
+          console.log("Single-part upload completed successfully");
           resolve(xhr);
         } else {
           reject(new Error(`Upload failed with status: ${xhr.status}`));
@@ -609,8 +648,15 @@ document.addEventListener("DOMContentLoaded", function () {
             if (event.lengthComputable) {
               // Calculate progress for this specific chunk
               const chunkProgress = (event.loaded / event.total) * 100;
+              // Calculate overall progress: (completed chunks + current chunk progress) / total chunks
+              const completedChunks = chunkIndex;
               const overallProgress =
-                ((chunkIndex + chunkProgress / 100) / totalChunks) * 100;
+                ((completedChunks + chunkProgress / 100) / totalChunks) * 100;
+              console.log(
+                `Chunk ${chunkIndex + 1} progress: ${chunkProgress.toFixed(
+                  1
+                )}%, Overall: ${overallProgress.toFixed(1)}%`
+              );
               onProgress(overallProgress);
             }
           };
@@ -618,6 +664,7 @@ document.addEventListener("DOMContentLoaded", function () {
           xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
               const etag = xhr.getResponseHeader("ETag");
+              console.log(`Chunk ${chunkIndex + 1} completed successfully`);
               resolve({
                 PartNumber: chunkIndex + 1,
                 ETag: etag,
@@ -647,14 +694,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         completedChunks += chunkResults.length;
         const progress = (completedChunks / totalChunks) * 100;
-        onProgress(progress);
 
-        // Log progress for large files
-        console.log(
-          `Upload progress: ${progress.toFixed(
-            1
-          )}% (${completedChunks}/${totalChunks} chunks completed)`
-        );
+        onProgress(progress);
       }
 
       // Complete multipart upload

@@ -108,6 +108,10 @@ class DownloadRequest(models.Model):
     s3_key = models.CharField(max_length=500, blank=True, help_text="S3 key for the video file")
     aws_request_id = models.CharField(max_length=100, blank=True, help_text="AWS request ID for tracking")
     
+    # Bulk request tracking
+    bulk_request_id = models.CharField(max_length=100, blank=True, help_text="ID to group related bulk download requests")
+    is_bulk_request = models.BooleanField(default=False, help_text="Whether this request is part of a bulk request")
+    
     class Meta:
         ordering = ['-request_date']
         indexes = [

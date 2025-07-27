@@ -78,26 +78,34 @@ class OrdersListView(LoginRequiredMixin, ListView):
         ).select_related('video', 'video__library').order_by('-request_date')
 
     def get_context_data(self, **kwargs):
-        """Group download requests by date and add library context."""
+        """Group download requests by bulk request ID and add library context."""
         context = super().get_context_data(**kwargs)
-        
-        # Group download requests by date (same day requests are grouped together)
-        from itertools import groupby
-        from operator import attrgetter
         
         download_requests = context['download_requests']
         grouped_requests = {}
         
         for request in download_requests:
-            # Create a key based on date and user for grouping
-            date_key = request.request_date.strftime('%Y-%m-%d')
-            if date_key not in grouped_requests:
-                grouped_requests[date_key] = {
+            if request.is_bulk_request and request.bulk_request_id:
+                # Group bulk requests by bulk_request_id
+                if request.bulk_request_id not in grouped_requests:
+                    grouped_requests[request.bulk_request_id] = {
+                        'bulk_id': request.bulk_request_id,
+                        'date': request.request_date,
+                        'requests': [],
+                        'is_bulk': True,
+                        'order_number': len(grouped_requests) + 1
+                    }
+                grouped_requests[request.bulk_request_id]['requests'].append(request)
+            else:
+                # Individual requests get their own group
+                individual_key = f"individual_{request.id}"
+                grouped_requests[individual_key] = {
+                    'bulk_id': None,
                     'date': request.request_date,
-                    'requests': [],
-                    'order_number': len(grouped_requests) + 1  # Simple order numbering
+                    'requests': [request],
+                    'is_bulk': False,
+                    'order_number': len(grouped_requests) + 1
                 }
-            grouped_requests[date_key]['requests'].append(request)
         
         context['grouped_requests'] = grouped_requests
         
@@ -643,6 +651,10 @@ def bulk_download_request(request):
         results = []
         download_requests = []
         
+        # Generate bulk request ID for grouping
+        import uuid
+        bulk_request_id = str(uuid.uuid4())
+        
         # First pass: create download requests for valid videos
         for video_id in video_ids:
             try:
@@ -673,6 +685,11 @@ def bulk_download_request(request):
                     video=video,
                     email=email
                 )
+                
+                # Mark as bulk request
+                download_request.is_bulk_request = True
+                download_request.bulk_request_id = bulk_request_id
+                download_request.save(update_fields=['is_bulk_request', 'bulk_request_id'])
                 
                 download_requests.append(download_request)
                 results.append({

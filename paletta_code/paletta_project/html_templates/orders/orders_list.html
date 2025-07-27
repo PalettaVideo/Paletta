@@ -40,10 +40,14 @@
                 
                 {% if grouped_requests %}
                     <div class="orders-list">
-                        {% for date_key, group in grouped_requests.items %}
+                        {% for group_key, group in grouped_requests.items %}
                             <div class="order-card">
                                 <div class="order-card-header">
-                                    <h2>Request #{{ group.order_number }}</h2>
+                                    {% if group.is_bulk %}
+                                        <h2>Bulk Request #{{ group.order_number }}</h2>
+                                    {% else %}
+                                        <h2>Request #{{ group.requests.0.id }}</h2>
+                                    {% endif %}
                                     <span class="status-badge status-{{ group.requests.0.status }}">{{ group.requests.0.get_status_display }}</span>
                                 </div>
                                 <div class="order-card-body">
@@ -59,9 +63,6 @@
                                             </div>
                                         {% endfor %}
                                     </div>
-                                </div>
-                                <div class="order-card-footer">
-                                    <span class="request-status">Status: {{ group.requests.0.get_status_display }}</span>
                                 </div>
                             </div>
                         {% endfor %}
