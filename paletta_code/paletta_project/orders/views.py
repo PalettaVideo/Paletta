@@ -67,20 +67,39 @@ class CartView(LoginRequiredMixin, ListView):
         return context
 
 class OrdersListView(LoginRequiredMixin, ListView):
-    """View for displaying a user's order history."""
+    """View for displaying a user's download request history."""
     template_name = 'orders/orders_list.html'
-    context_object_name = 'orders'
+    context_object_name = 'download_requests'
     
     def get_queryset(self):
-        """Return all completed orders for the current user."""
-        return Order.objects.filter(
-            user=self.request.user,
-            payment_status='completed'
-        ).order_by('-order_date')
+        """Return all download requests for the current user, grouped by request date."""
+        return DownloadRequest.objects.filter(
+            user=self.request.user
+        ).select_related('video', 'video__library').order_by('-request_date')
 
     def get_context_data(self, **kwargs):
-        """Add library context to the orders list page."""
+        """Group download requests by date and add library context."""
         context = super().get_context_data(**kwargs)
+        
+        # Group download requests by date (same day requests are grouped together)
+        from itertools import groupby
+        from operator import attrgetter
+        
+        download_requests = context['download_requests']
+        grouped_requests = {}
+        
+        for request in download_requests:
+            # Create a key based on date and user for grouping
+            date_key = request.request_date.strftime('%Y-%m-%d')
+            if date_key not in grouped_requests:
+                grouped_requests[date_key] = {
+                    'date': request.request_date,
+                    'requests': [],
+                    'order_number': len(grouped_requests) + 1  # Simple order numbering
+                }
+            grouped_requests[date_key]['requests'].append(request)
+        
+        context['grouped_requests'] = grouped_requests
         
         # Get current library from session
         current_library_id = self.request.session.get('current_library_id')

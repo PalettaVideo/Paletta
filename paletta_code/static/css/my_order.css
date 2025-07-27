@@ -86,3 +86,59 @@ body {
 .modal-content button:hover {
     background-color: #76a74c;
 }
+
+/* Video list styles for download requests */
+.video-list {
+    margin-top: 10px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.video-item {
+    display: flex;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.video-item:last-child {
+    border-bottom: none;
+}
+
+.video-title {
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+}
+
+.library-name {
+    color: #666;
+    font-size: 0.9em;
+    margin-left: 8px;
+}
+
+.request-status {
+    color: #666;
+    font-size: 0.9em;
+}
+
+/* Status badge colors */
+.status-badge.status-pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.status-badge.status-completed {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.status-badge.status-failed {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.status-badge.status-expired {
+    background-color: #6c757d;
+    color: #fff;
+}

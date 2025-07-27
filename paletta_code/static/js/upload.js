@@ -599,21 +599,40 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const { presigned_url } = await partResponse.json();
 
-        // Upload the chunk
-        const uploadResponse = await fetch(presigned_url, {
-          method: "PUT",
-          body: chunk,
+        // Upload the chunk with progress tracking
+        return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("PUT", presigned_url);
+          xhr.setRequestHeader("Content-Type", file.type);
+
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+              // Calculate progress for this specific chunk
+              const chunkProgress = (event.loaded / event.total) * 100;
+              const overallProgress =
+                ((chunkIndex + chunkProgress / 100) / totalChunks) * 100;
+              onProgress(overallProgress);
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const etag = xhr.getResponseHeader("ETag");
+              resolve({
+                PartNumber: chunkIndex + 1,
+                ETag: etag,
+              });
+            } else {
+              reject(new Error(`Failed to upload part ${chunkIndex + 1}`));
+            }
+          };
+
+          xhr.onerror = () => {
+            reject(new Error(`Network error uploading part ${chunkIndex + 1}`));
+          };
+
+          xhr.send(chunk);
         });
-
-        if (!uploadResponse.ok) {
-          throw new Error(`Failed to upload part ${chunkIndex + 1}`);
-        }
-
-        const etag = uploadResponse.headers.get("ETag");
-        return {
-          PartNumber: chunkIndex + 1,
-          ETag: etag,
-        };
       };
 
       // Upload chunks with limited concurrency
@@ -631,13 +650,11 @@ document.addEventListener("DOMContentLoaded", function () {
         onProgress(progress);
 
         // Log progress for large files
-        if (totalChunks > 10) {
-          console.log(
-            `Upload progress: ${progress.toFixed(
-              1
-            )}% (${completedChunks}/${totalChunks} chunks completed)`
-          );
-        }
+        console.log(
+          `Upload progress: ${progress.toFixed(
+            1
+          )}% (${completedChunks}/${totalChunks} chunks completed)`
+        );
       }
 
       // Complete multipart upload
