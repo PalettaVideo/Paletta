@@ -206,8 +206,19 @@ function saveChanges() {
     body.password = password;
   }
 
+  // Determine the correct action URL based on library context
+  let actionUrl = "/profile/update/";
+
+  // Check if we're in a library context
+  const currentLibrarySlug = document.querySelector(
+    'meta[name="current-library-slug"]'
+  )?.content;
+  if (currentLibrarySlug && currentLibrarySlug !== "paletta") {
+    actionUrl = `/library/${currentLibrarySlug}/profile/update/`;
+  }
+
   // create and submit form
-  submitFormData("/profile/update/", body);
+  submitFormData(actionUrl, body);
 }
 
 /**

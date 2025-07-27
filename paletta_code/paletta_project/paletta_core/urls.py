@@ -22,7 +22,7 @@ from accounts.views.login import CustomLoginView
 from accounts.views.signup import SignupView
 from accounts.views.forgot_password import ForgotPasswordView
 from accounts.views.home_view import HomeView, LogoutView, AboutUsView, ContactUsView, QAndAView, TermsConditionsView, PrivacyView
-from accounts.views.update_profile import ProfileView, CollectionView
+from accounts.views.update_profile import ProfileView, CollectionView, ProfileUpdateView
 from accounts.views.admin_view import ManageAdministratorsView
 from videos.views.clip_store_view import CategoryClipView
 from videos.views.video_detail_view import VideoDetailView
@@ -54,6 +54,8 @@ urlpatterns = [
     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
     path('home/', HomeView.as_view(), name='home'),
     path('logout/', LogoutView.as_view(), name='logout'),
+    path('profile/', ProfileView.as_view(), name='profile'),
+    path('profile/update/', ProfileUpdateView.as_view(), name='profile_update'),
     
     # LIBRARY-SCOPED ROUTES
     # Library context is set by middleware and maintained through these routes
@@ -74,6 +76,7 @@ urlpatterns = [
     
     # User Profile & Collection                                                                
     path('library/<str:library_slug>/profile/', ProfileView.as_view(), name='library_profile'),
+    path('library/<str:library_slug>/profile/update/', ProfileUpdateView.as_view(), name='library_profile_update'),
     path('library/<str:library_slug>/collection/', CollectionView.as_view(), name='library_collection'),
     
     # Commerce & Orders                                                                      

@@ -133,5 +133,16 @@ class ProfileUpdateView(TemplateView):
         # save the user and show success message
         user.save()
         messages.success(request, 'Profile updated successfully.')
-        # redirect to profile page
+        
+        # Determine redirect URL based on library context
+        current_library_id = request.session.get('current_library_id')
+        if current_library_id:
+            try:
+                current_library = Library.objects.get(id=current_library_id)
+                # Redirect to library-specific profile page
+                return redirect('library_profile', library_slug=current_library.name.lower().replace(' ', '-'))
+            except Library.DoesNotExist:
+                pass
+        
+        # Fallback to general profile page
         return redirect('profile')
