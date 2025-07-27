@@ -35,6 +35,13 @@
         <main class="content">
             <h2>Create a Library</h2>
             
+            {% if not user_owns_libraries %}
+            <div class="no-libraries-message" style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
+                <h3 style="color: #6c757d; margin-bottom: 10px;">No Libraries Owned</h3>
+                <p style="color: #6c757d; margin: 0;">You do not own any libraries currently. Reach out to us to setup a plan to store your video content.</p>
+            </div>
+            {% endif %}
+            
             <form method="post" enctype="multipart/form-data" id="library-form">
                 {% csrf_token %}
                 {% if form.non_field_errors %}
