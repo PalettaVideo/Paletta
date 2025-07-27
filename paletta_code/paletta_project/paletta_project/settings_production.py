@@ -22,8 +22,6 @@ ALLOWED_HOSTS = [
     'paletta-alb-62461270.eu-west-2.elb.amazonaws.com',
     'paletta.io',
     'www.paletta.io',
-    'localhost',
-    '127.0.0.1',
 ]
 
 # Security settings for production
