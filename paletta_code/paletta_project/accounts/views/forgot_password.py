@@ -67,8 +67,8 @@ class ForgotPasswordView(TemplateView):
         """
         try:
             # Get manager email from settings
-            manager_email = getattr(settings, 'MANAGER_EMAIL', 'vvomifares@gmail.com')
-            sender_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'info@filmbright.com')
+            manager_email = getattr(settings, 'MANAGER_EMAIL', 'info@filmbright.com')
+            sender_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'niklaas@filmbright.com')
             
             # Prepare email content
             subject = f'Password Reset Request - User: {user.email}'

@@ -27,11 +27,11 @@ def test_email_configuration():
     print("Testing Email Configuration...")
     
     # Check manager email
-    manager_email = getattr(settings, 'MANAGER_EMAIL', 'vvomifares@gmail.com')
+    manager_email = getattr(settings, 'MANAGER_EMAIL', 'info@filmbright.com')
     print(f"Manager Email: {manager_email}")
     
     # Check sender email
-    sender_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'info@filmbright.com')
+    sender_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'niklaas@filmbright.com')
     print(f"Sender Email: {sender_email}")
     
     # Check email backend
@@ -105,8 +105,8 @@ def test_email_sending():
     print("\nTesting Email Sending...")
     
     # Get manager email
-    manager_email = getattr(settings, 'MANAGER_EMAIL', 'vvomifares@gmail.com')
-    sender_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'info@filmbright.com')
+    manager_email = getattr(settings, 'MANAGER_EMAIL', 'info@filmbright.com')
+    sender_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'niklaas@filmbright.com')
     
     # Create test context
     context = {

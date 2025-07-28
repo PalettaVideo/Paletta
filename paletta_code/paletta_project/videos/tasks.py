@@ -42,10 +42,12 @@ def generate_and_send_download_link(video_id, user_email):
             plain_message = strip_tags(html_message)
                     
             # Send the email
+            from django.conf import settings
+            sender_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'niklaas@filmbright.com')
             send_mail(
                 subject,
                 plain_message,
-                'noreply@paletta.com',
+                sender_email,
                 [user_email],
                 html_message=html_message
             )

@@ -130,10 +130,10 @@ S3_MAX_CONCURRENT_PARTS = int(os.environ.get('S3_MAX_CONCURRENT_PARTS', '100')) 
 # AWS SES Configuration for email automation
 AWS_SES_ENABLED = os.environ.get('AWS_SES_ENABLED', 'False') == 'True'
 AWS_SES_REGION = os.environ.get('AWS_SES_REGION', AWS_REGION)
-AWS_SES_SENDER_EMAIL = os.environ.get('AWS_SES_SENDER_EMAIL', 'info@filmbright.com')
+AWS_SES_SENDER_EMAIL = os.environ.get('AWS_SES_SENDER_EMAIL', 'niklaas@filmbright.com')
 
 # Manager notification email settings
-MANAGER_EMAIL = os.environ.get('MANAGER_EMAIL', 'vvomifares@gmail.com')
+MANAGER_EMAIL = os.environ.get('MANAGER_EMAIL', 'info@filmbright.com')
 
 # Celery Configuration
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
@@ -182,7 +182,7 @@ else:
     EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 
 # Default sender email - applies to both SES and other backends  
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'info@filmbright.com')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'niklaas@filmbright.com')
 
 # Logging Configuration
 LOGGING = {
