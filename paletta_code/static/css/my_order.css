@@ -86,3 +86,109 @@ body {
 .modal-content button:hover {
     background-color: #76a74c;
 }
+
+/* Orders list container - similar to clips-grid */
+.orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Order card styling - similar to clip boxes */
+.order-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.order-card-header {
+    flex: 1;
+    min-width: 200px;
+}
+
+.order-card-header h2 {
+    font-size: 18px;
+    margin: 0 0 10px;
+    color: #333;
+}
+
+.order-card-body {
+    flex: 2;
+    padding: 0 20px;
+}
+
+.order-card-body p {
+    margin: 5px 0;
+    color: #666;
+}
+
+/* Video list styles for download requests */
+.video-list {
+    margin-top: 10px;
+    max-height: 150px;
+    overflow-y: auto;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.video-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.video-item:last-child {
+    border-bottom: none;
+}
+
+.video-title {
+    font-weight: 600;
+    color: #333;
+    flex: 1;
+    font-size: 14px;
+}
+
+.library-name {
+    color: #666;
+    font-size: 0.9em;
+    margin-left: 8px;
+}
+
+.order-card-footer {
+    flex: 1;
+    text-align: right;
+    min-width: 120px;
+}
+
+.request-status {
+    color: #666;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+/* Status badge colors */
+.status-badge.status-pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.status-badge.status-completed {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.status-badge.status-failed {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.status-badge.status-expired {
+    background-color: #6c757d;
+    color: #fff;
+}

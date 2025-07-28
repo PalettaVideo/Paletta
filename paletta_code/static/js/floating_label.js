@@ -10,6 +10,71 @@ document.addEventListener("DOMContentLoaded", function () {
     return;
   }
 
+  // Get user role from meta tag or data attribute
+  function getUserRole() {
+    const metaUserRole = document.querySelector('meta[name="user-role"]');
+    return metaUserRole ? metaUserRole.getAttribute("content") : "user";
+  }
+
+  // Check if user has admin/owner/superuser permissions
+  function hasAdminPermissions() {
+    const userRole = getUserRole();
+    // Only allow admin, owner, and superuser roles
+    return (
+      userRole === "owner" || userRole === "admin" || userRole === "superuser"
+    );
+  }
+
+  // Show permission denied popup
+  function showPermissionDeniedPopup() {
+    const userRole = getUserRole();
+    let message = "Access denied! ";
+
+    if (userRole === "contributor") {
+      message +=
+        "Contributors cannot access administrative functions. Only Library Admins, Owners, or Superusers can manage libraries.";
+    } else {
+      message +=
+        "Only Library Admin, Owner, or Superuser can access these pages. Enjoy exploring other libraries!";
+    }
+
+    alert(message);
+  }
+
+  // Add permission checks to admin navigation buttons
+  function addPermissionChecks() {
+    const adminButtons = document.querySelectorAll(".admin-nav-btn a");
+
+    adminButtons.forEach((link) => {
+      link.addEventListener("click", function (e) {
+        const userRole = getUserRole();
+
+        // Explicitly block contributors and any role that's not admin/owner/superuser
+        if (userRole === "contributor" || !hasAdminPermissions()) {
+          e.preventDefault();
+          e.stopPropagation();
+          showPermissionDeniedPopup();
+          return false;
+        }
+        // If they have permission, let the navigation proceed normally
+      });
+    });
+  }
+
+  // Hide/show admin navigation buttons based on permissions
+  function toggleAdminButtonsVisibility() {
+    const adminNavSection = document.querySelector(".admin-nav-btns");
+
+    if (adminNavSection) {
+      if (!hasAdminPermissions()) {
+        // Hide the entire admin navigation section for unauthorized users
+        adminNavSection.style.display = "none";
+      } else {
+        adminNavSection.style.display = "flex";
+      }
+    }
+  }
+
   // open the sidebar
   const openSidebar = () => {
     sidebar.classList.add("active");
@@ -39,4 +104,8 @@ document.addEventListener("DOMContentLoaded", function () {
     e.stopPropagation();
     closeSidebar();
   });
+
+  // Initialize permission checks when DOM is loaded
+  addPermissionChecks();
+  toggleAdminButtonsVisibility();
 });

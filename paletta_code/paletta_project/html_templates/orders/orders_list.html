@@ -36,30 +36,40 @@
         
         <main class="content">
             <div class="orders-container">
-                <h1>My Orders</h1>
+                <h1>My Download Requests</h1>
                 
-                {% if orders %}
+                {% if grouped_requests %}
                     <div class="orders-list">
-                        {% for order in orders %}
+                        {% for group_key, group in grouped_requests.items %}
                             <div class="order-card">
                                 <div class="order-card-header">
-                                    <h2>Order #{{ order.id }}</h2>
-                                    <span class="status-badge status-{{ order.payment_status }}">{{ order.get_payment_status_display }}</span>
+                                    {% if group.is_bulk %}
+                                        <h2>Bulk Request #{{ group.order_number }}</h2>
+                                    {% else %}
+                                        <h2>Request #{{ group.requests.0.id }}</h2>
+                                    {% endif %}
+                                    <span class="status-badge status-{{ group.requests.0.status }}">{{ group.requests.0.get_status_display }}</span>
                                 </div>
                                 <div class="order-card-body">
-                                    <p>Date: {{ order.order_date|date:"F j, Y" }}</p>
-                                    <p>Items: {{ order.details.count }}</p>
-                                    <p>Total: £{{ order.total_price }}</p>
-                                </div>
-                                <div class="order-card-footer">
-                                    <a href="{% library_specific_url 'library_order_detail' pk=order.id %}" class="view-details-button">View Details</a>
+                                    <p>Date: {{ group.date|date:"F j, Y" }}</p>
+                                    <p>Videos: {{ group.requests|length }}</p>
+                                    <div class="video-list">
+                                        {% for request in group.requests %}
+                                            <div class="video-item">
+                                                <span class="video-title">{{ request.video.title }}</span>
+                                                {% if request.video.library %}
+                                                    <span class="library-name">({{ request.video.library.name }})</span>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
                                 </div>
                             </div>
                         {% endfor %}
                     </div>
                 {% else %}
                     <div class="no-orders">
-                        <p>You don't have any orders yet.</p>
+                        <p>You don't have any download requests yet.</p>
                         <a href="{% library_specific_url 'library_clip_store' %}" class="browse-button">Browse Clip Store</a>
                     </div>
                 {% endif %}

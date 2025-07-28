@@ -47,16 +47,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Force clear all stale data on every page load to prevent caching issues
   clearStaleLibraryData();
-
-  // Add debug logging to track library context
-  const currentLibrarySlug = getCurrentLibrarySlug();
-  const currentLibraryName =
-    document.querySelector('meta[name="current-library-name"]')?.content ||
-    "Unknown";
-  console.log(
-    `[Library Debug] Page loaded for library: ${currentLibraryName} (slug: ${currentLibrarySlug})`
-  );
-
   // Initialize UI
   initializeUI();
   setupEventListeners();
@@ -302,7 +292,6 @@ document.addEventListener("DOMContentLoaded", function () {
     // Get CSRF token
     const csrftoken = getCSRFToken();
     if (!csrftoken) {
-      console.error("CSRF token not found");
       showNotification("Error: CSRF token not found", "error");
       return;
     }
@@ -314,7 +303,7 @@ document.addEventListener("DOMContentLoaded", function () {
     formData.append("price", price);
 
     // Fetch request to add to cart
-    fetch("/cart/add/", {
+    fetch("/api/orders/add-to-cart/", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -341,8 +330,7 @@ document.addEventListener("DOMContentLoaded", function () {
           );
         }
       })
-      .catch((error) => {
-        console.error("Error:", error);
+      .catch(() => {
         // Try to update cache anyway
         updateCartCache(videoId, resolution, price);
         showNotification("Added to local cart", "info");
@@ -357,20 +345,16 @@ document.addEventListener("DOMContentLoaded", function () {
     // Get CSRF token
     const csrftoken = getCSRFToken();
     if (!csrftoken) {
-      console.error("CSRF token not found");
       showNotification("Error: CSRF token not found", "error");
       return;
     }
-
-    // Log what we're sending
-    console.log(`Adding video ID ${videoId} to collection`);
 
     // Create URL-encoded form data
     const formData = new URLSearchParams();
     formData.append("clip_id", videoId);
 
     // Fetch request to add to favorites
-    fetch("/collection/add/", {
+    fetch("/api/orders/add-to-collection/", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -380,14 +364,12 @@ document.addEventListener("DOMContentLoaded", function () {
       credentials: "same-origin",
     })
       .then((response) => {
-        console.log(`Response status: ${response.status}`);
         if (response.ok) {
           return response.json();
         }
         throw new Error(`Network response error: ${response.status}`);
       })
       .then((data) => {
-        console.log("Response data:", data);
         if (data.success) {
           // Update collection cache
           updateCollectionCache(videoId);
@@ -399,8 +381,7 @@ document.addEventListener("DOMContentLoaded", function () {
           );
         }
       })
-      .catch((error) => {
-        console.error("Error adding to collection:", error);
+      .catch(() => {
         // Still try to update cache anyway for offline functionality
         updateCollectionCache(videoId);
         showNotification("Added to local collection", "info");
@@ -416,7 +397,6 @@ document.addEventListener("DOMContentLoaded", function () {
   function updateCartCache(videoId, resolution, price) {
     const videoCard = document.querySelector(`.clip[data-id="${videoId}"]`);
     if (!videoCard) {
-      console.error(`Video card with ID ${videoId} not found`);
       return;
     }
 
@@ -470,15 +450,11 @@ document.addEventListener("DOMContentLoaded", function () {
       `.clip-thumbnail[data-video-id="${videoId}"]`
     );
     if (!videoCard) {
-      console.error(`Video card with ID ${videoId} not found`);
       return;
     }
 
     const clipElement = videoCard.closest(".clip");
     if (!clipElement) {
-      console.error(
-        `Could not find parent clip element for video ID ${videoId}`
-      );
       return;
     }
 

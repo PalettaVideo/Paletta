@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status, permissions, generics, parsers
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Count, Q
-from ..models import Video, Category, Tag, VideoTag
+from django.db import IntegrityError
+from ..models import Video, ContentType, Tag, VideoTag
 from ..serializers import VideoSerializer, TagSerializer
 from libraries.models import Library
 import logging
@@ -70,13 +71,227 @@ class VideoFilterMixin:
 
 
 # ==============================================================================
-# FRONTEND-READY ENDPOINTS (Used by JavaScript with current features set)
+# S3 MULTIPART UPLOAD ENDPOINTS (For large file uploads)
+# ==============================================================================
+
+class S3MultipartUploadView(APIView):
+    """
+    Create multipart upload for large files.
+    MAPPED TO: /api/s3/create-multipart-upload/
+    USED BY: Frontend multipart upload for files > 5MB
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request, format=None):
+        try:
+            bucket = request.data.get('bucket')
+            key = request.data.get('key')
+            content_type = request.data.get('content_type')
+            
+            if not all([bucket, key, content_type]):
+                return Response(
+                    {'error': 'Missing required fields: bucket, key, content_type'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Initialize S3 client
+            from ..services import AWSCloudStorageService
+            storage_service = AWSCloudStorageService()
+            
+            if not storage_service.storage_enabled:
+                return Response(
+                    {'error': 'S3 storage is not enabled'},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+            
+            # Create multipart upload
+            response = storage_service.s3_client.create_multipart_upload(
+                Bucket=bucket,
+                Key=key,
+                ContentType=content_type,
+                ACL='private'
+            )
+            
+            return Response({
+                'upload_id': response['UploadId'],
+                'key': key,
+                'bucket': bucket
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            logger.error(f"Error creating multipart upload: {str(e)}")
+            return Response(
+                {'error': 'Failed to create multipart upload'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class S3UploadPartView(APIView):
+    """
+    Get presigned URL for uploading a part.
+    MAPPED TO: /api/s3/get-upload-part-url/
+    USED BY: Frontend multipart upload for individual parts
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request, format=None):
+        try:
+            bucket = request.data.get('bucket')
+            key = request.data.get('key')
+            upload_id = request.data.get('upload_id')
+            part_number = request.data.get('part_number')
+            
+            if not all([bucket, key, upload_id, part_number]):
+                return Response(
+                    {'error': 'Missing required fields: bucket, key, upload_id, part_number'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Initialize S3 client
+            from ..services import AWSCloudStorageService
+            storage_service = AWSCloudStorageService()
+            
+            if not storage_service.storage_enabled:
+                return Response(
+                    {'error': 'S3 storage is not enabled'},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+            
+            # Generate presigned URL for part upload
+            presigned_url = storage_service.s3_client.generate_presigned_url(
+                'upload_part',
+                Params={
+                    'Bucket': bucket,
+                    'Key': key,
+                    'UploadId': upload_id,
+                    'PartNumber': part_number
+                },
+                ExpiresIn=3600  # 1 hour expiry
+            )
+            
+            return Response({
+                'presigned_url': presigned_url,
+                'part_number': part_number
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error generating upload part URL: {str(e)}")
+            return Response(
+                {'error': 'Failed to generate upload part URL'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class S3CompleteMultipartUploadView(APIView):
+    """
+    Complete multipart upload.
+    MAPPED TO: /api/s3/complete-multipart-upload/
+    USED BY: Frontend multipart upload completion
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request, format=None):
+        try:
+            bucket = request.data.get('bucket')
+            key = request.data.get('key')
+            upload_id = request.data.get('upload_id')
+            parts = request.data.get('parts', [])
+            
+            if not all([bucket, key, upload_id]) or not parts:
+                return Response(
+                    {'error': 'Missing required fields: bucket, key, upload_id, parts'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Initialize S3 client
+            from ..services import AWSCloudStorageService
+            storage_service = AWSCloudStorageService()
+            
+            if not storage_service.storage_enabled:
+                return Response(
+                    {'error': 'S3 storage is not enabled'},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+            
+            # Complete multipart upload
+            response = storage_service.s3_client.complete_multipart_upload(
+                Bucket=bucket,
+                Key=key,
+                UploadId=upload_id,
+                MultipartUpload={'Parts': parts}
+            )
+            
+            return Response({
+                'location': response.get('Location'),
+                'etag': response.get('ETag'),
+                'key': key
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error completing multipart upload: {str(e)}")
+            return Response(
+                {'error': 'Failed to complete multipart upload'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class S3AbortMultipartUploadView(APIView):
+    """
+    Abort multipart upload.
+    MAPPED TO: /api/s3/abort-multipart-upload/
+    USED BY: Frontend multipart upload cleanup on failure
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request, format=None):
+        try:
+            bucket = request.data.get('bucket')
+            key = request.data.get('key')
+            upload_id = request.data.get('upload_id')
+            
+            if not all([bucket, key, upload_id]):
+                return Response(
+                    {'error': 'Missing required fields: bucket, key, upload_id'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Initialize S3 client
+            from ..services import AWSCloudStorageService
+            storage_service = AWSCloudStorageService()
+            
+            if not storage_service.storage_enabled:
+                return Response(
+                    {'error': 'S3 storage is not enabled'},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+            
+            # Abort multipart upload
+            storage_service.s3_client.abort_multipart_upload(
+                Bucket=bucket,
+                Key=key,
+                UploadId=upload_id
+            )
+            
+            return Response({
+                'message': 'Multipart upload aborted successfully'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error aborting multipart upload: {str(e)}")
+            return Response(
+                {'error': 'Failed to abort multipart upload'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+# ==============================================================================
+# METADATA CREATION ENDPOINT (After S3 upload completes)
 # ==============================================================================
 
 class VideoAPIUploadView(APIView):
     """
-    FRONTEND-READY: Main video upload endpoint for metadata creation.
-    MAPPED TO: /api/upload/
+    Main video upload endpoint for metadata creation.
+    MAPPED TO: /api/uploads/
     USED BY: upload.js line 635
     
     Creates video database record after successful S3 upload completes.
@@ -84,33 +299,11 @@ class VideoAPIUploadView(APIView):
     1. Frontend uploads file directly to S3 using presigned URL
     2. Frontend calls this endpoint with S3 key and metadata
     3. This endpoint creates the Video record with storage_status='stored'
-    
-    Required fields: s3_key, title, category, library_id, content_types
-    Optional fields: description, tags, duration, file_size, format, thumbnail
     """
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
     
     def post(self, request, format=None):
-        """
-        POST HANDLER: Create video record after S3 upload completion.
-        
-        Request data expected:
-        - s3_key (str): AWS S3 key where video is stored
-        - title (str): Video title
-        - category (int): Category ID for subject area
-        - library_id (int): Library ID where video belongs
-        - content_types (list): List of content type IDs (1-3 required)
-        - description (str, optional): Video description
-        - tags (str, optional): Comma-separated tag names
-        - duration (int, optional): Video duration in seconds
-        - file_size (int, optional): File size in bytes
-        - format (str, optional): Video format (mp4, mov, etc.)
-        - thumbnail (file, optional): Thumbnail image file
-        
-        Returns:
-            Response: Video data with 201 status on success, error on failure
-        """
         s3_key = request.data.get('s3_key')
         if not s3_key:
             return Response({'message': 's3_key is required.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -119,7 +312,7 @@ class VideoAPIUploadView(APIView):
             # Get required data from request
             title = request.data.get('title', 'Untitled Video')
             description = request.data.get('description', '')
-            category_id = request.data.get('category')
+            content_type_id = request.data.get('content_type')
             library_id = request.data.get('library_id')
             tags_str = request.data.get('tags', '')
             duration = request.data.get('duration')
@@ -127,37 +320,58 @@ class VideoAPIUploadView(APIView):
             format_type = request.data.get('format')
             thumbnail = request.FILES.get('thumbnail')
             
-            # Content types validation (1-3 required)
-            content_type_ids = request.data.getlist('content_types')
-            if not content_type_ids:
-                return Response({'message': 'At least one content type is required.'}, status=status.HTTP_400_BAD_REQUEST)
-            if len(content_type_ids) > 3:
-                return Response({'message': 'Maximum of 3 content types allowed.'}, status=status.HTTP_400_BAD_REQUEST)
+            # Validation
+            if not title or not title.strip():
+                return Response({'message': 'Title is required and cannot be empty.'}, status=status.HTTP_400_BAD_REQUEST)
             
-            # Validate library and category
+            if len(title) > 25:
+                return Response({'message': 'Title cannot exceed 25 characters.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if duration is not None:
+                try:
+                    duration = int(duration)
+                    if duration < 0:
+                        return Response({'message': 'Duration cannot be negative.'}, status=status.HTTP_400_BAD_REQUEST)
+                    if duration > 86400:
+                        return Response({'message': 'Duration cannot exceed 24 hours (86400 seconds).'}, status=status.HTTP_400_BAD_REQUEST)
+                except (ValueError, TypeError):
+                    return Response({'message': 'Duration must be a valid integer.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if file_size is not None:
+                try:
+                    file_size = int(file_size)
+                    if file_size < 0:
+                        return Response({'message': 'File size cannot be negative.'}, status=status.HTTP_400_BAD_REQUEST)
+                    if file_size > 10737418240:
+                        return Response({'message': 'File size cannot exceed 10GB.'}, status=status.HTTP_400_BAD_REQUEST)
+                except (ValueError, TypeError):
+                    return Response({'message': 'File size must be a valid integer.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            if not content_type_id:
+                return Response({'message': 'Content type is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Validate library and content type
             try:
                 library = Library.objects.get(id=library_id)
-                category = Category.objects.get(id=category_id, library=library)
             except Library.DoesNotExist:
                 return Response({'message': 'Library not found'}, status=status.HTTP_404_NOT_FOUND)
-            except Category.DoesNotExist:
-                return Response({'message': f"Category with id {category_id} not found in this library"}, status=status.HTTP_404_NOT_FOUND)
             
-            # Validate content types
-            from ..models import ContentType
-            content_types = []
-            for ct_id in content_type_ids:
-                try:
-                    ct = ContentType.objects.get(id=ct_id, is_active=True)
-                    content_types.append(ct)
-                except ContentType.DoesNotExist:
-                    return Response({'message': f"Content type with id {ct_id} not found"}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                content_type = ContentType.objects.get(
+                    id=content_type_id, 
+                    library=library, 
+                    is_active=True
+                )
+            except ContentType.DoesNotExist:
+                return Response({
+                    'message': f"Content type with id {content_type_id} not found in library '{library.name}' or is inactive"
+                }, status=status.HTTP_404_NOT_FOUND)
             
             # Create video record
             video = Video.objects.create(
                 title=title,
                 description=description,
-                subject_area=category,
+                content_type=content_type,
                 library=library,
                 uploader=request.user,
                 storage_reference_id=s3_key,
@@ -168,18 +382,24 @@ class VideoAPIUploadView(APIView):
                 format=format_type
             )
             
-            # Set content types and thumbnail
-            video.content_types.set(content_types)
+            # Set thumbnail if provided
             if thumbnail:
                 video.thumbnail = thumbnail
                 video.save(update_fields=['thumbnail'])
                 
-            # Handle tags
+            # Handle tags with race condition protection
             if tags_str:
                 tag_names = [name.strip() for name in tags_str.split(',') if name.strip()]
                 for tag_name in tag_names:
-                    tag, _ = Tag.objects.get_or_create(name=tag_name, library=library)
-                    VideoTag.objects.create(video=video, tag=tag)
+                    try:
+                        tag = Tag.objects.get(name=tag_name, library=library)
+                    except Tag.DoesNotExist:
+                        try:
+                            tag = Tag.objects.create(name=tag_name, library=library)
+                        except IntegrityError:
+                            tag = Tag.objects.get(name=tag_name, library=library)
+                    
+                    VideoTag.objects.get_or_create(video=video, tag=tag)
                     
             serializer = VideoSerializer(video, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -191,7 +411,7 @@ class VideoAPIUploadView(APIView):
 
 class PopularTagsAPIView(APIView):
     """
-    FRONTEND-READY: Get popular tags for video filtering interface.
+    Get popular tags for video filtering interface.
     MAPPED TO: /api/popular-tags/
     
     Returns the top 20 most popular tags based on video count.
@@ -236,20 +456,20 @@ class PopularTagsAPIView(APIView):
 
 
 # ==============================================================================
-# BACKEND-READY ENDPOINTS (URL mapped for future feature implementations)
+# VIDEO LISTING ENDPOINTS (Used by frontend)
 # ==============================================================================
 
 class UnifiedVideoListAPIView(generics.ListAPIView, VideoFilterMixin):
     """
-    BACKEND-READY: Unified video listing with optional category filtering.
-    MAPPED TO: /api/videos/ and /api/categories/<name>/videos/
+    Unified video listing with optional content type filtering.
+    MAPPED TO: /api/videos/ and /api/content-types/<name>/videos/
     
-    Consolidates VideoListAPIView and CategoryVideosAPIView into one endpoint.
-    Returns paginated list of videos with optional category filtering.
+    Consolidates VideoListAPIView and ContentTypeVideosAPIView into one endpoint.
+    Returns paginated list of videos with optional content type filtering.
     
     URL patterns:
     - /api/videos/ - All videos
-    - /api/categories/<category_name>/videos/ - Videos in specific category
+    - /api/content-types/<content_type_name>/videos/ - Videos in specific content type
     
     Query parameters:
     - search: Filter by title/description content
@@ -262,39 +482,34 @@ class UnifiedVideoListAPIView(generics.ListAPIView, VideoFilterMixin):
     
     def get_queryset(self):
         """
-        QUERYSET BUILDER: Get videos with optional category filtering.
+        QUERYSET BUILDER: Get videos with optional content type filtering.
         
-        Category filtering logic:
-        1. If category_name in URL kwargs, filter by that category
-        2. Handles both subject areas and paletta categories
+        Content type filtering logic:
+        1. If content_type_name in URL kwargs, filter by that content type
+        2. Handles both subject areas and content types
         3. Decodes URL encoding and converts hyphens to spaces
-        4. Returns empty queryset if category not found
+        4. Returns empty queryset if content type not found
         
         Returns:
-            QuerySet: Video objects filtered by category (if specified) and common filters
+            QuerySet: Video objects filtered by content type (if specified) and common filters
         """
         queryset = Video.objects.all()
         
-        # Category filtering (if category_name is provided in URL)
-        category_name = self.kwargs.get('category_name')
-        if category_name:
+        # Content type filtering (if content_type_name is provided in URL)
+        content_type_name = self.kwargs.get('content_type_name')
+        if content_type_name:
             # Decode URL encoding and handle hyphens vs spaces
-            decoded_category_name = urllib.parse.unquote(category_name)
-            db_category_name = decoded_category_name.replace('-', ' ')
+            decoded_content_type_name = urllib.parse.unquote(content_type_name)
+            db_content_type_name = decoded_content_type_name.replace('-', ' ')
             
-            logger.info(f"Category lookup: '{db_category_name}'")
+            logger.info(f"Content type lookup: '{db_content_type_name}'")
             
             try:
-                # Try subject area first, then paletta category
-                try:
-                    category = Category.objects.get(subject_area__iexact=db_category_name)
-                    queryset = queryset.filter(subject_area=category)
-                except Category.DoesNotExist:
-                    from ..models import PalettaCategory
-                    paletta_category = PalettaCategory.objects.get(code__iexact=db_category_name)
-                    queryset = queryset.filter(paletta_category=paletta_category)
-            except (Category.DoesNotExist, PalettaCategory.DoesNotExist):
-                logger.warning(f"Category '{db_category_name}' not found")
+                # Look up content type by subject_area
+                content_type = ContentType.objects.get(subject_area__iexact=db_content_type_name.replace(' ', '_'), is_active=True)
+                queryset = queryset.filter(content_type=content_type)
+            except ContentType.DoesNotExist:
+                logger.warning(f"Content type '{db_content_type_name}' not found")
                 return Video.objects.none()
         
         # Apply common filters (search, sorting)
@@ -329,7 +544,7 @@ class UnifiedVideoListAPIView(generics.ListAPIView, VideoFilterMixin):
 
 class VideoDetailAPIView(generics.RetrieveAPIView):
     """
-    BACKEND-READY: Get single video details with view count increment.
+    Get single video details with view count increment.
     MAPPED TO: /api/videos/<video_id>/
     
     Retrieves detailed information for a specific video by ID.
@@ -370,71 +585,3 @@ class VideoDetailAPIView(generics.RetrieveAPIView):
                 {"error": "Unable to retrieve video details"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-
-class ContentTypeVideosAPIView(generics.ListAPIView, VideoFilterMixin):
-    """
-    BACKEND-READY: Filter videos by content types with advanced matching.
-    MAPPED TO: /api/content-type-videos/
-    
-    Advanced filtering by content type codes or IDs with AND/OR logic.
-    Supports both content type codes ('campus_life') and IDs (1, 2, 3).
-    
-    Query parameters:
-    - content_types: List of content type codes (e.g., campus_life, research_innovation)
-    - content_type_ids: List of content type IDs (e.g., 1, 3, 5)
-    - match_all: Boolean, if true videos must have ALL specified types (default: ANY)
-    - search: Filter by title/description
-    - sort_by: 'newest', 'oldest', or 'popular'
-    """
-    serializer_class = VideoSerializer
-    pagination_class = StandardResultsSetPagination
-    permission_classes = [permissions.AllowAny]
-    
-    def get_queryset(self):
-        """
-        QUERYSET BUILDER: Filter videos by content types with flexible matching.
-        
-        Filtering logic:
-        1. Get content_types (codes) and content_type_ids from query params
-        2. If match_all=true: Videos must have ALL specified content types
-        3. If match_all=false: Videos must have ANY of the specified content types
-        4. Apply additional common filters (search, sorting)
-        
-        Returns:
-            QuerySet: Videos filtered by content types and other criteria
-        """
-        queryset = Video.objects.all()
-        
-        # Content type filtering
-        content_types = self.request.query_params.getlist('content_types', [])
-        content_type_ids = self.request.query_params.getlist('content_type_ids', [])
-        match_all = self.request.query_params.get('match_all', 'false').lower() == 'true'
-        
-        if content_types or content_type_ids:
-            if match_all:
-                # Must have ALL specified content types
-                for ct_code in content_types:
-                    queryset = queryset.filter(content_types__code=ct_code)
-                for ct_id in content_type_ids:
-                    queryset = queryset.filter(content_types__id=ct_id)
-            else:
-                # Must have ANY of the specified content types
-                if content_types:
-                    queryset = queryset.filter(content_types__code__in=content_types)
-                if content_type_ids:
-                    queryset = queryset.filter(content_types__id__in=content_type_ids)
-        
-        # Apply common filters
-        queryset = self.apply_video_filters(queryset, self.request)
-        
-        return queryset
-
-
-# ==============================================================================
-# COMPATIBILITY ALIASES (For existing URL patterns)
-# ==============================================================================
-
-# These maintain backward compatibility with existing URLs
-VideoListAPIView = UnifiedVideoListAPIView
-CategoryVideosAPIView = UnifiedVideoListAPIView 

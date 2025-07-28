@@ -22,10 +22,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const MAX_FILE_SIZE = 256 * 1024 * 1024 * 1024;
 
   let selectedTags = [];
+  let selectedContentType = null; // Store the selected content type
   let videoMetadata = {}; // Variable to store extracted metadata
 
-  // fetch categories and content types from API
-  fetchCategories();
+  // fetch content types from API
   fetchContentTypes();
 
   // event Listeners
@@ -89,110 +89,73 @@ document.addEventListener("DOMContentLoaded", function () {
     uploadForm.addEventListener("submit", handleFormSubmit);
   }
 
-  // Add event listeners for content type checkboxes
-  const contentTypeCheckboxes = document.querySelectorAll(
-    ".content-type-checkbox"
-  );
-  contentTypeCheckboxes.forEach((checkbox) => {
-    checkbox.addEventListener("change", handleContentTypeChange);
-  });
-
-  // Category creation removed - categories are now predefined by administrators
-  // Users can only select from existing categories
-
   // functions
-  function handleContentTypeChange(event) {
-    const selectedContentTypes = document.querySelectorAll(
-      ".content-type-checkbox:checked"
-    );
-    const contentTypesError = document.getElementById("content-types-error");
-    const allContentTypeItems = document.querySelectorAll(".content-type-item");
 
-    // If trying to select more than 3, prevent the selection
-    if (event && event.target.checked && selectedContentTypes.length > 3) {
-      event.target.checked = false;
-      if (contentTypesError) {
-        contentTypesError.textContent =
-          "You can select a maximum of 3 content types.";
-        contentTypesError.style.display = "block";
-      }
-      return;
-    }
-
-    // Clear previous error messages
-    if (contentTypesError) {
-      contentTypesError.style.display = "none";
-      contentTypesError.textContent = "";
-    }
-
-    // Remove disabled class from all items
-    allContentTypeItems.forEach((item) => {
-      item.classList.remove("disabled");
-      const checkbox = item.querySelector(".content-type-checkbox");
-      if (checkbox && !checkbox.checked) {
-        checkbox.disabled = false;
-      }
-    });
-
-    // If exactly 3 content types are selected, disable the rest
-    if (selectedContentTypes.length >= 3) {
-      allContentTypeItems.forEach((item) => {
-        const checkbox = item.querySelector(".content-type-checkbox");
-        if (checkbox && !checkbox.checked) {
-          item.classList.add("disabled");
-          checkbox.disabled = true;
-        }
-      });
-    }
-  }
   function handleVideoFileSelect(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // check file size
-    if (file.size > MAX_FILE_SIZE) {
-      showUploadLimitModal();
-      fileInput.value = "";
-      return;
-    }
-
-    // check file type
-    const validTypes = [
-      "video/mp4",
-      "video/mpeg",
-      "video/quicktime",
-      "video/x-msvideo",
-      "video/x-flv",
-      "video/x-matroska",
-    ];
-    if (!validTypes.includes(file.type)) {
+    // File size validation - 10GB limit
+    const maxFileSize = 10 * 1024 * 1024 * 1024; // 10GB in bytes
+    if (file.size > maxFileSize) {
+      const fileSizeGB = (file.size / (1024 * 1024 * 1024)).toFixed(2);
       alert(
-        "Invalid file type. Please upload a video file (MP4, MOV, AVI, etc.)"
+        `File size (${fileSizeGB}GB) exceeds the maximum allowed size of 10GB. Please select a smaller file.`
       );
       fileInput.value = "";
       return;
     }
 
-    // create video preview
-    videoPreviewContainer.innerHTML = "";
-    const video = document.createElement("video");
-    video.controls = true;
-    video.src = URL.createObjectURL(file);
-    videoPreviewContainer.appendChild(video);
+    // File type validation
+    const allowedTypes = [
+      "video/mp4",
+      "video/mpeg",
+      "video/quicktime",
+      "video/x-msvideo",
+      "video/webm",
+      "video/ogg",
+      "video/x-ms-wmv",
+      "video/x-flv",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please select a valid video file (MP4, MOV, AVI, etc.).");
+      fileInput.value = "";
+      return;
+    }
 
-    // update file name display
-    const fileNameDisplay = document.createElement("div");
-    fileNameDisplay.className = "file-name";
-    fileNameDisplay.textContent = file.name;
-    videoPreviewContainer.appendChild(fileNameDisplay);
+    // Display file info
+    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+    const fileSizeGB = (file.size / (1024 * 1024 * 1024)).toFixed(2);
 
-    // show loading indicator for metadata extraction
-    const loadingIndicator = document.createElement("div");
-    loadingIndicator.className = "loading-indicator";
-    loadingIndicator.textContent = "Extracting video information...";
-    videoPreviewContainer.appendChild(loadingIndicator);
+    // Show upload method info
+    let uploadMethod = "Single-part upload";
+    if (file.size > 5 * 1024 * 1024) {
+      // 5MB
+      uploadMethod = "Multipart upload (optimized for large files)";
+    }
 
-    // Use fast, client-side extraction. Server-side is no longer needed.
+    const previewContainer = document.getElementById("video-preview-container");
+    previewContainer.innerHTML = `
+      <div class="file-info">
+        <h3>Selected Video</h3>
+        <div class="video-preview">
+          <video controls preload="metadata" style="max-width: 100%; max-height: 350px; border-radius: 8px;">
+            <source src="${URL.createObjectURL(file)}" type="${file.type}">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+        <p><strong>Name:</strong> ${file.name}</p>
+
+        <div class="progress-bar" style="display: none;">
+          <div class="progress-fill"></div>
+        </div>
+        <div class="upload-progress" style="display: none;">
+          <div class="progress-text">0%</div>
+        </div>
+      </div>
+    `;
+
+    // Extract and display video metadata
     extractVideoMetadata(file);
   }
 
@@ -299,27 +262,20 @@ document.addEventListener("DOMContentLoaded", function () {
     video.src = URL.createObjectURL(file);
   }
 
-  async function fetchCategories() {
+  async function fetchContentTypes() {
     try {
-      console.log("Fetching categories...");
-      // Get the current library ID from the page
-      let currentLibraryId = null;
-      const libraryInfo = document.querySelector(".library-info");
-      if (libraryInfo) {
-        // Try to extract library ID from data attribute if available
-        currentLibraryId = libraryInfo.getAttribute("data-library-id");
+      // Get library ID from meta tag or data attribute
+      const libraryId = document
+        .querySelector('meta[name="current-library-id"]')
+        .getAttribute("content");
+
+      // Use the content types API with library filtering
+      let apiUrl = `/api/content-types/`;
+      if (libraryId) {
+        apiUrl += `?library=${libraryId}`;
       }
 
-      if (!currentLibraryId) {
-        console.error("No library ID found, cannot fetch categories");
-        return;
-      }
-
-      // Use the new unified category API
-      let apiUrl = `/api/api/categories/?library=${currentLibraryId}`;
-      console.log(`Using unified API URL: ${apiUrl}`);
-
-      // fetch cache options
+      // fetch with cache options
       const response = await fetch(apiUrl, {
         method: "GET",
         cache: "no-cache", // force server request, don't check cache
@@ -328,136 +284,89 @@ document.addEventListener("DOMContentLoaded", function () {
           Pragma: "no-cache",
         },
       });
-      console.log("Response status:", response.status);
 
       if (!response.ok) {
-        console.error("Failed to fetch categories. Status:", response.status);
-        throw new Error(`Failed to fetch categories: ${response.statusText}`);
-      }
-
-      const categories = await response.json();
-      console.log("Categories data:", categories);
-
-      const categorySelect = document.getElementById("category");
-      if (!categorySelect) {
-        console.error("Category select element not found in DOM");
-        return;
-      }
-
-      // Clear existing options
-      categorySelect.innerHTML = "";
-
-      // Add initial "Select a category" option
-      const defaultOption = document.createElement("option");
-      defaultOption.value = "";
-      defaultOption.textContent = "Select a category";
-      categorySelect.appendChild(defaultOption);
-
-      // Add categories to the select dropdown
-      categories.forEach((category) => {
-        const option = document.createElement("option");
-        option.value = category.id;
-
-        // Handle both paletta and library categories
-        if (category.type === "paletta_category") {
-          option.textContent = `${category.display_name} (Paletta)`;
-        } else if (
-          category.type === "library_category" ||
-          category.type === "subject_area"
-        ) {
-          option.textContent = category.display_name || category.name;
-        } else {
-          option.textContent = category.display_name || category.name;
-        }
-
-        categorySelect.appendChild(option);
-      });
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      const categorySelect = document.getElementById("category");
-      if (categorySelect) {
-        categorySelect.innerHTML = "";
-        const errorOption = document.createElement("option");
-        errorOption.value = "";
-        errorOption.textContent = "Error loading categories";
-        categorySelect.appendChild(errorOption);
-      }
-    }
-  }
-
-  async function fetchContentTypes() {
-    try {
-      const response = await fetch("/api/api/content-types/", {
-        method: "GET",
-        cache: "no-cache",
-        headers: {
-          "Cache-Control": "no-cache",
-          Pragma: "no-cache",
-        },
-      });
-
-      if (!response.ok) {
-        console.error(
-          "Failed to fetch content types. Status:",
-          response.status
+        throw new Error(
+          `Failed to fetch content types: ${response.statusText}`
         );
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
-        return;
       }
 
       const contentTypes = await response.json();
 
-      if (!contentTypes || contentTypes.length === 0) {
-        console.error("No content types received from API");
+      const contentTypesGrid = document.getElementById("content-types-grid");
+      const contentTypesError = document.getElementById("content-types-error");
+
+      if (!contentTypesGrid) {
+        console.error("Content types grid element not found in DOM");
         return;
       }
 
-      // Create content types selection UI
-      createContentTypesUI(contentTypes);
-    } catch (error) {
-      console.error("Error fetching content types:", error);
+      // Clear existing content
+      contentTypesGrid.innerHTML = "";
+
+      if (contentTypes.length === 0) {
+        contentTypesGrid.innerHTML =
+          "<p>No content types available for this library.</p>";
+        return;
+      }
+
+      // Create content type cards for SINGLE selection only
+      contentTypes.forEach((contentType) => {
+        const card = document.createElement("div");
+        card.className = "content-type-card";
+        card.dataset.contentTypeId = contentType.id;
+        card.dataset.contentTypeCode =
+          contentType.code || contentType.subject_area;
+
+        card.innerHTML = `
+          <div class="content-type-title">${
+            contentType.display_name || contentType.name
+          }</div>
+          <div class="content-type-check">✓</div>
+        `;
+
+        card.addEventListener("click", function () {
+          handleContentTypeSelection(this);
+        });
+
+        contentTypesGrid.appendChild(card);
+      });
+    } catch {
+      const contentTypesGrid = document.getElementById("content-types-grid");
+      const contentTypesError = document.getElementById("content-types-error");
+
+      if (contentTypesError) {
+        contentTypesError.textContent = "Error loading content types";
+        contentTypesError.style.display = "block";
+      }
+
+      if (contentTypesGrid) {
+        contentTypesGrid.innerHTML = "";
+      }
     }
   }
 
-  function createContentTypesUI(contentTypes) {
-    // Use existing content types grid from HTML template
-    const contentTypesGrid = document.getElementById("content-types-grid");
-    if (!contentTypesGrid) {
-      console.error("Content types grid not found in HTML template");
-      return;
+  function handleContentTypeSelection(clickedCard) {
+    // Remove selection from all cards
+    const allCards = document.querySelectorAll(".content-type-card");
+    allCards.forEach((card) => {
+      card.classList.remove("selected");
+    });
+
+    // Add selection to clicked card
+    clickedCard.classList.add("selected");
+
+    // Store the selected content type
+    selectedContentType = {
+      id: clickedCard.dataset.contentTypeId,
+      code: clickedCard.dataset.contentTypeCode,
+    };
+
+    // Hide error message if visible
+    const contentTypesError = document.getElementById("content-types-error");
+    if (contentTypesError) {
+      contentTypesError.style.display = "none";
     }
-
-    // Clear existing content types
-    contentTypesGrid.innerHTML = "";
-
-    // Add content types as checkboxes
-    contentTypes.forEach((contentType) => {
-      const checkboxWrapper = document.createElement("div");
-      checkboxWrapper.className = "content-type-item";
-      checkboxWrapper.innerHTML = `
-        <input type="checkbox" id="content-type-${
-          contentType.id
-        }" name="content_types" value="${
-        contentType.id
-      }" class="content-type-checkbox">
-        <label for="content-type-${contentType.id}" class="content-type-label">
-          <span class="content-type-name">${
-            contentType.display_name || contentType.name
-          }</span>
-        </label>
-      `;
-      contentTypesGrid.appendChild(checkboxWrapper);
-    });
-
-    // Add validation for 1-3 content types selection
-    const checkboxes = contentTypesGrid.querySelectorAll(
-      ".content-type-checkbox"
-    );
-
-    checkboxes.forEach((checkbox) => {
-      checkbox.addEventListener("change", handleContentTypeChange);
-    });
   }
 
   async function handleFormSubmit(e) {
@@ -466,7 +375,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Validate form fields before proceeding
     if (!validateForm()) {
-      alert("Please fill out all required fields: Title and Category.");
       return;
     }
 
@@ -499,7 +407,33 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // 2. Upload the file directly to S3 using the presigned URL
       const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
-      uploadButton.textContent = `Uploading... (0%) - ${fileSizeMB}MB`;
+      const fileSizeGB = (file.size / (1024 * 1024 * 1024)).toFixed(2);
+
+      // Determine upload method and calculate chunks for multipart
+      const uploadMethod =
+        file.size > 5 * 1024 * 1024 ? "Multipart" : "Single-part";
+      const CHUNK_SIZE = 100 * 1024 * 1024; // 100MB chunks
+      const totalChunks =
+        file.size > 5 * 1024 * 1024 ? Math.ceil(file.size / CHUNK_SIZE) : 1;
+
+      uploadButton.textContent = `Uploading... (0%) - ${fileSizeMB}MB (${uploadMethod})`;
+
+      // Show progress bar
+      const progressBar = document.querySelector(".progress-bar");
+      const progressFill = document.querySelector(".progress-fill");
+      const uploadProgress = document.querySelector(".upload-progress");
+      const progressTextElement = document.querySelector(".progress-text");
+
+      if (progressBar && progressFill) {
+        progressBar.style.display = "block";
+        progressFill.style.width = "0%";
+      }
+
+      if (uploadProgress && progressTextElement) {
+        uploadProgress.style.display = "block";
+        progressTextElement.textContent = "0%";
+      }
+
       const s3UploadResponse = await uploadFileToS3(
         uploadURL,
         file,
@@ -509,9 +443,45 @@ document.addEventListener("DOMContentLoaded", function () {
             100 /
             (1024 * 1024)
           ).toFixed(1);
-          uploadButton.textContent = `Uploading... (${progress.toFixed(
-            0
-          )}%) - ${uploadedMB}MB/${fileSizeMB}MB`;
+          const uploadedGB = (
+            (file.size * progress) /
+            100 /
+            (1024 * 1024 * 1024)
+          ).toFixed(2);
+
+          // Show chunk progress for multipart uploads
+          let progressText = `Uploading... (${progress.toFixed(0)}%)`;
+
+          if (file.size > 5 * 1024 * 1024) {
+            // Multipart upload - show chunk progress
+            const completedChunks = Math.floor((progress / 100) * totalChunks);
+            progressText += ` - Chunk ${completedChunks}/${totalChunks}`;
+          }
+
+          if (file.size > 100 * 1024 * 1024) {
+            // Show GB for files > 100MB
+            uploadButton.textContent = `${progressText} - ${uploadedGB}GB/${fileSizeGB}GB (${uploadMethod})`;
+          } else {
+            uploadButton.textContent = `${progressText} - ${uploadedMB}MB/${fileSizeMB}MB (${uploadMethod})`;
+          }
+
+          // Update progress bar
+          const progressBar = document.querySelector(".progress-bar");
+          const progressFill = document.querySelector(".progress-fill");
+          const uploadProgress = document.querySelector(".upload-progress");
+          const progressTextElement = document.querySelector(".progress-text");
+
+          if (progressBar && progressFill) {
+            progressBar.style.display = "block";
+            progressFill.style.width = `${progress}%`;
+          }
+
+          if (uploadProgress && progressTextElement) {
+            uploadProgress.style.display = "block";
+            progressTextElement.textContent = `${progress.toFixed(0)}%`;
+          }
+
+          console.log(`Button text updated: ${uploadButton.textContent}`);
         }
       );
 
@@ -535,8 +505,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Fallback or display a message
         window.location.href = "/"; // Redirect to home page as a fallback
       }
-    } catch (error) {
-      console.error("Upload process failed:", error);
+    } catch {
       alert(`An error occurred: ${error.message}`);
       uploadButton.textContent = "Upload Clip";
       uploadButton.disabled = false;
@@ -544,6 +513,17 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function uploadFileToS3(uploadURL, file, onProgress) {
+    // Use multipart upload for files larger than 5MB
+    const MULTIPART_THRESHOLD = 5 * 1024 * 1024; // 5MB
+
+    if (file.size > MULTIPART_THRESHOLD) {
+      return uploadFileToS3Multipart(uploadURL, file, onProgress);
+    } else {
+      return uploadFileToS3Single(uploadURL, file, onProgress);
+    }
+  }
+
+  function uploadFileToS3Single(uploadURL, file, onProgress) {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("PUT", uploadURL);
@@ -557,12 +537,14 @@ document.addEventListener("DOMContentLoaded", function () {
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
           const progress = (event.loaded / event.total) * 100;
+          console.log(`Single-part progress: ${progress.toFixed(1)}%`);
           onProgress(progress);
         }
       };
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
+          console.log("Single-part upload completed successfully");
           resolve(xhr);
         } else {
           reject(new Error(`Upload failed with status: ${xhr.status}`));
@@ -581,22 +563,191 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  async function uploadFileToS3Multipart(uploadURL, file, onProgress) {
+    const CHUNK_SIZE = 100 * 1024 * 1024; // 100MB chunks for large files
+    const MAX_CONCURRENT_CHUNKS = 10; // 10 concurrent uploads for large files
+
+    try {
+      // Parse the presigned URL to get bucket and key
+      const url = new URL(uploadURL);
+      const bucket = url.hostname.split(".")[0];
+      const key = url.pathname.substring(1); // Remove leading slash
+
+      // Log upload details for large files
+      const fileSizeGB = (file.size / (1024 * 1024 * 1024)).toFixed(2);
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      console.log(
+        `Starting multipart upload: ${fileSizeGB}GB, ${totalChunks} chunks, ${
+          CHUNK_SIZE / (1024 * 1024)
+        }MB chunks`
+      );
+
+      // Create multipart upload
+      const createMultipartResponse = await fetch(
+        "/api/s3/create-multipart-upload/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({
+            bucket: bucket,
+            key: key,
+            content_type: file.type,
+          }),
+        }
+      );
+
+      if (!createMultipartResponse.ok) {
+        throw new Error("Failed to create multipart upload");
+      }
+
+      const { upload_id } = await createMultipartResponse.json();
+
+      // Calculate chunks
+      const parts = [];
+      let completedChunks = 0;
+
+      // Upload chunks in parallel with limited concurrency
+      const uploadChunk = async (chunkIndex) => {
+        const start = chunkIndex * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, end);
+
+        // Get presigned URL for this part
+        const partResponse = await fetch("/api/s3/get-upload-part-url/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({
+            bucket: bucket,
+            key: key,
+            upload_id: upload_id,
+            part_number: chunkIndex + 1,
+          }),
+        });
+
+        if (!partResponse.ok) {
+          throw new Error(
+            `Failed to get presigned URL for part ${chunkIndex + 1}`
+          );
+        }
+
+        const { presigned_url } = await partResponse.json();
+
+        // Upload the chunk with progress tracking
+        return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("PUT", presigned_url);
+          xhr.setRequestHeader("Content-Type", file.type);
+
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+              // Calculate progress for this specific chunk
+              const chunkProgress = (event.loaded / event.total) * 100;
+              // Calculate overall progress: (completed chunks + current chunk progress) / total chunks
+              const completedChunks = chunkIndex;
+              const overallProgress =
+                ((completedChunks + chunkProgress / 100) / totalChunks) * 100;
+              console.log(
+                `Chunk ${chunkIndex + 1} progress: ${chunkProgress.toFixed(
+                  1
+                )}%, Overall: ${overallProgress.toFixed(1)}%`
+              );
+              onProgress(overallProgress);
+            }
+          };
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const etag = xhr.getResponseHeader("ETag");
+              console.log(`Chunk ${chunkIndex + 1} completed successfully`);
+              resolve({
+                PartNumber: chunkIndex + 1,
+                ETag: etag,
+              });
+            } else {
+              reject(new Error(`Failed to upload part ${chunkIndex + 1}`));
+            }
+          };
+
+          xhr.onerror = () => {
+            reject(new Error(`Network error uploading part ${chunkIndex + 1}`));
+          };
+
+          xhr.send(chunk);
+        });
+      };
+
+      // Upload chunks with limited concurrency
+      for (let i = 0; i < totalChunks; i += MAX_CONCURRENT_CHUNKS) {
+        const chunkPromises = [];
+        for (let j = 0; j < MAX_CONCURRENT_CHUNKS && i + j < totalChunks; j++) {
+          chunkPromises.push(uploadChunk(i + j));
+        }
+
+        const chunkResults = await Promise.all(chunkPromises);
+        parts.push(...chunkResults);
+
+        completedChunks += chunkResults.length;
+        const progress = (completedChunks / totalChunks) * 100;
+
+        onProgress(progress);
+      }
+
+      // Complete multipart upload
+      console.log(`Completing multipart upload with ${parts.length} parts`);
+      const completeResponse = await fetch(
+        "/api/s3/complete-multipart-upload/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken"),
+          },
+          body: JSON.stringify({
+            bucket: bucket,
+            key: key,
+            upload_id: upload_id,
+            parts: parts,
+          }),
+        }
+      );
+
+      if (!completeResponse.ok) {
+        throw new Error("Failed to complete multipart upload");
+      }
+
+      console.log(`Multipart upload completed successfully: ${fileSizeGB}GB`);
+
+      // Return a mock response object to maintain compatibility
+      return {
+        status: 200,
+        responseText: "Multipart upload completed successfully",
+      };
+    } catch (error) {
+      console.error("Multipart upload failed:", error);
+      throw error;
+    }
+  }
+
   async function notifyBackend(s3Key) {
     const libraryInfo = document.querySelector(".library-info");
     const libraryId = libraryInfo
       ? libraryInfo.getAttribute("data-library-id")
       : null;
 
-    // Get selected content types
-    const selectedContentTypes = Array.from(
-      document.querySelectorAll(".content-type-checkbox:checked")
-    ).map((checkbox) => checkbox.value);
-
     // Use FormData to send both file and text data
     const formData = new FormData();
     formData.append("title", titleInput.value.trim());
     formData.append("description", descriptionInput.value.trim());
-    formData.append("category", document.getElementById("category").value);
+    formData.append(
+      "content_type",
+      selectedContentType ? selectedContentType.id : ""
+    );
     formData.append("tags", selectedTags.join(","));
     formData.append("s3_key", s3Key);
     formData.append("library_id", libraryId);
@@ -604,18 +755,13 @@ document.addEventListener("DOMContentLoaded", function () {
     formData.append("file_size", videoMetadata.fileSize);
     formData.append("format", videoMetadata.format);
 
-    // Add content types (multiple values)
-    selectedContentTypes.forEach((contentTypeId) => {
-      formData.append("content_types", contentTypeId);
-    });
-
     // Append the thumbnail file if it exists
     const thumbnailFile = previewImageInput.files[0];
     if (thumbnailFile) {
       formData.append("thumbnail", thumbnailFile);
     }
 
-    const response = await fetch("/api/api/upload/", {
+    const response = await fetch("/api/uploads/", {
       method: "POST",
       headers: {
         // 'Content-Type' is set automatically by the browser for FormData
@@ -634,12 +780,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function validateForm() {
     const title = titleInput.value.trim();
-    const category = document.getElementById("category").value;
-
-    // Validate content types selection
-    const selectedContentTypes = document.querySelectorAll(
-      ".content-type-checkbox:checked"
-    );
     const contentTypesError = document.getElementById("content-types-error");
 
     if (!title) {
@@ -648,28 +788,12 @@ document.addEventListener("DOMContentLoaded", function () {
       return false;
     }
 
-    if (!category) {
-      alert("Please select a category");
-      document.getElementById("category").focus();
-      return false;
-    }
-
-    if (selectedContentTypes.length === 0) {
-      alert("Please select at least 1 content type");
+    if (!selectedContentType) {
       if (contentTypesError) {
-        contentTypesError.textContent =
-          "Please select at least 1 content type.";
+        contentTypesError.textContent = "Please select a content type";
         contentTypesError.style.display = "block";
-      }
-      return false;
-    }
-
-    if (selectedContentTypes.length > 3) {
-      alert("Please select no more than 3 content types");
-      if (contentTypesError) {
-        contentTypesError.textContent =
-          "Please select no more than 3 content types.";
-        contentTypesError.style.display = "block";
+      } else {
+        alert("Please select a content type");
       }
       return false;
     }

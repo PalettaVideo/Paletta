@@ -13,6 +13,6 @@ class UploadHistoryView(TemplateView):
         context = self.get_context_data(**kwargs)
         # Use select_related and prefetch_related to efficiently fetch related information
         context['videos'] = Video.objects.filter(uploader=request.user).select_related(
-            'library', 'subject_area'
-        ).prefetch_related('content_types').order_by('-upload_date')
+            'library', 'content_type'
+        ).order_by('-upload_date')
         return self.render_to_response(context)

@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - Checkout</title>
+  <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - Submit Video Request</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token }}">
@@ -17,71 +17,6 @@
   <link rel="stylesheet" href="{% static 'css/layout.css' %}">
   <!-- CSS -->
   <link rel="stylesheet" href="{% static 'css/checkout.css' %}">
-  <style>
-    .checkout-section {
-      margin-bottom: 30px;
-    }
-    .checkout-form {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    .checkout-form label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-    .checkout-form input, .checkout-form select {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    .full-width {
-      grid-column: span 2;
-    }
-    .payment-methods {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-    .payment-method {
-      border: 1px solid #ddd;
-      padding: 15px;
-      border-radius: 4px;
-      text-align: center;
-      cursor: pointer;
-      flex: 1;
-    }
-    .payment-method.selected {
-      border-color: #86B049;
-      background-color: rgba(134, 176, 73, 0.1);
-    }
-    .payment-method img {
-      height: 30px;
-      margin-bottom: 10px;
-    }
-    .checkout-button {
-      background-color: #86B049;
-      color: white;
-      border: none;
-      padding: 15px 25px;
-      font-size: 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      width: 100%;
-    }
-    .checkout-button:hover {
-      background-color: #758f3e;
-    }
-    .checkout-button:disabled {
-      background-color: #aaa;
-      cursor: not-allowed;
-    }
-  </style>
   <!-- JS -->
   <script src="{% static 'js/checkout.js' %}" defer></script>
 </head>
@@ -90,78 +25,74 @@
   
   <div class="layout">
     <main class="content">
-      <h1>Checkout</h1>
+      <h1>Submit Video Request</h1>
       
       <div class="checkout-container">
         <div class="checkout-details">
           <div class="checkout-section">
-            <h2>Order Summary</h2>
+            <h2>Your Selected Videos</h2>
             <div class="cart-items">
               {% for detail in order_details %}
-              <div class="cart-item">
+              <div class="cart-item" data-video-id="{{ detail.video.id }}">
                 {% if detail.video.thumbnail %}
-                  <img src="{{ detail.video.thumbnail.url }}" alt="{{ detail.video.title }}">
+                  <img src="{{ detail.video.thumbnail.url }}" alt="{{ detail.video.title }}" style="max-width: 200px; max-height: 150px; object-fit: cover; border-radius: 8px;">
                 {% else %}
-                  <img src="{% static 'picture/default_thumbnail.png' %}" alt="{{ detail.video.title }}">
+                  <img src="{% static 'picture/default_thumbnail.png' %}" alt="{{ detail.video.title }}" style="max-width: 200px; max-height: 150px; object-fit: cover; border-radius: 8px;">
                 {% endif %}
                 
                 <div class="cart-item-details">
                   <h3>{{ detail.video.title }}</h3>
                   <p>Resolution: {{ detail.resolution }}</p>
-                  <p class="cart-item-price">£{{ detail.price }}</p>
+                  <p>Duration: {{ detail.video.duration_formatted|default:"Unknown" }}</p>
+                  {% if detail.video.storage_status != 'stored' %}
+                    <p class="storage-warning" style="color: #dc3545;">
+                      Status: {{ detail.video.get_storage_status_display }}
+                    </p>
+                  {% endif %}
                 </div>
               </div>
               {% endfor %}
             </div>
             
             <div class="cart-summary">
-              <p>Subtotal: £{{ total }}</p>
-              {% with vat=total|multiply:0.2 %}
-              <p>VAT (20%): £{{ vat|floatformat:2 }}</p>
-              <p class="total">Total: £{{ total|add:vat|floatformat:2 }}</p>
-              {% endwith %}
+              <p><strong>Total Videos:</strong> {{ order_details|length }}</p>
+              <p><strong>Total Size:</strong> Estimated download size will be included in your email</p>
             </div>
           </div>
           
           <div class="checkout-section">
-            <h2>Payment Method</h2>
-            <div class="payment-methods">
-              <div class="payment-method selected" data-method="card">
-                <img src="{% static 'picture/card-icon.png' %}" alt="Credit Card" onerror="this.src='https://via.placeholder.com/80x30?text=Credit+Card'">
-                <p>Credit Card</p>
-              </div>
-              <div class="payment-method" data-method="paypal">
-                <img src="{% static 'picture/paypal-icon.png' %}" alt="PayPal" onerror="this.src='https://via.placeholder.com/80x30?text=PayPal'">
-                <p>PayPal</p>
-              </div>
-              <div class="payment-method" data-method="bank">
-                <img src="{% static 'picture/bank-icon.png' %}" alt="Bank Transfer" onerror="this.src='https://via.placeholder.com/80x30?text=Bank+Transfer'">
-                <p>Bank Transfer</p>
-              </div>
+            <div class="download-info">
+              <h3>🎬 How Video Requests Work</h3>
+              <ul>
+                <li><strong>Manager Review:</strong> Your request will be reviewed by our FilmBright team</li>
+                <li><strong>Personal Contact:</strong> We'll contact you directly to discuss licensing and pricing</li>
+                <li><strong>High Quality:</strong> Videos are delivered in their original uploaded quality</li>
+              </ul>
             </div>
             
-            <div id="card-payment-form">
-              <form class="checkout-form" id="checkout-form">
-                <div class="form-group">
-                  <label for="card-name">Name on Card</label>
-                  <input type="text" id="card-name" value="{{ user.get_full_name }}" required>
-                </div>
-                <div class="form-group">
-                  <label for="card-number">Card Number</label>
-                  <input type="text" id="card-number" placeholder="1234 5678 9012 3456" required>
-                </div>
-                <div class="form-group">
-                  <label for="card-expiry">Expiry Date</label>
-                  <input type="text" id="card-expiry" placeholder="MM/YY" required>
-                </div>
-                <div class="form-group">
-                  <label for="card-cvc">CVC</label>
-                  <input type="text" id="card-cvc" placeholder="123" required>
-                </div>
-                <div class="form-group full-width">
-                  <button type="button" id="complete-order" class="checkout-button">Complete Order</button>
-                </div>
-              </form>
+            <div class="email-input-group">
+              <label for="download-email">Your Contact Email:</label>
+              <input type="email" id="download-email" value="{{ user.email }}" required>
+              <small>We'll use this email to contact you about your video request</small>
+            </div>
+            
+            <div class="download-actions">
+              <button type="button" id="request-downloads" class="download-button">
+                Submit Video Request
+              </button>
+              
+              <div class="loading" id="loading-indicator">
+                <div class="loading-spinner"></div>
+                <p>Submitting your video request...</p>
+              </div>
+              
+              <div class="success-message" id="success-message">
+                <strong>Success!</strong> Your video request has been submitted and our team will contact you soon.
+              </div>
+              
+              <div class="error-message" id="error-message">
+                <strong>Error:</strong> <span id="error-text"></span>
+              </div>
             </div>
           </div>
         </div>

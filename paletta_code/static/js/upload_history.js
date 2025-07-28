@@ -129,8 +129,6 @@ function setupDeleteFunctionality() {
       // Use the standard video delete URL since videos always have a library
       const deleteUrl = `/videos/delete/${videoId}/`;
 
-      console.log("Attempting to delete video:", videoId, "at URL:", deleteUrl);
-
       // Send AJAX request to delete the video
       fetch(deleteUrl, {
         method: "POST",
@@ -180,8 +178,7 @@ function setupDeleteFunctionality() {
           // Close the modal
           closeDeleteModal();
         })
-        .catch((error) => {
-          console.error("Error:", error);
+        .catch(() => {
           let errorMessage = "An error occurred while deleting the video";
 
           // Try to provide more specific error messages

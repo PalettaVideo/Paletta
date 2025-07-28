@@ -11,6 +11,7 @@
   <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
   <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
   <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
+  <meta name="user-role" content="{{ user_role|default:'user' }}">
   <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
@@ -50,9 +51,9 @@
         {% endif %}
       </li>
       
-      {% for category in categories %}
-      <li class="{% if current_category and current_category.display_name == category.display_name %}active{% endif %}" data-category="{{ category.display_name|lower }}">
-        <a href="{% library_specific_url 'library_category' category_slug=category.display_name|library_slugify %}">{{ category.display_name }}</a>
+      {% for content_type in content_types %}
+      <li class="{% if current_category and current_category.display_name == content_type.display_name %}active{% endif %}" data-category="{{ content_type.display_name|lower }}">
+        <a href="{% library_specific_url 'library_category' category_slug=content_type.display_name|library_slugify %}">{{ content_type.display_name }}</a>
       </li>
       {% endfor %}
     </ul>

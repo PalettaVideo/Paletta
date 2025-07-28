@@ -12,7 +12,8 @@
   <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
   <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
   <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
-  <meta name="categories-count" content="{{ categories|length }}">
+  <meta name="content-types-count" content="{{ content_types|length }}">
+  <meta name="user-role" content="{{ user_role|default:'user' }}">
   
   <!-- Styles -->
   <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
@@ -32,9 +33,9 @@
 <body>
   <!-- Debug comments for troubleshooting -->
   <!-- Current Library: {% if current_library %}{{ current_library.name }} (ID: {{ current_library.id }}){% else %}None{% endif %} -->
-  <!-- Categories Count: {{ categories|length }} -->
-  {% if categories %}
-  <!-- Category Names: {% for cat in categories %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %} -->
+  <!-- Content Types Count: {{ content_types|length }} -->
+{% if content_types %}
+<!-- Content Type Names: {% for ct in content_types %}{{ ct.name }}{% if not forloop.last %}, {% endif %}{% endfor %} -->
   {% endif %}
   
   <header>
@@ -126,54 +127,54 @@
   </div>
 
   <div class="categoriestitle">
-    <span>Categories</span>
+    <span>Content Types</span>
   </div>
   
   <!-- new categories section -->
   <div class="categories-wrap">
     <div class="categories" id="categories-container">
       
-      <!-- Private category (pinned) - shown first among library categories -->
-      {% for category in categories %}
-        {% if category.code == 'private' or category.type == 'library_category' and category.name == 'Private' %}
+      <!-- Private content type (pinned) - shown first among library content types -->
+      {% for content_type in content_types %}
+        {% if content_type.code == 'private' or content_type.type == 'library_content_type' and content_type.name == 'Private' %}
         {% if current_library %}
-        <a href="{% library_specific_url 'library_category' category_slug=category.name|library_slugify %}" style="text-decoration: none;">
+        <a href="{% library_specific_url 'library_category' category_slug=content_type.name|library_slugify %}" style="text-decoration: none;">
         {% else %}
         <a href="{% url 'home' %}" style="text-decoration: none;">
         {% endif %}
           <div class="category private-category">
-            <img src="{% if category.image_url %}{{ category.image_url }}{% else %}{% static 'picture/main_campus.png' %}{% endif %}" 
-                 alt="{{ category.name }}" data-category="{{ category.name }}" class="category-image">
-            <span>{{ category.name }}</span>
+            <img src="{% if content_type.image_url %}{{ content_type.image_url }}{% else %}{% static 'picture/main_campus.png' %}{% endif %}" 
+                 alt="{{ content_type.name }}" data-category="{{ content_type.name }}" class="category-image">
+            <span>{{ content_type.name }}</span>
           </div>
         </a>
         {% endif %}
       {% endfor %}
       
-      <!-- Other dynamic categories from database -->
-      {% for category in categories %}
-        {% if category.code != 'private' and category.name != 'Private' %}
+      <!-- Other dynamic content types from database -->
+      {% for content_type in content_types %}
+        {% if content_type.code != 'private' and content_type.name != 'Private' %}
         {% if current_library %}
-        <a href="{% library_specific_url 'library_category' category_slug=category.name|library_slugify %}" style="text-decoration: none;">
+        <a href="{% library_specific_url 'library_category' category_slug=content_type.name|library_slugify %}" style="text-decoration: none;">
         {% else %}
         <a href="{% url 'home' %}" style="text-decoration: none;">
         {% endif %}
           <div class="category">
-            <!-- Use the category image URL if available, otherwise use a default image -->
-            {% if category.image_url %}
-              <img src="{{ category.image_url }}" alt="{{ category.name }}" 
-                  data-category="{{ category.name }}" class="category-image">
+            <!-- Use the content type image URL if available, otherwise use a default image -->
+            {% if content_type.image_url %}
+              <img src="{{ content_type.image_url }}" alt="{{ content_type.name }}" 
+                  data-category="{{ content_type.name }}" class="category-image">
             {% else %}
-              <img src="{% static 'picture/main_campus.png' %}" alt="{{ category.name }}" 
-                  data-category="{{ category.name }}" class="category-image">
+              <img src="{% static 'picture/main_campus.png' %}" alt="{{ content_type.name }}" 
+                  data-category="{{ content_type.name }}" class="category-image">
             {% endif %}
-            <span>{{ category.name }}</span>
+            <span>{{ content_type.name }}</span>
           </div>
         </a>
         {% endif %}
       {% empty %}
-      <!-- If no categories are found, show a message -->
-      <p class="no-categories">No categories created yet. Reach out to Admin for more information.</p>
+      <!-- If no content types are found, show a message -->
+      <p class="no-categories">No content types created yet. Reach out to Admin for more information.</p>
       {% endfor %}
     </div>
   </div>

@@ -152,8 +152,7 @@ document.addEventListener("DOMContentLoaded", function () {
               "User with this email address does not exist in the system";
           }
         })
-        .catch((error) => {
-          console.error("Error:", error);
+        .catch(() => {
           document.getElementById("emailError").textContent =
             "An error occurred while checking this email. Please try again.";
         });
@@ -209,8 +208,7 @@ document.addEventListener("DOMContentLoaded", function () {
           initialActions.style.display = "flex";
         }
       })
-      .catch((error) => {
-        console.error("Error:", error);
+      .catch(() => {
         document.getElementById("emailError").textContent =
           "An error occurred. Please try again.";
         confirmationSection.style.display = "none";
@@ -256,8 +254,7 @@ document.addEventListener("DOMContentLoaded", function () {
               alert(data.message || "Failed to revoke admin privileges.");
             }
           })
-          .catch((error) => {
-            console.error("Error:", error);
+          .catch(() => {
             alert("An error occurred. Please try again.");
           });
       }
@@ -334,8 +331,7 @@ document.addEventListener("DOMContentLoaded", function () {
               alert(data.message || "Failed to revoke admin privileges.");
             }
           })
-          .catch((error) => {
-            console.error("Error:", error);
+          .catch(() => {
             alert("An error occurred. Please try again.");
           });
       }

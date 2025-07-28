@@ -73,12 +73,6 @@ function clearStaleLibraryData() {
   keysToRemove.forEach((key) => {
     localStorage.removeItem(key);
   });
-
-  if (keysToRemove.length > 0) {
-    console.log(
-      `Cleared ${keysToRemove.length} stale localStorage entries for library switch`
-    );
-  }
 }
 
 // Get default thumbnail path for missing thumbnails
@@ -116,8 +110,7 @@ function processThumbnail(clip) {
           }
           return clip;
         })
-        .catch((error) => {
-          console.error(`Error fetching thumbnail for clip ${clip.id}:`, error);
+        .catch(() => {
           return clip;
         });
     }
@@ -136,7 +129,6 @@ function fetchThumbnailForClip(clipId) {
 
   // Only proceed if we have a csrf token and clip ID
   if (!csrfToken || !clipId) {
-    console.error("Missing CSRF token or clip ID");
     return Promise.resolve(null);
   }
 
@@ -144,7 +136,7 @@ function fetchThumbnailForClip(clipId) {
   // Try different possible paths to the thumbnail API
   const urls = [
     `/api/clip/${clipId}/thumbnail/`, // Direct API path
-    `/api/api/clip/${clipId}/thumbnail/`, // Through videos app
+    `/api/clip/${clipId}/thumbnail/`, // Through videos app
   ];
 
   // Try the first URL, if it fails, try the second
@@ -159,7 +151,6 @@ function fetchThumbnailForClip(clipId) {
         return response.json();
       }
       // If first URL fails, try the second URL
-      console.log(`First URL failed, trying ${urls[1]}...`);
       return fetch(urls[1], {
         method: "GET",
         headers: {
@@ -183,8 +174,7 @@ function fetchThumbnailForClip(clipId) {
       }
       return null;
     })
-    .catch((error) => {
-      console.error("Thumbnail fetch error:", error);
+    .catch(() => {
       return null;
     });
 }
@@ -264,7 +254,6 @@ function renderCollection() {
   if (collectionGrid) {
     collectionGrid.innerHTML = "";
   } else {
-    console.error("Collection grid not found in the DOM");
     return;
   }
 
@@ -309,7 +298,7 @@ function renderCollection() {
           <img src="${clip.thumbnail}" alt="${clip.title || "Video"}">
           <div class="clip-details">
             <h2>${clip.title || "Untitled Video"}</h2>
-            <a href="/clip/${clip.id}/">
+            <a href="/library/${getCurrentLibrarySlug()}/video/${clip.id}/">
               <button class="view-details">View Details</button>
             </a>
             <button class="remove" data-clip-id="${clip.id}">Remove</button>
@@ -325,8 +314,7 @@ function renderCollection() {
           });
       });
     })
-    .catch((error) => {
-      console.error("Error rendering collection:", error);
+    .catch(() => {
       collectionGrid.innerHTML = `
         <div class="error">
           <p>There was an error loading your collection. Please try again later.</p>

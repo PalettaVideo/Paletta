@@ -1,1 +1,1 @@
-from .viewsets import VideoViewSet, CategoryViewSet
+from .viewsets import ContentTypeViewSet

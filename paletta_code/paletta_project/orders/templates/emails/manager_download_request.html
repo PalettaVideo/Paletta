@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Video Download Request</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 20px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #dc3545;
+            margin-bottom: 20px;
+        }
+        .customer-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        .customer-info h3 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 18px;
+        }
+        .customer-detail {
+            margin: 8px 0;
+            padding: 5px 0;
+        }
+        .customer-detail strong {
+            color: #495057;
+            min-width: 120px;
+            display: inline-block;
+        }
+        .videos-section {
+            margin: 30px 0;
+        }
+        .videos-section h3 {
+            color: #2c3e50;
+            font-size: 18px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 8px;
+        }
+        .video-item {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            border-left: 4px solid #007bff;
+        }
+        .video-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        .video-details {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .video-details span {
+            display: inline-block;
+            margin-right: 15px;
+            margin-bottom: 5px;
+        }
+        .request-summary {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 25px 0;
+        }
+        .request-summary h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .action-needed {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .action-needed h4 {
+            margin-top: 0;
+            color: #0c5460;
+            font-size: 18px;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .urgency-high {
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        .urgency-normal {
+            background-color: #f8f9fa;
+            border-left-color: #007bff;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .email-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">Paletta</div>
+            <h1 class="title">New Video Download Request</h1>
+        </div>
+
+        <p>Hello,</p>
+
+        <p>A customer has submitted a request to download {{ video_count }} video{{ video_count|pluralize }}.</p>
+
+        <div class="customer-info">
+            <h3>Customer Details</h3>
+            <div class="customer-detail">
+                <strong>Name:</strong> {{ customer_name }}
+            </div>
+            <div class="customer-detail">
+                <strong>Email:</strong> {{ customer_email }}
+            </div>
+            <div class="customer-detail">
+                <strong>User ID:</strong> {{ customer_id }}
+            </div>
+            <div class="customer-detail">
+                <strong>Request Date:</strong> {{ request_date|date:"F j, Y" }} at {{ request_date|time:"g:i A" }}
+            </div>
+            {% if customer_library %}
+            <div class="customer-detail">
+                <strong>Library:</strong> {{ customer_library }}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="videos-section">
+            <h3>Requested Videos ({{ video_count }} item{{ video_count|pluralize }})</h3>
+            
+            {% for video in videos %}
+            <div class="video-item">
+                <div class="video-title">{{ video.title }}</div>
+                <div class="video-details">
+                    <span><strong>ID:</strong> {{ video.id }}</span>
+                    <span><strong>Duration:</strong> {{ video.duration_formatted|default:"Unknown" }}</span>
+                    <span><strong>Size:</strong> {{ video.file_size|filesizeformat|default:"Unknown" }}</span>
+                    {% if video.content_type %}
+                    <span><strong>Category:</strong> {{ video.content_type.display_name }}</span>
+                    {% endif %}
+                    {% if video.format %}
+                    <span><strong>Format:</strong> {{ video.format|upper }}</span>
+                    {% endif %}
+                </div>
+                {% if video.description %}
+                <div style="margin-top: 8px; color: #495057; font-style: italic;">
+                    "{{ video.description|truncatewords:20 }}"
+                </div>
+                {% endif %}
+                {% if video.download_url %}
+                <div style="margin-top: 15px;">
+                    <a href="{{ video.download_url }}" style="display: inline-block; background-color: #28a745; color: #ffffff; text-decoration: none; padding: 8px 16px; border-radius: 4px; font-size: 14px; font-weight: 600;" target="_blank">
+                        Download Link (48h)
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="request-summary">
+            <h4>Request Summary</h4>
+            <p><strong>Total Videos:</strong> {{ video_count }}</p>
+            <p><strong>Customer Email:</strong> {{ customer_email }}</p>
+            <p><strong>Request ID:</strong> {{ request_id|default:"Multiple requests" }}</p>
+        </div>
+        <div style="background-color: #fff3cd; padding: 20px; border-radius: 6px; margin: 20px 0;">
+            <h4 style="margin-top: 0; color: #856404;">Download Link Details:</h4>
+            <ul style="margin: 10px 0; padding-left: 20px; color: #856404;">
+                <li><strong>Expiry:</strong> 48 hours from request time</li>
+                <li><strong>Access:</strong> Direct S3 download links</li>
+                <li><strong>Security:</strong> Presigned URLs with time-limited access</li>
+                <li><strong>Customer Email:</strong> {{ customer_email }}</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>This is an automated notification from the Paletta video request system.</p>
+            <p>Generated at {{ request_date|date:"F j, Y" }} {{ request_date|time:"g:i A" }}</p>
+        </div>
+    </div>
+</body>
+</html> 

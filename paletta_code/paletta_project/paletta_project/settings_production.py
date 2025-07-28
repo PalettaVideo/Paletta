@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 import sys
 from dotenv import load_dotenv
 import dj_database_url
@@ -23,8 +22,6 @@ ALLOWED_HOSTS = [
     'paletta-alb-62461270.eu-west-2.elb.amazonaws.com',
     'paletta.io',
     'www.paletta.io',
-    'localhost',
-    '127.0.0.1',
 ]
 
 # Security settings for production
@@ -60,6 +57,31 @@ if not API_GATEWAY_URL:
     # In production, we require the API Gateway URL to be set.
     raise ValueError("API_GATEWAY_URL environment variable not set.")
 
+# Override INSTALLED_APPS to use proper app configurations
+INSTALLED_APPS = [
+    # Local apps with proper configurations
+    'accounts.apps.AccountsConfig',
+    'videos.apps.VideosConfig',
+    'libraries.apps.LibrariesConfig',
+    'orders.apps.OrdersConfig',
+    
+    # Django built-in apps
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    
+    # Third-party apps
+    'rest_framework',
+    'rest_framework.authtoken',
+
+    # AWS S3 and storage
+    'storages',
+    'django_ses',
+]
+
 # AWS S3 Storage Configuration
 AWS_STORAGE_ENABLED = True
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
@@ -92,12 +114,26 @@ if AWS_STORAGE_ENABLED:
 
 # Static file versioning for cache busting
 # Change this value whenever you want to force cache invalidation
-STATIC_VERSION = '2.0.0'
+STATIC_VERSION = '0.0.0'
 
-# Download link configuration
-DOWNLOAD_LINK_EXPIRY_HOURS = int(os.environ.get('DOWNLOAD_LINK_EXPIRY_HOURS', '24'))
+# Download link configuration - 48 hours for download requests
+DOWNLOAD_LINK_EXPIRY_HOURS = int(os.environ.get('DOWNLOAD_LINK_EXPIRY_HOURS', '48'))  # 48 hours for download requests
+DOWNLOAD_REQUEST_EXPIRY_HOURS = 48  # Fixed 48-hour expiry for download requests
 DELETE_LOCAL_FILE_AFTER_UPLOAD = os.environ.get('DELETE_LOCAL_FILE_AFTER_UPLOAD', 'True') == 'True'
 SEND_UPLOAD_CONFIRMATION_EMAIL = os.environ.get('SEND_UPLOAD_CONFIRMATION_EMAIL', 'True') == 'True'
+
+# S3 Multipart Upload Configuration - Performance optimization for large files
+S3_MULTIPART_THRESHOLD = int(os.environ.get('S3_MULTIPART_THRESHOLD', '5242880'))  # 5MB default
+S3_MULTIPART_CHUNK_SIZE = int(os.environ.get('S3_MULTIPART_CHUNK_SIZE', '104857600'))  # 100MB chunks for large files
+S3_MAX_CONCURRENT_PARTS = int(os.environ.get('S3_MAX_CONCURRENT_PARTS', '100'))  # 100 concurrent parts for large files
+
+# AWS SES Configuration for email automation
+AWS_SES_ENABLED = os.environ.get('AWS_SES_ENABLED', 'False') == 'True'
+AWS_SES_REGION = os.environ.get('AWS_SES_REGION', AWS_REGION)
+AWS_SES_SENDER_EMAIL = os.environ.get('AWS_SES_SENDER_EMAIL', 'niklaas@filmbright.com')
+
+# Manager notification email settings
+MANAGER_EMAIL = os.environ.get('MANAGER_EMAIL', 'info@filmbright.com')
 
 # Celery Configuration
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
@@ -114,6 +150,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'videos.tasks.cleanup_expired_download_links',
         'schedule': crontab(hour='*/1'),  # Run every hour
     },
+    'cleanup-expired-download-requests': {
+        'task': 'orders.tasks.cleanup_expired_download_requests',
+        'schedule': crontab(minute='*/120'),  # Run every 2 hours
+    },
     'retry-failed-uploads': {
         'task': 'videos.tasks.retry_failed_uploads',
         'schedule': crontab(minute='*/30'),  # Run every 30 minutes
@@ -121,13 +161,28 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 # Email Configuration
-EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
-EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@paletta.com')
+# Check if AWS SES should be used based on AWS_SES_ENABLED environment variable
+if AWS_SES_ENABLED:
+    # Use AWS SES backend for production email sending
+    EMAIL_BACKEND = 'django_ses.SESBackend'
+    AWS_SES_REGION_NAME = AWS_SES_REGION or AWS_REGION
+    AWS_SES_REGION_ENDPOINT = f'email.{AWS_SES_REGION_NAME}.amazonaws.com'
+    
+    # Log SES configuration for production debugging
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Email configured for AWS SES in region {AWS_SES_REGION_NAME}")
+else:
+    # Fallback to environment-specified backend or console
+    EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+    EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
+    EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+    EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+
+# Default sender email - applies to both SES and other backends  
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'niklaas@filmbright.com')
 
 # Logging Configuration
 LOGGING = {

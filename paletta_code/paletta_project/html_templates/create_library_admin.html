@@ -35,6 +35,12 @@
         <main class="content">
             <h2>Create a Library</h2>
             
+            {% if not user_owns_libraries %}
+            <div class="no-libraries-message" style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
+                <h3 style="color: #6c757d; margin-bottom: 10px;">No Libraries Owned</h3>
+                <p style="color: #6c757d; margin: 0;">You do not own any libraries currently. Reach out to us to setup a plan to store your video content.</p>
+            </div>
+            {% else %}
             <form method="post" enctype="multipart/form-data" id="library-form">
                 {% csrf_token %}
                 {% if form.non_field_errors %}
@@ -61,12 +67,13 @@
                 {% endif %}
 
                 <label for="id_description">Description</label>
-                <textarea id="id_description" name="description" maxlength="100" placeholder="Enter description" required></textarea>
+                <textarea id="id_description" name="description" maxlength="1000" placeholder="Enter description (100-200 words recommended)" required></textarea>
+                <div class="word-count" id="description-word-count">Please write 10-200 words to provide enough context for your library</div>
                 {% if form.description.errors %}
                     <div class="error-message">{{ form.description.errors }}</div>
                 {% endif %}
                 
-                <label for="id_storage_tier">Storage Tier</label>
+                <label for="id_storage_tier">Storage Tier (to be implemented as functionality)</label>
                 <select id="id_storage_tier" name="storage_tier">
                     <option value="basic">Basic (up to 100GB)</option>
                     <option value="pro">Professional (up to 1TB)</option>
@@ -97,11 +104,9 @@
                         <div class="category-option">
                             <input type="radio" id="custom" name="category_source" value="custom">
                             <label for="custom">
-                                <strong>Create My Own Categories</strong>
+                                <strong>Select Subject Area Categories</strong>
                                 <p class="option-description">
-                                    Uses academic subject areas (Engineering Sciences, Medical Sciences, etc.) 
-                                    combined with content types. Ideal for specialized academic or research institutions 
-                                    that need subject-specific organization.
+                                    Select from a list of academic subject areas
                                 </p>
                             </label>
                         </div>
@@ -109,7 +114,7 @@
                     
                     <!-- Custom Categories Creation Interface -->
                     <div id="custom-categories-interface" class="custom-categories-interface" style="display: none;">
-                        <h4>Create Your Subject Area Categories</h4>
+                        <h4>Select Subject Area Categories</h4>
                         <p class="interface-description">
                             Select the subject areas that are relevant to your institution. You can always add more later.
                         </p>
@@ -198,7 +203,7 @@
                     <div class="error-message">{{ form.category_source.errors }}</div>
                 {% endif %}
 
-                <label for="id_theme_color">Theme Colour</label>
+                <label for="id_theme_color">Theme Colour (to be implemented as frontend functionality)</label>
                 <div id="colorPickerContainer">
                     <div id="colorPreview" onclick="toggleColorPicker()"></div>
                     <input type="color" id="themeColor" name="primary_color" onchange="updateColor()" value="#86B049">
@@ -209,6 +214,7 @@
 
                 <button type="submit" class="create-btn">Create Library</button>
             </form>
+            {% endif %}
         </main>
     </div>
 

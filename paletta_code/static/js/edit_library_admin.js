@@ -77,7 +77,6 @@ document.addEventListener("DOMContentLoaded", function () {
       button.textContent = "Save";
     } else {
       field.setAttribute("readonly", true);
-      console.log(`Updated ${fieldId}:`, field.value);
       button.textContent = "Edit";
     }
   };
@@ -351,15 +350,12 @@ document.addEventListener("DOMContentLoaded", function () {
           },
         })
           .then((response) => {
-            console.log("Response status:", response.status);
             if (!response.ok) {
               throw new Error(`HTTP error! Status: ${response.status}`);
             }
             return response.json();
           })
-          .then((data) => {
-            console.log("Response data:", data);
-
+          .then((data) => { 
             // Show success message
             if (data.status === "success") {
               alert(data.message);
@@ -367,37 +363,24 @@ document.addEventListener("DOMContentLoaded", function () {
               alert("Error: " + (data.message || "Unknown error occurred"));
             }
 
-            // Always redirect regardless of status
-            console.log(
-              "Attempting redirect to:",
-              data.redirect_url || "/libraries/manage/"
-            );
-
-            // Force redirect using a more direct approach
             setTimeout(function () {
               window.location.replace(
                 data.redirect_url || "/libraries/manage/"
               );
             }, 500);
           })
-          .catch((error) => {
-            console.error("Error:", error);
+          .catch(() => {
             alert(
               "An error occurred while saving changes. Redirecting to library management page."
             );
-
-            // Force redirect after error using the same approach
             setTimeout(function () {
               window.location.replace("/libraries/manage/");
             }, 500);
           });
-      } catch (error) {
-        console.error("Form processing error:", error);
+      } catch {
         alert(
           "An unexpected error occurred while processing the form. Redirecting to library management page."
         );
-
-        // Force redirect after error using the same approach
         setTimeout(function () {
           window.location.replace("/libraries/manage/");
         }, 500);

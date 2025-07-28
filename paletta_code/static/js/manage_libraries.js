@@ -1,15 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("Manage libraries page loaded");
-  console.log("Checking for required elements...");
-
   // Check if required elements exist
   const confirmModal = document.getElementById("confirmModal");
   const confirmBtn = document.getElementById("confirmBtn");
   const categoriesModal = document.getElementById("categoriesModal");
-
-  console.log("confirmModal:", confirmModal ? "found" : "NOT FOUND");
-  console.log("confirmBtn:", confirmBtn ? "found" : "NOT FOUND");
-  console.log("categoriesModal:", categoriesModal ? "found" : "NOT FOUND");
 
   // Get CSRF token for AJAX requests
   function getCookie(name) {
@@ -28,7 +21,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   const csrftoken = getCookie("csrftoken");
-  console.log("CSRF token:", csrftoken ? "found" : "NOT FOUND");
 
   // Global variables for confirmation modal
   let pendingAction = null;
@@ -166,7 +158,6 @@ document.addEventListener("DOMContentLoaded", function () {
         method = "DELETE";
         break;
       default:
-        console.error("Unknown action:", action);
         return;
     }
 
@@ -194,8 +185,7 @@ document.addEventListener("DOMContentLoaded", function () {
           alert("Error: " + message);
         }
       })
-      .catch((error) => {
-        console.error("Error:", error);
+      .catch(() => {
         alert("An error occurred while performing the action");
       });
   }
@@ -208,7 +198,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Store library ID for later use
     document.getElementById("categoriesModal").dataset.libraryId = libraryId;
 
-    fetch(`/api/api/categories/?library=${libraryId}`)
+    fetch(`/api/content-types/?library=${libraryId}`)
       .then((response) => response.json())
       .then((data) => {
         if (data.length === 0) {
@@ -238,8 +228,7 @@ document.addEventListener("DOMContentLoaded", function () {
         html += "</div>";
         categoriesContent.innerHTML = html;
       })
-      .catch((error) => {
-        console.error("Error loading categories:", error);
+      .catch(() => {
         categoriesContent.innerHTML =
           "<p>Error loading categories. Please try again.</p>";
       });
@@ -273,7 +262,7 @@ document.addEventListener("DOMContentLoaded", function () {
     ];
 
     // Get current categories to exclude them
-    fetch(`/api/api/categories/?library=${libraryId}`)
+    fetch(`/api/content-types/?library=${libraryId}`)
       .then((response) => response.json())
       .then((currentCategories) => {
         const existingAreas = currentCategories.map(
@@ -300,8 +289,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         container.innerHTML = html;
       })
-      .catch((error) => {
-        console.error("Error loading available subject areas:", error);
+      .catch(() => {
         container.innerHTML = "<p>Error loading available options.</p>";
       });
   }
@@ -332,42 +320,16 @@ document.addEventListener("DOMContentLoaded", function () {
           alert("Error: " + (data.message || "Failed to add categories"));
         }
       })
-      .catch((error) => {
-        console.error("Error adding categories:", error);
+      .catch(() => {
         alert("An error occurred while adding categories");
       });
   }
 
-  // Remove category
+  // DISABLED: Remove category - endpoint /api/videos/categories/ does not exist
+  // ContentTypeViewSet is ReadOnly, DELETE operations not supported
   window.removeCategory = function (categoryId, categoryName) {
-    showConfirmModal(
-      "Remove Category",
-      `Are you sure you want to remove "${categoryName}"? This will affect all videos in this category.`,
-      () => {
-        fetch(`/api/videos/categories/${categoryId}/`, {
-          method: "DELETE",
-          headers: {
-            "X-CSRFToken": csrftoken,
-          },
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.status === "success") {
-              alert("Category removed successfully");
-              const libraryId =
-                document.getElementById("categoriesModal").dataset.libraryId;
-              loadLibraryCategories(libraryId);
-              loadAvailableSubjectAreas(libraryId);
-            } else {
-              alert("Error: " + (data.message || "Failed to remove category"));
-            }
-          })
-          .catch((error) => {
-            console.error("Error removing category:", error);
-            alert("An error occurred while removing the category");
-          });
-      }
-    );
+    alert("Category removal is not implemented. ContentTypes cannot be deleted via API.");
+    return;
   };
 
   // Confirmation modal functions
@@ -377,8 +339,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const messageElement = document.getElementById("confirmMessage");
     const confirmBtn = document.getElementById("confirmBtn");
 
-    if (!confirmBtn) {
-      console.error("Confirm button not found");
+    if (!confirmBtn) {  
       return;
     }
 
