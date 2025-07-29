@@ -10,7 +10,8 @@ import django
 from datetime import datetime
 
 # Add the project directory to the Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_dir)
 
 # Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'paletta_project.settings_production')
