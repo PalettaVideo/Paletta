@@ -50,7 +50,7 @@
                 {% for library in libraries %}
                 <div class="library-item" data-id="{{ library.id }}" data-owner-id="{{ library.owner.id }}">
                     <div class="library-logo">
-                        <img src="{% if library.logo %}{{ library.logo.url }}{% else %}{% static 'images/default-logo.jpg' %}{% endif %}" alt="{{ library.name }}">
+                        <img src="{% if library.logo %}{{ library.logo.url }}{% else %}{% static 'picture/logo.jpg' %}{% endif %}" alt="{{ library.name }}">
                     </div>
                     <div class="library-details">
                         <div class="library-name">{{ library.name }}</div>
@@ -96,7 +96,7 @@
             <h3>Category Types</h3>
             <div class="legend-item">
                 <i class="fas fa-palette"></i>
-                <strong>Paletta Style:</strong> Uses predefined Paletta categories (People & Community, Buildings & Architecture, etc.) with content types
+                <strong>Paletta Style:</strong> Uses predefined Paletta content types (Private, Campus Life, Teaching & Learning, Research & Innovation, etc.)
             </div>
             <div class="legend-item">
                 <i class="fas fa-graduation-cap"></i>

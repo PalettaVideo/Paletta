@@ -329,6 +329,17 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                                 }
                             )
                 
+                # Automatically assign default images to content types
+                try:
+                    from django.core.management import call_command
+                    # Process all libraries to ensure consistency with deployment script
+                    call_command('setup_content_type_images', force=True)
+                except Exception as e:
+                    # Log the error but don't fail the library creation
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Failed to assign content type images: {str(e)}")
+                
                 # Create an admin role for the creator automatically
                 UserLibraryRole.objects.create(
                     library=library,
