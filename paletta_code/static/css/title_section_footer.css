@@ -14,10 +14,14 @@
     width: 100%;
     margin-left: 10%;
     margin-right: 10%;
+    overflow: hidden;
 }
 
 .title-section .image-container img {
     width: 100%;
-    height: 350px
+    height: 350px;
+    object-fit: cover; 
+    object-position: center center; 
+    display: block;
 }
 
