@@ -4,7 +4,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-      <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - Upload History</title>
+      <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - My Videos</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
@@ -19,9 +19,9 @@
     <link rel="stylesheet" href="{% static 'css/button_reusable.css' %}">
     <link rel="stylesheet" href="{% static 'css/layout.css' %}">
     <!-- CSS -->
-    <link rel="stylesheet" href="{% static 'css/upload_history.css' %}">
+    <link rel="stylesheet" href="{% static 'css/my_videos.css' %}">
     <!-- JS -->
-    <script src="{% static 'js/upload_history.js' %}" defer></script>
+    <script src="{% static 'js/my_videos.js' %}" defer></script>
 </head>
 <body>
   {% include "html_reusables/header_reusable.html" %}
@@ -30,14 +30,14 @@
       <aside class="sidebar">
         <ul>
           <li><a href="{% library_specific_url 'library_upload' %}">Upload</a></li>
-          <li><a href="{% library_specific_url 'library_upload_history' %}" class="active">History</a></li>
+          <li><a href="{% library_specific_url 'library_my_videos' %}" class="active">My Videos</a></li>
         </ul>
       </aside>
       <main class="content">
-          <h1> Your Upload History</h1>
+          <h1> Your Uploaded Videos</h1>
           
           {% if videos %}
-              <div class="upload-history-container">
+              <div class="my-videos-container">
                   {% for video in videos %}
                       <div class="history-item" data-id="{{ video.id }}">
                           <div class="video-thumbnail">

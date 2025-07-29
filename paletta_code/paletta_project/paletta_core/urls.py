@@ -22,14 +22,14 @@ from accounts.views.login import CustomLoginView
 from accounts.views.signup import SignupView
 from accounts.views.forgot_password import ForgotPasswordView
 from accounts.views.home_view import HomeView, LogoutView, AboutUsView, ContactUsView, QAndAView, TermsConditionsView, PrivacyView
-from accounts.views.update_profile import ProfileView, CollectionView, ProfileUpdateView
+from accounts.views.update_profile import ProfileView, FavouritesView, ProfileUpdateView
 from accounts.views.admin_view import ManageAdministratorsView
 from videos.views.clip_store_view import CategoryClipView
 from videos.views.video_detail_view import VideoDetailView
 from videos.views.video_management_views import VideoEditView, VideoDeleteView
 
 from videos.views.page_views import UploadPageView
-from videos.views.upload_view import UploadHistoryView
+from videos.views.upload_view import MyVideosView
 from orders.views import CartView, CheckoutView, OrdersListView, OrderDetailView
 
 urlpatterns = [
@@ -72,12 +72,12 @@ urlpatterns = [
     
     # Upload System                                                                         
     path('library/<str:library_slug>/upload/', UploadPageView.as_view(), name='library_upload'),
-    path('library/<str:library_slug>/upload/history/', UploadHistoryView.as_view(), name='library_upload_history'),
+    path('library/<str:library_slug>/my-videos/', MyVideosView.as_view(), name='library_my_videos'),
     
-    # User Profile & Collection                                                                
+        # User Profile & Favourites
     path('library/<str:library_slug>/profile/', ProfileView.as_view(), name='library_profile'),
     path('library/<str:library_slug>/profile/update/', ProfileUpdateView.as_view(), name='library_profile_update'),
-    path('library/<str:library_slug>/collection/', CollectionView.as_view(), name='library_collection'),
+    path('library/<str:library_slug>/favourites/', FavouritesView.as_view(), name='library_favourites'),
     
     # Commerce & Orders                                                                      
     path('library/<str:library_slug>/cart/', CartView.as_view(), name='library_cart'),

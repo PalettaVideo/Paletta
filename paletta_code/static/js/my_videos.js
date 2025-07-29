@@ -155,16 +155,16 @@ function setupDeleteFunctionality() {
               const remainingVideos =
                 document.querySelectorAll(".history-item");
               if (remainingVideos.length === 0) {
-                const uploadHistoryContainer = document.querySelector(
-                  ".upload-history-container"
-                );
+                              const myVideosContainer = document.querySelector(
+                ".my-videos-container"
+              );
                 const noVideosElement = document.createElement("div");
                 noVideosElement.className = "no-videos";
                 noVideosElement.innerHTML = `
                                 <p>You haven't uploaded any videos yet.</p>
                                 <a href="/videos/upload/" class="button">Upload Your First Video</a>
                             `;
-                uploadHistoryContainer.replaceWith(noVideosElement);
+                myVideosContainer.replaceWith(noVideosElement);
               }
             }
 

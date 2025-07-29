@@ -170,10 +170,10 @@ class VideoEditView(TemplateView):
                 return JsonResponse({
                     'success': True,
                     'message': 'Video updated successfully',
-                    'redirect_url': f'/videos/upload-history/'
+                    'redirect_url': f'/videos/my-videos/'
                 })
             else:
-                return redirect('upload_history')
+                return redirect('my_videos')
             
         except Video.DoesNotExist:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -208,7 +208,7 @@ class VideoDeleteView(View):
             video = get_object_or_404(Video, id=video_id)
             
             # Check if the user has permission to delete this video
-            # Only the video uploader can delete videos from upload history
+            # Only the video uploader can delete videos from my videos
             if video.uploader != request.user:
                 return JsonResponse({
                     'success': False,

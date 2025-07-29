@@ -63,7 +63,7 @@
                 <div class="form-group">
             <label for="library-name">Name</label>
             <div class="input-group">
-                        <input type="text" id="libraryName" name="library_name" value="{{ library.name }}" readonly maxlength="100">
+                        <input type="text" id="libraryName" name="library_name" value="{{ library.name }}" readonly maxlength="50">
                         <button type="button" onclick="toggleEdit('libraryName', this)">Edit</button>
                     </div>
                     {% if form.library_name.errors %}

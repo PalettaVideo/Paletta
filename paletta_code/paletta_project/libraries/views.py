@@ -544,16 +544,16 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                         else:
                             # Create new content type
                             new_content_type = ContentType(
-                                subject_area=category_data.get('subject_area'),
-                                description=category_data.get('description', ''),
+                                subject_area=content_type_data.get('subject_area'),
+                                description=content_type_data.get('description', ''),
                                 library=library
                             )
                             new_content_type.save()
                             
                             # Handle image if provided
-                            if 'image' in category_data and category_data['image'] and category_data['image'].startswith('data:'):
+                            if 'image' in content_type_data and content_type_data['image'] and content_type_data['image'].startswith('data:'):
                                 image_file = process_base64_image(
-                                    category_data['image'],
+                                    content_type_data['image'],
                                     name=f"content_type_{new_content_type.display_name}"
                                 )
                                 new_content_type.image = image_file

@@ -199,7 +199,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Redirect after a short delay
             setTimeout(() => {
-              window.location.href = data.redirect_url || "/upload-history/";
+              window.location.href = data.redirect_url || "/videos/my-videos/";
             }, 1500);
           } else {
             showToast(`Error: ${data.message || "Failed to update video"}`);

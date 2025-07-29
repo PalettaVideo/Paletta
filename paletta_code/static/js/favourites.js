@@ -179,8 +179,8 @@ function fetchThumbnailForClip(clipId) {
     });
 }
 
-// Remove clip from collection
-function removeFromCollection(clipId, buttonElement) {
+// Remove clip from favourites
+function removeFromFavourites(clipId, buttonElement) {
   // Update localStorage
   const favorites = getFavorites();
   const updatedFavorites = favorites.filter((item) => item.id != clipId);
@@ -192,16 +192,16 @@ function removeFromCollection(clipId, buttonElement) {
     clipElement.style.opacity = "0";
     setTimeout(() => {
       clipElement.remove();
-      checkEmptyCollection();
+      checkEmptyFavourites();
     }, 300);
   }
 
   // Show notification
-  showNotification("Clip removed from your collection");
+  showNotification("Clip removed from your favourites");
 }
 
-// Check if collection is empty and update UI
-function checkEmptyCollection() {
+// Check if favourites is empty and update UI
+function checkEmptyFavourites() {
   // Check if there are any clips left
   const remainingClips = document.querySelectorAll(".clip");
   if (remainingClips.length === 0) {
@@ -212,7 +212,7 @@ function checkEmptyCollection() {
 
     clipsGrid.innerHTML = `
       <div class="no-clips">
-        <p>Your collection is empty. Browse the clip store to add items to your collection.</p>
+        <p>Your favourites is empty. Browse the clip store to add items to your favourites.</p>
         <a href="${clipStoreUrl}">
           <button class="view-details">Browse Clip Store</button>
         </a>
@@ -245,8 +245,8 @@ function showNotification(message, type = "success") {
   }, 3000);
 }
 
-// Render collection
-function renderCollection() {
+// Render favourites
+function renderFavourites() {
   const collectionGrid = document.querySelector(".clips-grid");
   const favorites = getFavorites();
 
@@ -265,7 +265,7 @@ function renderCollection() {
 
     collectionGrid.innerHTML = `
       <div class="no-clips">
-        <p>Your collection is empty. Browse the clip store to add items to your collection.</p>
+        <p>Your favourites is empty. Browse the clip store to add items to your favourites.</p>
         <a href="${clipStoreUrl}">
           <button class="view-details">Browse Clip Store</button>
         </a>
@@ -275,7 +275,7 @@ function renderCollection() {
   }
 
   // Show loading state
-  collectionGrid.innerHTML = `<div class="loading">Loading your collection...</div>`;
+  collectionGrid.innerHTML = `<div class="loading">Loading your favourites...</div>`;
 
   // Process each clip (handling thumbnails that might need fetching)
   const processPromises = favorites.map((clip) => processThumbnail(clip));
@@ -317,7 +317,7 @@ function renderCollection() {
     .catch(() => {
       collectionGrid.innerHTML = `
         <div class="error">
-          <p>There was an error loading your collection. Please try again later.</p>
+          <p>There was an error loading your favourites. Please try again later.</p>
         </div>
       `;
     });
@@ -326,5 +326,5 @@ function renderCollection() {
 // initialize
 document.addEventListener("DOMContentLoaded", () => {
   clearStaleLibraryData();
-  renderCollection();
+  renderFavourites();
 });

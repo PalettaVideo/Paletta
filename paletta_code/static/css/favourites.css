@@ -1,4 +1,4 @@
-/* Main content layout styles only for collection page */
+/* Main content layout styles only for favourites page */
 body {
   margin: 0;
   padding: 0;
@@ -92,7 +92,7 @@ body {
   margin-top: 10px;
 }
 
-/* For empty collection state */
+/* For empty favourites state */
 .no-clips {
   text-align: center;
   padding: 40px;
