@@ -276,6 +276,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const categorySourceField = document.querySelector(
       'input[name="category_source"]:checked'
     );
+    const fileInput = document.getElementById("file-input");
 
     if (!nameField.value.trim()) {
       alert("Please enter a library name");
@@ -310,6 +311,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!categorySourceField) {
       alert("Please select a category management option");
+      return false;
+    }
+
+    // Validate logo upload
+    if (!fileInput.files || fileInput.files.length === 0) {
+      alert("Please upload a logo for your library");
+      fileInput.focus();
       return false;
     }
 

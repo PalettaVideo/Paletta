@@ -473,14 +473,8 @@ document.addEventListener("DOMContentLoaded", function () {
             (1024 * 1024 * 1024)
           ).toFixed(2);
 
-          // Show chunk progress for multipart uploads
+          // Show simple progress text
           let progressText = `Uploading... (${progress.toFixed(0)}%)`;
-
-          if (file.size > 5 * 1024 * 1024) {
-            // Multipart upload - show chunk progress
-            const completedChunks = Math.floor((progress / 100) * totalChunks);
-            progressText += ` - Chunk ${completedChunks}/${totalChunks}`;
-          }
 
           if (file.size > 100 * 1024 * 1024) {
             // Show GB for files > 100MB
