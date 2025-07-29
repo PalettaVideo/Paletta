@@ -10,11 +10,11 @@ window.addEventListener("beforeunload", function (e) {
 
 // Override console logging during upload
 function suppressConsole() {
-  console.log = function () {};
-  console.debug = function () {};
-  console.warn = function () {};
-  console.info = function () {};
-  console.error = function () {};
+  // console.log = function () {};
+  // console.debug = function () {};
+  // console.warn = function () {};
+  // console.info = function () {};
+  // console.error = function () {};
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -592,6 +592,11 @@ document.addEventListener("DOMContentLoaded", function () {
       const key = url.pathname.substring(1);
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
+      // Track cumulative uploaded bytes for smooth progress
+      let totalUploadedBytes = 0;
+      const totalFileSize = file.size;
+      const activeChunkProgress = {}; // chunkIndex → bytes uploaded
+
       const createMultipartResponse = await fetch(
         "/api/s3/create-multipart-upload/",
         {
@@ -635,15 +640,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
           xhr.upload.onprogress = (event) => {
             if (event.lengthComputable) {
-              const chunkProgress = (event.loaded / event.total) * 100;
-              const overallProgress =
-                ((chunkIndex + chunkProgress / 100) / totalChunks) * 100;
-              onProgress(overallProgress);
+              // Track this chunk's progress
+              activeChunkProgress[chunkIndex] = event.loaded;
+
+              // Calculate cumulative progress from all active chunks
+              const uploaded = Object.values(activeChunkProgress).reduce(
+                (sum, bytes) => sum + bytes,
+                0
+              );
+
+              // Calculate overall progress based on actual bytes uploaded
+              const progress = (uploaded / totalFileSize) * 100;
+              onProgress(progress);
             }
           };
 
           xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
+              // Mark this chunk as fully uploaded
+              activeChunkProgress[chunkIndex] = chunk.size;
+
               const etag = xhr.getResponseHeader("ETag");
               resolve({ PartNumber: chunkIndex + 1, ETag: etag });
             } else {
@@ -666,6 +682,8 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         const chunkResults = await Promise.all(chunkPromises);
         parts.push(...chunkResults);
+
+        // Update progress after each batch completes
         const completed = parts.length;
         const progress = (completed / totalChunks) * 100;
         onProgress(progress);
