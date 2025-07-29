@@ -224,10 +224,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
           // Show success notification
           const clipTitle = document.querySelector("h1").textContent;
-          showNotification(`"${clipTitle}" added to your collection!`);
+          showNotification(`"${clipTitle}" added to your favourites!`);
         } else {
           showNotification(
-            "Error: " + (data.error || "Failed to add to collection"),
+            "Error: " + (data.error || "Failed to add to favourites"),
             "error"
           );
         }
@@ -235,7 +235,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch(() => {
         // Still try to update cache anyway for offline functionality
         updateCollectionCache(videoId);
-        showNotification("Added to local collection (offline mode)", "info");
+        showNotification("Added to local favourites (offline mode)", "info");
       });
   }
 

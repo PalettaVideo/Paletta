@@ -373,10 +373,10 @@ document.addEventListener("DOMContentLoaded", function () {
         if (data.success) {
           // Update collection cache
           updateCollectionCache(videoId);
-          showNotification("Video added to your collection");
+          showNotification("Video added to your favourites");
         } else {
           showNotification(
-            "Error: " + (data.error || "Failed to add to collection"),
+            "Error: " + (data.error || "Failed to add to favourites"),
             "error"
           );
         }
@@ -384,7 +384,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch(() => {
         // Still try to update cache anyway for offline functionality
         updateCollectionCache(videoId);
-        showNotification("Added to local collection", "info");
+        showNotification("Added to local favourites", "info");
       });
   }
 

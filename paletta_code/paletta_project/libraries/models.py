@@ -32,7 +32,7 @@ class Library(models.Model):
     PRO_LIMIT = 1 * TB
     ENTERPRISE_LIMIT = 10 * TB
     
-    name = models.CharField(max_length=25, unique=True)
+    name = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_libraries')
     logo = models.ImageField(upload_to='library_logos/', blank=True, null=True, storage=get_media_storage)
@@ -47,7 +47,7 @@ class Library(models.Model):
     
     # Content source selection
     content_source = models.CharField(
-        max_length=20, 
+        max_length=50, 
         choices=CONTENT_SOURCE_CHOICES, 
         default='custom',
         help_text="Choose the source for video content types in this library"

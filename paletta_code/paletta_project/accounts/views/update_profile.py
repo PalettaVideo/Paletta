@@ -50,23 +50,23 @@ class ProfileView(TemplateView):
         }
         return render(request, self.template_name, context)
 
-class CollectionView(LoginRequiredMixin, TemplateView):
+class FavouritesView(LoginRequiredMixin, TemplateView):
     """
-    BACKEND/FRONTEND-READY: User's video collection display.
-    MAPPED TO: /collection/ URL
-    USED BY: collection.html template
+    BACKEND/FRONTEND-READY: User's video favourites display.
+    MAPPED TO: /favourites/ URL
+    USED BY: favourites.html template
     
     Shows user's uploaded videos with library context.
     """
-    template_name = 'collection.html'
+    template_name = 'favourites.html'
 
     def get_context_data(self, **kwargs):
         """
-        BACKEND/FRONTEND-READY: Add library context to collection page.
+        BACKEND/FRONTEND-READY: Add library context to favourites page.
         MAPPED TO: Template context
-        USED BY: collection.html template
+        USED BY: favourites.html template
         
-        Provides current library context for user's video collection.
+        Provides current library context for user's video favourites.
         """
         context = super().get_context_data(**kwargs)
         

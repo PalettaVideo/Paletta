@@ -4,7 +4,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - My Collection</title>
+  <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - My Favourites</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
@@ -21,9 +21,9 @@
   <link rel="stylesheet" href="{% static 'css/button_reusable.css' %}">
   <link rel="stylesheet" href="{% static 'css/layout.css' %}">
   <!-- CSS -->
-  <link rel="stylesheet" href="{% static 'css/collection.css' %}">
+  <link rel="stylesheet" href="{% static 'css/favourites.css' %}">
   <!-- JS -->
-  <script src="{% static 'js/collection.js' %}" defer></script>
+  <script src="{% static 'js/favourites.js' %}" defer></script>
 </head>
 
 <body>
@@ -35,7 +35,7 @@
   <nav>
     <ul>
         <li><a href="{% library_specific_url 'library_profile' %}">My profile</a></li>
-        <li><a href="{% library_specific_url 'library_collection' %}" class="active">My collection</a></li>
+        <li><a href="{% library_specific_url 'library_favourites' %}" class="active">My Favourites</a></li>
         <li><a href="{% library_specific_url 'library_cart' %}">My cart</a></li>
         <li><a href="{% library_specific_url 'library_orders_list' %}">My orders</a></li>
     </ul>
@@ -44,7 +44,7 @@
 
 
 <main class="content">
-  <h1>My Collection</h1>
+  <h1>My Favourites</h1>
   
   <!-- The clips-grid will be populated by JavaScript -->
   <div class="clips-grid">
