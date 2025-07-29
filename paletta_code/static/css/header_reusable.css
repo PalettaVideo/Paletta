@@ -39,8 +39,7 @@ header {
 
   .search-bar {
     margin-left: 20px;
-    flex-grow: 1;
-    max-width: 600px;
+    width: clamp(20px, 30vw, 1000px);
     display: flex;
     align-items: center;
     border: 2px solid #80B824;
@@ -115,6 +114,20 @@ header {
     background-color: #6a9a1d;
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
   .popup {
     display: none;
     position: absolute;
