@@ -123,6 +123,9 @@ except Library.DoesNotExist:
     print("✗ Error: Paletta library not found")
 EOF
 
+echo "Setting up default images for content types..."
+python manage.py setup_content_type_images --force
+
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 

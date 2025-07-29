@@ -38,11 +38,11 @@ class VideoEditView(TemplateView):
             
             # Check if the user has permission to edit this video
             if video.uploader != self.request.user:
-                # Check if the user has admin/contributor role for the library
+                # Check if the user has admin/user role for the library
                 has_permission = UserLibraryRole.objects.filter(
                     user=self.request.user,
                     library=video.library,
-                    role__in=['admin', 'contributor']
+                    role__in=['admin', 'user']
                 ).exists()
                 
                 if not has_permission:
@@ -89,11 +89,11 @@ class VideoEditView(TemplateView):
             
             # Check if the user has permission to edit this video
             if video.uploader != request.user:
-                # Check if the user has admin/contributor role for the library
+                # Check if the user has admin/user role for the library
                 has_permission = UserLibraryRole.objects.filter(
                     user=request.user,
                     library=video.library,
-                    role__in=['admin', 'contributor']
+                    role__in=['admin', 'user']
                 ).exists()
                 
                 if not has_permission:

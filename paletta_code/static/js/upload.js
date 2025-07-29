@@ -1,3 +1,22 @@
+// Begin script - Add beforeunload event listener
+window.addEventListener("beforeunload", function (e) {
+  if (window.__uploadInProgress__) {
+    e.preventDefault();
+    e.returnValue =
+      "Are you sure you want to leave the page? The video upload will stop!";
+    return e.returnValue;
+  }
+});
+
+// Override console logging during upload
+function suppressConsole() {
+  console.log = function () {};
+  console.debug = function () {};
+  console.warn = function () {};
+  console.info = function () {};
+  console.error = function () {};
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   const fileInput = document.getElementById("file-input");
   const selectFileBtn = document.getElementById("select-file");
@@ -371,16 +390,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function handleFormSubmit(e) {
     e.preventDefault();
+    window.__uploadInProgress__ = true;
+    suppressConsole();
+
     const uploadButton = uploadForm.querySelector("button[type='submit']");
 
     // Validate form fields before proceeding
     if (!validateForm()) {
+      window.__uploadInProgress__ = false;
       return;
     }
 
     const file = fileInput.files[0];
     if (!file) {
       alert("Please select a video file to upload.");
+      window.__uploadInProgress__ = false;
       return;
     }
 
@@ -480,8 +504,6 @@ document.addEventListener("DOMContentLoaded", function () {
             uploadProgress.style.display = "block";
             progressTextElement.textContent = `${progress.toFixed(0)}%`;
           }
-
-          console.log(`Button text updated: ${uploadButton.textContent}`);
         }
       );
 
@@ -494,21 +516,20 @@ document.addEventListener("DOMContentLoaded", function () {
       await notifyBackend(key);
 
       alert("Upload complete! Your video has been successfully submitted.");
+      window.__uploadInProgress__ = false;
       // Redirect to the success URL provided by the form's data attribute
       const successUrl = uploadForm.dataset.successUrl;
       if (successUrl) {
         window.location.href = successUrl;
       } else {
-        console.error(
-          "Success URL not found on form data-success-url attribute. Cannot redirect."
-        );
         // Fallback or display a message
         window.location.href = "/"; // Redirect to home page as a fallback
       }
-    } catch {
+    } catch (error) {
       alert(`An error occurred: ${error.message}`);
       uploadButton.textContent = "Upload Clip";
       uploadButton.disabled = false;
+      window.__uploadInProgress__ = false;
     }
   }
 
@@ -537,14 +558,12 @@ document.addEventListener("DOMContentLoaded", function () {
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
           const progress = (event.loaded / event.total) * 100;
-          console.log(`Single-part progress: ${progress.toFixed(1)}%`);
           onProgress(progress);
         }
       };
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          console.log("Single-part upload completed successfully");
           resolve(xhr);
         } else {
           reject(new Error(`Upload failed with status: ${xhr.status}`));
@@ -563,26 +582,16 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  async function uploadFileToS3Multipart(uploadURL, file, onProgress) {
-    const CHUNK_SIZE = 100 * 1024 * 1024; // 100MB chunks for large files
-    const MAX_CONCURRENT_CHUNKS = 10; // 10 concurrent uploads for large files
+  function uploadFileToS3Multipart(uploadURL, file, onProgress) {
+    const CHUNK_SIZE = 100 * 1024 * 1024;
+    const MAX_CONCURRENT_CHUNKS = 10;
 
-    try {
-      // Parse the presigned URL to get bucket and key
+    return (async function () {
       const url = new URL(uploadURL);
       const bucket = url.hostname.split(".")[0];
-      const key = url.pathname.substring(1); // Remove leading slash
-
-      // Log upload details for large files
-      const fileSizeGB = (file.size / (1024 * 1024 * 1024)).toFixed(2);
+      const key = url.pathname.substring(1);
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-      console.log(
-        `Starting multipart upload: ${fileSizeGB}GB, ${totalChunks} chunks, ${
-          CHUNK_SIZE / (1024 * 1024)
-        }MB chunks`
-      );
 
-      // Create multipart upload
       const createMultipartResponse = await fetch(
         "/api/s3/create-multipart-upload/",
         {
@@ -591,31 +600,18 @@ document.addEventListener("DOMContentLoaded", function () {
             "Content-Type": "application/json",
             "X-CSRFToken": getCookie("csrftoken"),
           },
-          body: JSON.stringify({
-            bucket: bucket,
-            key: key,
-            content_type: file.type,
-          }),
+          body: JSON.stringify({ bucket, key, content_type: file.type }),
         }
       );
 
-      if (!createMultipartResponse.ok) {
-        throw new Error("Failed to create multipart upload");
-      }
-
       const { upload_id } = await createMultipartResponse.json();
-
-      // Calculate chunks
       const parts = [];
-      let completedChunks = 0;
 
-      // Upload chunks in parallel with limited concurrency
       const uploadChunk = async (chunkIndex) => {
         const start = chunkIndex * CHUNK_SIZE;
         const end = Math.min(start + CHUNK_SIZE, file.size);
         const chunk = file.slice(start, end);
 
-        // Get presigned URL for this part
         const partResponse = await fetch("/api/s3/get-upload-part-url/", {
           method: "POST",
           headers: {
@@ -623,22 +619,15 @@ document.addEventListener("DOMContentLoaded", function () {
             "X-CSRFToken": getCookie("csrftoken"),
           },
           body: JSON.stringify({
-            bucket: bucket,
-            key: key,
-            upload_id: upload_id,
+            bucket,
+            key,
+            upload_id,
             part_number: chunkIndex + 1,
           }),
         });
 
-        if (!partResponse.ok) {
-          throw new Error(
-            `Failed to get presigned URL for part ${chunkIndex + 1}`
-          );
-        }
-
         const { presigned_url } = await partResponse.json();
 
-        // Upload the chunk with progress tracking
         return new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
           xhr.open("PUT", presigned_url);
@@ -646,17 +635,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
           xhr.upload.onprogress = (event) => {
             if (event.lengthComputable) {
-              // Calculate progress for this specific chunk
               const chunkProgress = (event.loaded / event.total) * 100;
-              // Calculate overall progress: (completed chunks + current chunk progress) / total chunks
-              const completedChunks = chunkIndex;
               const overallProgress =
-                ((completedChunks + chunkProgress / 100) / totalChunks) * 100;
-              console.log(
-                `Chunk ${chunkIndex + 1} progress: ${chunkProgress.toFixed(
-                  1
-                )}%, Overall: ${overallProgress.toFixed(1)}%`
-              );
+                ((chunkIndex + chunkProgress / 100) / totalChunks) * 100;
               onProgress(overallProgress);
             }
           };
@@ -664,11 +645,7 @@ document.addEventListener("DOMContentLoaded", function () {
           xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
               const etag = xhr.getResponseHeader("ETag");
-              console.log(`Chunk ${chunkIndex + 1} completed successfully`);
-              resolve({
-                PartNumber: chunkIndex + 1,
-                ETag: etag,
-              });
+              resolve({ PartNumber: chunkIndex + 1, ETag: etag });
             } else {
               reject(new Error(`Failed to upload part ${chunkIndex + 1}`));
             }
@@ -682,56 +659,32 @@ document.addEventListener("DOMContentLoaded", function () {
         });
       };
 
-      // Upload chunks with limited concurrency
       for (let i = 0; i < totalChunks; i += MAX_CONCURRENT_CHUNKS) {
         const chunkPromises = [];
         for (let j = 0; j < MAX_CONCURRENT_CHUNKS && i + j < totalChunks; j++) {
           chunkPromises.push(uploadChunk(i + j));
         }
-
         const chunkResults = await Promise.all(chunkPromises);
         parts.push(...chunkResults);
-
-        completedChunks += chunkResults.length;
-        const progress = (completedChunks / totalChunks) * 100;
-
+        const completed = parts.length;
+        const progress = (completed / totalChunks) * 100;
         onProgress(progress);
       }
 
-      // Complete multipart upload
-      console.log(`Completing multipart upload with ${parts.length} parts`);
-      const completeResponse = await fetch(
-        "/api/s3/complete-multipart-upload/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
-          },
-          body: JSON.stringify({
-            bucket: bucket,
-            key: key,
-            upload_id: upload_id,
-            parts: parts,
-          }),
-        }
-      );
+      await fetch("/api/s3/complete-multipart-upload/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify({ bucket, key, upload_id, parts }),
+      });
 
-      if (!completeResponse.ok) {
-        throw new Error("Failed to complete multipart upload");
-      }
-
-      console.log(`Multipart upload completed successfully: ${fileSizeGB}GB`);
-
-      // Return a mock response object to maintain compatibility
       return {
         status: 200,
         responseText: "Multipart upload completed successfully",
       };
-    } catch (error) {
-      console.error("Multipart upload failed:", error);
-      throw error;
-    }
+    })();
   }
 
   async function notifyBackend(s3Key) {
@@ -780,21 +733,44 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function validateForm() {
     const title = titleInput.value.trim();
+    const description = descriptionInput.value.trim();
+    const thumbnail = previewImageInput.files[0];
     const contentTypesError = document.getElementById("content-types-error");
 
+    if (!fileInput.files.length) {
+      alert("WARNING: A video file is required.");
+      return false;
+    }
+
     if (!title) {
-      alert("Please enter a video title");
+      alert("WARNING: A title is required.");
       titleInput.focus();
+      return false;
+    }
+
+    if (!description) {
+      alert("WARNING: A description is required.");
+      descriptionInput.focus();
+      return false;
+    }
+
+    if (!thumbnail) {
+      alert("WARNING: A thumbnail image is required.");
       return false;
     }
 
     if (!selectedContentType) {
       if (contentTypesError) {
-        contentTypesError.textContent = "Please select a content type";
+        contentTypesError.textContent = "WARNING: Select a content type.";
         contentTypesError.style.display = "block";
       } else {
-        alert("Please select a content type");
+        alert("WARNING: A content type must be selected.");
       }
+      return false;
+    }
+
+    if (selectedTags.length === 0) {
+      alert("WARNING: At least one tag is required.");
       return false;
     }
 

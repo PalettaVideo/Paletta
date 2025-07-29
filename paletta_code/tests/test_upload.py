@@ -82,7 +82,7 @@ class ComprehensiveUploadTestSuite:
                 password='testpass123',
                 first_name='Comprehensive',
                 last_name='Test',
-                role='contributor'
+                role='user'
             )
         
         # Create or get admin user for library ownership

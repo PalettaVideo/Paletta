@@ -197,11 +197,11 @@ class UserLibraryRole(models.Model):
     MAPPED TO: /api/roles/ endpoints
     USED BY: Permission checking and library management
     
-    Manages administrator and contributor roles for library access control.
+    Manages administrator and user roles for library access control.
     """
     ROLE_CHOICES = [
         ('admin', 'Administrator'),
-        ('contributor', 'Contributor'),
+        ('user', 'User'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='library_roles')

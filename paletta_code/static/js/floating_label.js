@@ -30,9 +30,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const userRole = getUserRole();
     let message = "Access denied! ";
 
-    if (userRole === "contributor") {
+    if (userRole === "user") {
       message +=
-        "Contributors cannot access administrative functions. Only Library Admins, Owners, or Superusers can manage libraries.";
+        "Users cannot access administrative functions. Only Library Admins, Owners, or Superusers can manage libraries.";
     } else {
       message +=
         "Only Library Admin, Owner, or Superuser can access these pages. Enjoy exploring other libraries!";
@@ -49,8 +49,8 @@ document.addEventListener("DOMContentLoaded", function () {
       link.addEventListener("click", function (e) {
         const userRole = getUserRole();
 
-        // Explicitly block contributors and any role that's not admin/owner/superuser
-        if (userRole === "contributor" || !hasAdminPermissions()) {
+        // Explicitly block users and any role that's not admin/owner/superuser
+        if (userRole === "user" || !hasAdminPermissions()) {
           e.preventDefault();
           e.stopPropagation();
           showPermissionDeniedPopup();

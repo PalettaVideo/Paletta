@@ -91,7 +91,7 @@ class HomeView(TemplateView):
             libraries = Library.objects.filter(is_active=True)
             
             # Add user role for permission checking
-            user_role = 'contributor'  # Default role
+            user_role = 'user'  # Default role
             if request.user.is_superuser or request.user.role == 'owner':
                 user_role = 'owner'
             elif request.user.role == 'admin':
