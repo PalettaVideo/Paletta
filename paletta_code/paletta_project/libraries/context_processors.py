@@ -14,14 +14,14 @@ def library_context(request):
     
     # Add user role for permission checking across all templates
     if hasattr(request, 'user') and request.user.is_authenticated:
-        user_role = 'contributor'  # Default role
+        user_role = 'user'  # Default role
         
         if request.user.is_superuser or request.user.role == 'owner':
             user_role = 'owner'
         elif request.user.role == 'admin':
             user_role = 'admin'
-        elif request.user.role == 'contributor':
-            user_role = 'contributor'
+        elif request.user.role == 'user':
+            user_role = 'user'
         
         context['user_role'] = user_role
         

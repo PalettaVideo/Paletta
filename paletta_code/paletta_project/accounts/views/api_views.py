@@ -189,13 +189,13 @@ def check_user(request):
         if library_id:
             try:
                 library = Library.objects.get(id=library_id)
-                is_contributor = UserLibraryRole.objects.filter(
+                is_user = UserLibraryRole.objects.filter(
                     user=user,
                     library=library,
-                    role='contributor'
+                    role='user'
                 ).exists()
                 
-                response_data['is_contributor'] = is_contributor
+                response_data['is_user'] = is_user
                 
             except Library.DoesNotExist:
                 pass
@@ -213,7 +213,7 @@ def make_admin(request):
     MAPPED TO: POST /api/accounts/make-admin/
     USED BY: Admin management interfaces
     
-    Promotes contributor user to admin role with validation.
+    Promotes user to admin role with validation.
     Required fields: user_id
     """
     if request.user.role not in ['admin', 'owner']:
@@ -275,7 +275,7 @@ def revoke_admin(request, admin_id):
     MAPPED TO: POST /api/accounts/revoke-administrator/{id}/
     USED BY: Admin management interfaces
     
-    Demotes admin user to contributor role with validation.
+    Demotes admin user to user role with validation.
     """
     if request.user.role not in ['admin', 'owner']:
         return Response(
@@ -298,7 +298,7 @@ def revoke_admin(request, admin_id):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        user_to_demote.role = 'contributor'
+        user_to_demote.role = 'user'
         user_to_demote.save()
         
         return Response({

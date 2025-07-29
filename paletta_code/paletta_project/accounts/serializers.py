@@ -53,7 +53,7 @@ class UserSerializer(serializers.ModelSerializer):
         )
         user.institution = validated_data.get('institution', '')
         user.company = validated_data.get('company', '')
-        user.role = validated_data.get('role', 'contributor')
+        user.role = validated_data.get('role', 'user')
         user.save()
         
         return user

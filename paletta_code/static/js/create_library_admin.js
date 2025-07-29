@@ -77,16 +77,10 @@ document.addEventListener("DOMContentLoaded", function () {
       title: "Paletta Style Categories",
       sections: [
         {
-          label: "Paletta Categories",
-          description:
-            "People & Community, Buildings & Architecture, Classrooms & Learning Spaces, Field Trips & Outdoor Learning, Events & Conferences, Research & Innovation Spaces, Technology & Equipment, Everyday Campus Life, Urban & Natural Environments, Backgrounds & Abstracts",
-          required: "1 per video",
-        },
-        {
           label: "Content Types",
           description:
-            "Campus Life, Teaching & Learning, Research & Innovation, City & Environment, Aerial & Establishing Shots, People & Portraits, Culture & Events, Workspaces & Facilities, Cutaways & Abstracts, Historical & Archive",
-          required: "1-3 per video",
+            "Private, Campus Life, Teaching & Learning, Research & Innovation, City & Environment, Aerial & Establishing Shots, People & Portraits, Culture & Events, Workspaces & Facilities, Cutaways & Abstracts, Historical & Archive",
+          required: "1 per video",
         },
         {
           label: "Tags",
@@ -107,8 +101,8 @@ document.addEventListener("DOMContentLoaded", function () {
         {
           label: "Content Types",
           description:
-            "Campus Life, Teaching & Learning, Research & Innovation, City & Environment, Aerial & Establishing Shots, People & Portraits, Culture & Events, Workspaces & Facilities, Cutaways & Abstracts, Historical & Archive",
-          required: "1-3 per video",
+            "Private, Campus Life, Teaching & Learning, Research & Innovation, City & Environment, Aerial & Establishing Shots, People & Portraits, Culture & Events, Workspaces & Facilities, Cutaways & Abstracts, Historical & Archive",
+          required: "1 per video",
         },
         {
           label: "Tags",
@@ -276,6 +270,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const categorySourceField = document.querySelector(
       'input[name="category_source"]:checked'
     );
+    const fileInput = document.getElementById("file-input");
 
     if (!nameField.value.trim()) {
       alert("Please enter a library name");
@@ -310,6 +305,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!categorySourceField) {
       alert("Please select a category management option");
+      return false;
+    }
+
+    // Validate logo upload
+    if (!fileInput.files || fileInput.files.length === 0) {
+      alert("Please upload a logo for your library");
+      fileInput.focus();
       return false;
     }
 

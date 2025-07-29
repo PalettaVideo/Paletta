@@ -2,7 +2,7 @@
 
 To run the Django application, follow these steps:
 
-1. Set up a new virtual environment inside the `paletta_code` folder:
+1. Set up a new virtual environment:
 
    > python -m venv .venv
 
@@ -81,36 +81,14 @@ The application supports the following user roles:
 
 - Owner
 - Administrator
-- Contributor
-- Customer
+- User
 
-## Admin Interface
+## Django Admin Interface
 
-The Django admin interface allows administrators to:
+The Django admin interface allows superusers/staff to:
 
 - Manage users and their roles
-- Control video uploads and categories
+- Control video uploads and content type
 - Monitor system activity
-
-## Database Setup
-
-Make sure PostgreSQL is installed and running. Create a database named `paletta_db`:
-
-```bash
-# Connect to PostgreSQL
-psql -U postgres
-
-# Create the database
-CREATE DATABASE paletta_db;
-
-# Exit PostgreSQL
-\q
-```
-
-## Testing the Database Connection
-
-You can test the database connection by running:
-
-```bash
-python db_test.py
-```
+- Manage libraries and their members
+- Track orders and downloads

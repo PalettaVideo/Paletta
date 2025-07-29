@@ -60,7 +60,7 @@ class SignupView(TemplateView):
                 password=password,
                 institution=institution,
                 company=company,
-                role='contributor'
+                role='user'
             )
             messages.success(request, 'Account created successfully! Please log in.')
             return redirect('login')

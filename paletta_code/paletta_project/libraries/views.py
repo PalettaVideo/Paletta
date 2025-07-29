@@ -211,7 +211,7 @@ class UserLibraryRoleViewSet(viewsets.ModelViewSet):
     MAPPED TO: /api/roles/ endpoints
     USED BY: Library member management interface
     
-    Manages contributor and admin role assignments within libraries.
+    Manages user and admin role assignments within libraries.
     """
     queryset = UserLibraryRole.objects.all()
     serializer_class = UserLibraryRoleSerializer
@@ -329,6 +329,17 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                                 }
                             )
                 
+                # Automatically assign default images to content types
+                try:
+                    from django.core.management import call_command
+                    # Process all libraries to ensure consistency with deployment script
+                    call_command('setup_content_type_images', force=True)
+                except Exception as e:
+                    # Log the error but don't fail the library creation
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Failed to assign content type images: {str(e)}")
+                
                 # Create an admin role for the creator automatically
                 UserLibraryRole.objects.create(
                     library=library,
@@ -356,7 +367,7 @@ class ManageLibrariesView(LoginRequiredMixin, TemplateView):
     MAPPED TO: /admin/manage-libraries/ URL  
     USED BY: manage_libraries.html template
     
-    Displays user's owned libraries and libraries where they have contributor roles.
+    Displays user's owned libraries and libraries where they have user roles.
     """
     template_name = 'manage_libraries.html'
     
@@ -397,7 +408,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
     MAPPED TO: /admin/edit-library/ URL
     USED BY: edit_library_admin.html template
     
-    Comprehensive library editing with categories, contributors, and settings management.
+    Comprehensive library editing with categories, users, and settings management.
     """
     template_name = 'edit_library_admin.html'
     
@@ -443,9 +454,10 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
             
             context['content_types'] = ordered_content_types
             
-            # Get contributors for this library
-            context['contributors'] = UserLibraryRole.objects.filter(
-                library=library
+            # Get users for this library
+            context['users'] = UserLibraryRole.objects.filter(
+                library=library,
+                role='user'
             ).select_related('user')
             
         except Library.DoesNotExist:
@@ -560,56 +572,56 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                         'message': "Invalid content type data format"
                     }, status=400, content_type='application/json')
             
-            # Process contributors
-            if 'contributors' in request.POST:
+            # Process users
+            if 'users' in request.POST:
                 try:
-                    contributors_data = json.loads(request.POST.get('contributors'))
+                    users_data = json.loads(request.POST.get('users'))
                     
-                    # Keep track of existing contributor IDs
-                    current_contributors = set(UserLibraryRole.objects.filter(
+                    # Keep track of existing user IDs
+                    current_users = set(UserLibraryRole.objects.filter(
                         library=library, 
-                        role='contributor'
+                        role='user'
                     ).values_list('id', flat=True))
                     
-                    processed_contributors = set()
+                    processed_users = set()
                     
-                    for contributor_data in contributors_data:
-                        contributor_id = contributor_data.get('id')
+                    for user_data in users_data:
+                        user_id = user_data.get('id')
                         
-                        if contributor_id and not contributor_id.startswith('temp_'):
-                            # Existing contributor - just mark as processed
-                            processed_contributors.add(int(contributor_id))
+                        if user_id and not user_id.startswith('temp_'):
+                            # Existing user - just mark as processed
+                            processed_users.add(int(user_id))
                         else:
-                            # New contributor to add
+                            # New user to add
                             from django.contrib.auth import get_user_model
                             User = get_user_model()
                             
                             # Try to find user by email
                             try:
-                                user = User.objects.get(email=contributor_data.get('email'))
+                                user = User.objects.get(email=user_data.get('email'))
                                 
                                 # Check if user already has a role in this library
                                 if not UserLibraryRole.objects.filter(library=library, user=user).exists():
                                     role = UserLibraryRole.objects.create(
                                         library=library,
                                         user=user,
-                                        role='contributor'
+                                        role='user'
                                     )
-                                    processed_contributors.add(role.id)
+                                    processed_users.add(role.id)
                             except User.DoesNotExist:
                                 # User doesn't exist - we might want to invite them
                                 # For now, just log it
                                 pass  # User not found
                     
-                    # Remove contributors that were removed
-                    contributors_to_delete = current_contributors - processed_contributors
-                    if contributors_to_delete:
-                        UserLibraryRole.objects.filter(id__in=contributors_to_delete, library=library).delete()
+                    # Remove users that were removed
+                    users_to_delete = current_users - processed_users
+                    if users_to_delete:
+                        UserLibraryRole.objects.filter(id__in=users_to_delete, library=library).delete()
                         
                 except json.JSONDecodeError:
                     return JsonResponse({
                         'status': 'error',
-                        'message': "Invalid contributor data format"
+                        'message': "Invalid user data format"
                     }, status=400, content_type='application/json')
             
             return JsonResponse({

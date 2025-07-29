@@ -82,7 +82,7 @@ class UserLibraryRoleAdmin(admin.ModelAdmin):
     MAPPED TO: /admin/libraries/userlibraryrole/
     USED BY: Django Admin panel
     
-    Manages contributor and admin assignments for libraries.
+    Manages user and admin assignments for libraries.
     """
     list_display = ('user', 'library', 'role', 'added_at')
     list_filter = ('role', 'added_at')
