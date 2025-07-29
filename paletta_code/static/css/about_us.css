@@ -81,10 +81,22 @@ body {
     text-align: center;
 }
 
+.team-photo {
+    width: 250px;
+    height: 250px;
+    margin: 0 auto;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .team-photo img {
     width: 100%;
-    height: auto;
-    
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
 }
 
 .team-right p {
