@@ -16,6 +16,10 @@ sys.path.insert(0, project_dir)
 # Change to the paletta_project directory where settings are located
 paletta_project_dir = os.path.join(project_dir, 'paletta_project')
 os.chdir(paletta_project_dir)
+
+# Add the current directory to Python path so Django can find the settings module
+sys.path.insert(0, os.getcwd())
+
 print(f"Working directory: {os.getcwd()}")
 print(f"Python path: {sys.path[:3]}")
 
