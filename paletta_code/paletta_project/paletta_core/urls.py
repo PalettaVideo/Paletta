@@ -29,7 +29,7 @@ from videos.views.video_detail_view import VideoDetailView
 from videos.views.video_management_views import VideoEditView, VideoDeleteView
 
 from videos.views.page_views import UploadPageView
-from videos.views.upload_view import UploadHistoryView
+from videos.views.upload_view import MyVideosView
 from orders.views import CartView, CheckoutView, OrdersListView, OrderDetailView
 
 urlpatterns = [
@@ -72,7 +72,7 @@ urlpatterns = [
     
     # Upload System                                                                         
     path('library/<str:library_slug>/upload/', UploadPageView.as_view(), name='library_upload'),
-    path('library/<str:library_slug>/upload/history/', UploadHistoryView.as_view(), name='library_upload_history'),
+    path('library/<str:library_slug>/my-videos/', MyVideosView.as_view(), name='library_my_videos'),
     
         # User Profile & Favourites
     path('library/<str:library_slug>/profile/', ProfileView.as_view(), name='library_profile'),

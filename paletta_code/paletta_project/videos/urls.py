@@ -8,7 +8,7 @@ Groups related functionality for better maintainability.
 """
 
 from django.urls import path
-from .views.upload_view import UploadHistoryView
+from .views.upload_view import MyVideosView
 from .views.download_view import DownloadRequestView
 from .views.tag_views import assign_tags
 from .views.video_management_views import VideoEditView, VideoDeleteView
@@ -18,7 +18,7 @@ from .views.page_views import UploadPageView
 urlpatterns = [
     # Frontend Pages - User-facing HTML pages
     path('upload/', UploadPageView.as_view(), name='upload'),
-    path('upload-history/', UploadHistoryView.as_view(), name='upload_history'),
+    path('my-videos/', MyVideosView.as_view(), name='my_videos'),
     path('edit/<int:video_id>/', VideoEditView.as_view(), name='edit_video'),
     path('delete/<int:video_id>/', VideoDeleteView.as_view(), name='delete_video'),
     path('download/request/<int:video_id>/', DownloadRequestView.as_view(), name='request_download'),
