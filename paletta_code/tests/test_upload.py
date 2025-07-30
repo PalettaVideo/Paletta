@@ -155,7 +155,7 @@ class ComprehensiveUploadTestSuite:
         for title in test_titles:
             if not self._validate_title_length(title):
                 logger.error(f" Test setup failed: title '{title}' exceeds database limit")
-                raise ValueError(f"Title '{title}' exceeds 25 character limit")
+                raise ValueError(f"Title '{title}' exceeds 200 character limit")
         
         # Validate library name length
         library_name = 'Test Lib'
@@ -656,8 +656,8 @@ class ComprehensiveUploadTestSuite:
     
     def _validate_title_length(self, title):
         """Validate that title doesn't exceed database limit."""
-        if len(title.split()) > 20:
-            logger.warning(f"Title '{title}' exceeds 20 words ({len(title.split())} words)")
+        if len(title) > 200:
+            logger.warning(f"Title '{title}' exceeds 200 characters ({len(title)} characters)")
             return False
         return True
     
