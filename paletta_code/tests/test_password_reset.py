@@ -10,10 +10,22 @@ import django
 from datetime import datetime
 
 # Add the project directory to the Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_dir)
+
+# Change to the paletta_project directory where settings are located
+paletta_project_dir = os.path.join(project_dir, 'paletta_project')
+os.chdir(paletta_project_dir)
+
+# Add the current directory to Python path so Django can find the settings module
+sys.path.insert(0, os.getcwd())
+
+print(f"Working directory: {os.getcwd()}")
+print(f"Python path: {sys.path[:3]}")
 
 # Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'paletta_project.settings_production')
+print(f"Django settings module: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
 django.setup()
 
 from django.conf import settings

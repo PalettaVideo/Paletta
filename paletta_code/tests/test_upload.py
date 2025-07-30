@@ -25,8 +25,23 @@ import uuid
 import json
 from concurrent.futures import ThreadPoolExecutor
 
+# Add the project directory to the Python path
+project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_dir)
+
+# Change to the paletta_project directory where settings are located
+paletta_project_dir = os.path.join(project_dir, 'paletta_project')
+os.chdir(paletta_project_dir)
+
+# Add the current directory to Python path so Django can find the settings module
+sys.path.insert(0, os.getcwd())
+
+print(f"Working directory: {os.getcwd()}")
+print(f"Python path: {sys.path[:3]}")
+
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'paletta_project.settings_production')
+print(f"Django settings module: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
 django.setup()
 
 from django.test.client import Client
@@ -641,8 +656,8 @@ class ComprehensiveUploadTestSuite:
     
     def _validate_title_length(self, title):
         """Validate that title doesn't exceed database limit."""
-        if len(title) > 25:
-            logger.warning(f"Title '{title}' exceeds 25 characters ({len(title)} chars)")
+        if len(title.split()) > 20:
+            logger.warning(f"Title '{title}' exceeds 20 words ({len(title.split())} words)")
             return False
         return True
     

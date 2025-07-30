@@ -126,8 +126,8 @@ class VideoSerializer(serializers.ModelSerializer):
         
     def validate_title(self, value):
         """Validate the title length."""
-        if len(value.split()) > 25:
-            raise serializers.ValidationError("Title cannot exceed 25 words.")
+        if len(value.split()) > 20:
+            raise serializers.ValidationError("Title cannot exceed 20 words.")
         return value
         
     def validate_description(self, value):
