@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (titleInput) {
     titleInput.addEventListener("input", function () {
-      updateWordCount(this, titleWordCount, 20);
+      updateCharacterCount(this, titleWordCount, 200);
     });
   }
 
@@ -109,6 +109,18 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // functions
+
+  function updateCharacterCount(input, countElement, limit) {
+    const count = input.value.length;
+
+    countElement.textContent = `${count}/${limit} characters`;
+
+    if (count > limit) {
+      countElement.classList.add("error");
+    } else {
+      countElement.classList.remove("error");
+    }
+  }
 
   function handleVideoFileSelect(e) {
     const file = e.target.files[0];
