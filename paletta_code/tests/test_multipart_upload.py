@@ -9,11 +9,23 @@ import sys
 import time
 import logging
 
-# Add Django project path to sys.path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'paletta_project'))
+# Add the project directory to the Python path
+project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_dir)
+
+# Change to the paletta_project directory where settings are located
+paletta_project_dir = os.path.join(project_dir, 'paletta_project')
+os.chdir(paletta_project_dir)
+
+# Add the current directory to Python path so Django can find the settings module
+sys.path.insert(0, os.getcwd())
+
+print(f"Working directory: {os.getcwd()}")
+print(f"Python path: {sys.path[:3]}")
 
 # Setup Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'paletta_project.settings_production')
+print(f"Django settings module: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
 
 import django
 django.setup()
