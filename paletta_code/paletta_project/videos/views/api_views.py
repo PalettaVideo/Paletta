@@ -324,8 +324,8 @@ class VideoAPIUploadView(APIView):
             if not title or not title.strip():
                 return Response({'message': 'Title is required and cannot be empty.'}, status=status.HTTP_400_BAD_REQUEST)
             
-            if len(title) > 25:
-                return Response({'message': 'Title cannot exceed 25 characters.'}, status=status.HTTP_400_BAD_REQUEST)
+            if len(title) > 200:
+                return Response({'message': 'Title cannot exceed 200 characters.'}, status=status.HTTP_400_BAD_REQUEST)
             
             if duration is not None:
                 try:
