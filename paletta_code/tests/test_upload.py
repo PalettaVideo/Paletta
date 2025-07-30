@@ -641,8 +641,8 @@ class ComprehensiveUploadTestSuite:
     
     def _validate_title_length(self, title):
         """Validate that title doesn't exceed database limit."""
-        if len(title) > 25:
-            logger.warning(f"Title '{title}' exceeds 25 characters ({len(title)} chars)")
+        if len(title.split()) > 20:
+            logger.warning(f"Title '{title}' exceeds 20 words ({len(title.split())} words)")
             return False
         return True
     

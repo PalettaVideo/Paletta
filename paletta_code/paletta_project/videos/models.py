@@ -185,7 +185,7 @@ class Video(models.Model):
     ('processing_failed', 'Processing Failed'),
   ]
 
-  title = models.CharField(max_length=25)
+  title = models.CharField(max_length=200) # max 200 characters for title length
   description = models.TextField(blank=True)
   tags = models.ManyToManyField(Tag, through='VideoTag', related_name='videos')
   
