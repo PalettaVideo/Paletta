@@ -63,7 +63,7 @@
                 <div class="form-group">
                     <label for="video-title">Title</label>
                     <div class="input-group">
-                        <input type="text" id="videoTitle" name="title" value="{{ video.title }}" maxlength="25">
+                        <input type="text" id="videoTitle" name="title" value="{{ video.title }}" maxlength="200">
                     </div>
                     {% if form.title.errors %}
                     <p class="error-text">{{ form.title.errors.0 }}</p>
