@@ -43,7 +43,19 @@
 
     <div class="contact-form">
         <h2>Contact Now</h2>
-        <form action="#" method="POST">
+        
+        <!-- Display Django Messages -->
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <form action="{% url 'contact_us' %}" method="POST">
             {% csrf_token %}
             <input type="email" name="email" placeholder="Your Email" required>
             <textarea name="message" rows="5" placeholder="Your Message" required></textarea>

@@ -50,23 +50,23 @@ class ProfileView(TemplateView):
         }
         return render(request, self.template_name, context)
 
-class CollectionView(LoginRequiredMixin, TemplateView):
+class FavouritesView(LoginRequiredMixin, TemplateView):
     """
-    BACKEND/FRONTEND-READY: User's video collection display.
-    MAPPED TO: /collection/ URL
-    USED BY: collection.html template
+    BACKEND/FRONTEND-READY: User's video favourites display.
+    MAPPED TO: /favourites/ URL
+    USED BY: favourites.html template
     
     Shows user's uploaded videos with library context.
     """
-    template_name = 'collection.html'
+    template_name = 'favourites.html'
 
     def get_context_data(self, **kwargs):
         """
-        BACKEND/FRONTEND-READY: Add library context to collection page.
+        BACKEND/FRONTEND-READY: Add library context to favourites page.
         MAPPED TO: Template context
-        USED BY: collection.html template
+        USED BY: favourites.html template
         
-        Provides current library context for user's video collection.
+        Provides current library context for user's video favourites.
         """
         context = super().get_context_data(**kwargs)
         
@@ -133,5 +133,16 @@ class ProfileUpdateView(TemplateView):
         # save the user and show success message
         user.save()
         messages.success(request, 'Profile updated successfully.')
-        # redirect to profile page
+        
+        # Determine redirect URL based on library context
+        current_library_id = request.session.get('current_library_id')
+        if current_library_id:
+            try:
+                current_library = Library.objects.get(id=current_library_id)
+                # Redirect to library-specific profile page
+                return redirect('library_profile', library_slug=current_library.name.lower().replace(' ', '-'))
+            except Library.DoesNotExist:
+                pass
+        
+        # Fallback to general profile page
         return redirect('profile')

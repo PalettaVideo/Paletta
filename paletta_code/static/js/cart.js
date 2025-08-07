@@ -27,10 +27,13 @@ document.addEventListener("DOMContentLoaded", function () {
     // Calculate totals
     let subtotal = 0;
     cartItems.forEach((item) => {
-      const priceText = item.querySelector(".cart-item-price").textContent;
-      const price = parseFloat(priceText.replace("£", ""));
-      if (!isNaN(price)) {
-        subtotal += price;
+      const priceElement = item.querySelector(".cart-item-price");
+      if (priceElement) {
+        const priceText = priceElement.textContent;
+        const price = parseFloat(priceText.replace("£", ""));
+        if (!isNaN(price)) {
+          subtotal += price;
+        }
       }
     });
 
@@ -94,7 +97,7 @@ document.addEventListener("DOMContentLoaded", function () {
       document.querySelector('meta[name="clip-store-url"]')?.content || "/";
 
     // Send AJAX request to remove item
-    fetch("/cart/remove/", {
+    fetch("/api/orders/remove-from-cart/", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -138,8 +141,7 @@ document.addEventListener("DOMContentLoaded", function () {
           alert("Error removing item: " + data.message);
         }
       })
-      .catch((error) => {
-        console.error("Error:", error);
+      .catch(() => {
         alert("An error occurred while removing the item from cart.");
       });
   }

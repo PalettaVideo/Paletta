@@ -10,6 +10,7 @@
   <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
   <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
   <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
+  <meta name="user-role" content="{{ user_role|default:'user' }}">
   {% if clip %}
   <meta name="clip-id" content="{{ clip.id }}">
   <meta name="clip-thumbnail" content="{% if clip.thumbnail %}{{ clip.thumbnail.url }}{% endif %}">
@@ -27,23 +28,17 @@
   <script src="{% static 'js/video_details.js' %}" defer></script>
 </head>
 <body>
-  <!-- Debug comments for troubleshooting -->
-  <!-- Current Library: {% if current_library %}{{ current_library.name }} (ID: {{ current_library.id }}){% else %}None{% endif %} -->
-  <!-- Clip ID: {% if clip %}{{ clip.id }}{% else %}None{% endif %} -->
-  
   {% include "html_reusables/header_reusable.html" %}
-  
   {% csrf_token %}
-
   <!-- Main content -->
   <main>
     <!-- Video and Details -->
     <div class="content">
       <div class="video-container">
           <div class="navigation-buttons">
-            {% if clip.subject_area and current_library %}
-              <a href="{% library_specific_url 'library_category' category_slug=clip.subject_area.display_name|library_slugify %}">
-                <button class="back-button">Back to all videos in Category -  '{{ clip.subject_area.display_name }}'</button>
+                                {% if clip.content_type and current_library %}
+                    <a href="{% library_specific_url 'library_category' category_slug=clip.content_type.display_name|library_slugify %}">
+                    <button class="back-button">Back to all videos in Category -  '{{ clip.content_type.display_name }}'</button>
               </a>
             {% endif %}
             {% if current_library %}
@@ -74,7 +69,7 @@
         <h1>{{ clip.title|default:"Video Title" }}</h1>
         <p>Uploaded: {{ clip.upload_date|date:"Y-m-d"|default:"2024-01-01" }}</p>
         <div class="clipaction">
-          <button id="addToCollectionButton">Add to Collection</button>
+          <button id="addToCollectionButton">Add to Favourites</button>
           <button id="addToCartButton">Add to Cart</button>
         </div>
       </div>
@@ -85,23 +80,19 @@
       <div class="video-info">
         <h2>Description</h2>
         <p>{{ clip.description|default:"No description available." }}</p>
-        <!-- Subject Area Display -->
-        {% if clip.subject_area %}
-        <div class="subject-area">
-          <strong>Subject Area:</strong>
-          <span class="subject-area-name">{{ clip.subject_area.display_name }}</span>
+        <!-- Content Type Display -->
+        {% if clip.content_type %}
+        <div class="content-type">
+          <strong>Content Type:</strong>
+          <span class="content-type-name">{{ clip.content_type.display_name }}</span>
         </div>
         {% endif %}
         
-        <!-- Content Types Display -->
-        {% if clip.content_types.exists %}
-        <div class="content-types">
-          <strong>Content Types:</strong>
-          <div class="content-types-list">
-            {% for content_type in clip.content_types.all %}
-              <span class="content-type-badge">{{ content_type.display_name }}</span>
-            {% endfor %}
-          </div>
+        <!-- Content Type Display -->
+        {% if clip.content_type %}
+        <div class="content-type">
+          <strong>Content Type:</strong>
+          <span class="content-type-badge">{{ clip.content_type.display_name }}</span>
         </div>
         {% endif %}
                
@@ -116,22 +107,12 @@
       </div>
       <div class="attributes">
         <h2>Attributes</h2>
-        <p><strong>Duration:</strong> {{ duration_formatted }}</p>
+        <p><strong>Duration:</strong> {{ clip.duration_formatted }}</p>
         <p><strong>Format:</strong> {{ clip.format|upper|default:"Unknown" }}</p>
         <p><strong>File Size:</strong> {{ clip.file_size|filesizeformat }}</p>
       </div>
     </div>
   </main>
-
-<!-- Popup -->
-<div class="popup-overlay" id="popupOverlay">
-  <div class="resolution">
-    <h2>Choose the resolution you want</h2>
-    <label><input type="radio" name="resolution" value="HD" data-price="5.00"> HD : 1920×1080 - £5.00</label><br>
-    <label><input type="radio" name="resolution" value="4K" data-price="7.00"> 4K : 3840×2160 - £7.00</label><br><br>
-    <button id="confirmAddToCart">Add to Cart</button>
-  </div>
-</div>
 
 {% include "html_reusables/footer_reusable.html" %}
 </body>

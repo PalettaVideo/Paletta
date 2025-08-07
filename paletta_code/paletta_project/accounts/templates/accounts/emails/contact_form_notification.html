@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>New Contact Form Message</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #80B824;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .message-box {
+            background-color: white;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .info-row {
+            margin: 10px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .label {
+            font-weight: bold;
+            color: #555;
+        }
+        .value {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>New Contact Form Message</h1>
+        <p>A new message has been submitted through the Paletta contact form.</p>
+    </div>
+    
+    <div class="content">
+        <div class="info-row">
+            <span class="label">From:</span>
+            <span class="value">{{ sender_email }}</span>
+        </div>
+        
+        <div class="info-row">
+            <span class="label">Date:</span>
+            <span class="value">{{ request_date }}</span>
+        </div>
+        
+        <div class="info-row">
+            <span class="label">IP Address:</span>
+            <span class="value">{{ ip_address }}</span>
+        </div>
+        
+        <div class="info-row">
+            <span class="label">User Agent:</span>
+            <span class="value">{{ user_agent }}</span>
+        </div>
+        
+        <h3>Message:</h3>
+        <div class="message-box">
+            {{ message|linebreaks }}
+        </div>
+        
+        <p style="margin-top: 20px; font-size: 12px; color: #666;">
+            This message was sent from the Paletta contact form. Please respond to the sender at {{ sender_email }}.
+        </p>
+    </div>
+</body>
+</html> 

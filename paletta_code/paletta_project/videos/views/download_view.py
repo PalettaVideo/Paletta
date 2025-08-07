@@ -55,7 +55,7 @@ class DownloadRequestView(View):
             # Check if the video is stored in AWS S3 storage
             if video.storage_status != 'stored':
                 messages.warning(request, "This video is not available for download yet.")
-                return redirect('upload_history')
+                return redirect('my_videos')
             
             return render(request, 'download_request.html', {
                 'video': video
@@ -64,7 +64,7 @@ class DownloadRequestView(View):
         except Exception as e:
             logger.error(f"Error in RequestDownloadView.get: {str(e)}")
             messages.error(request, "An error occurred while processing your request.")
-            return redirect('upload_history')
+            return redirect('my_videos')
     
     @method_decorator(login_required)
     def post(self, request, video_id):
@@ -83,7 +83,7 @@ class DownloadRequestView(View):
             video_id (int): Video ID from URL parameter
             
         Returns:
-            HttpResponse: Redirect to upload history with success/error message
+            HttpResponse: Redirect to my videos with success/error message
         """
         try:
             video = get_object_or_404(Video, id=video_id)
@@ -97,7 +97,7 @@ class DownloadRequestView(View):
             # Check if the video is stored in AWS S3 storage
             if video.storage_status != 'stored':
                 messages.warning(request, "This video is not available for download yet.")
-                return redirect('upload_history')
+                return redirect('my_videos')
             
             # Get the email address from the form or use the user's email
             email = request.POST.get('email', request.user.email)
@@ -114,15 +114,15 @@ class DownloadRequestView(View):
             messages.success(
                 request, 
                 f"Download link will be sent to {email} shortly. "
-                f"Please check your email."
+                "Please check your email."
             )
             
             # Log the download request
             logger.info(f"User {request.user.username} requested download link for video ID {video_id} to {email}")
             
-            return redirect('upload_history')
+            return redirect('my_videos')
             
         except Exception as e:
             logger.error(f"Error in RequestDownloadView.post: {str(e)}")
             messages.error(request, "An error occurred while processing your request.")
-            return redirect('upload_history') 
+            return redirect('my_videos') 

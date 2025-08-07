@@ -1,0 +1,111 @@
+{% load static %}
+{% load library_tags %}
+{% if user.is_authenticated %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+      <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - My Videos</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
+  <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
+  <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
+    <!-- Styles -->
+    <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- CSS Reusables -->
+    <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/button_reusable.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/my_videos.css' %}">
+    <!-- JS -->
+    <script src="{% static 'js/my_videos.js' %}" defer></script>
+</head>
+<body>
+  {% include "html_reusables/header_reusable.html" %}
+  {% csrf_token %}
+  <div class="layout">
+      <aside class="sidebar">
+        <ul>
+          <li><a href="{% library_specific_url 'library_upload' %}">Upload</a></li>
+          <li><a href="{% library_specific_url 'library_my_videos' %}" class="active">My Videos</a></li>
+        </ul>
+      </aside>
+      <main class="content">
+          <h1> Your Uploaded Videos</h1>
+          
+          {% if videos %}
+              <div class="my-videos-container">
+                  {% for video in videos %}
+                      <div class="history-item" data-id="{{ video.id }}">
+                          <div class="video-thumbnail">
+                              {% if video.thumbnail %}
+                                  <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" style="height: 200px;">
+                              {% else %}
+                                  <div class="no-thumbnail">No Thumbnail</div>
+                              {% endif %}
+                          </div>
+                          <div class="video-details">
+                              <h3>{{ video.title }}</h3>
+                              <p>Uploaded: {{ video.upload_date|date:"F j, Y" }}</p>
+                              {% if video.library %}
+                              <div class="library-tag">
+                                  <span class="library-badge">{{ video.library.name }}</span>
+                              </div>
+                              {% endif %}
+                              
+                              <!-- Content Type Display -->
+                              {% if video.content_type %}
+                              <div class="content-type-tag">
+                                  <strong>Content Type:</strong> 
+                                  <span class="content-type-badge">{{ video.content_type.display_name }}</span>
+                              </div>
+                              {% endif %}
+                              
+                              <div class="video-actions">
+                                  <a href="#" class="button edit" data-id="{{ video.id }}">Edit</a>
+                                  {% if video.uploader == user %}
+                                  <a href="#" class="button delete" data-id="{{ video.id }}" data-title="{{ video.title }}">Delete</a>
+                                  {% endif %}
+                              </div>
+                          </div>
+                      </div>
+                  {% endfor %}
+              </div>
+          {% else %}
+              <div class="no-videos">
+                  <p>You haven't uploaded any videos yet.</p>
+                  <a href="{% library_specific_url 'library_upload' %}" class="button">Upload Your First Video</a>
+              </div>
+          {% endif %}
+          
+      </main>
+  </div>
+
+  <!-- Delete confirmation modal -->
+  <div id="deleteModal" class="delete-modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Confirm Delete</h2>
+      <p>Are you sure you want to delete the video "<span id="videoTitle"></span>"?</p>
+      <p>This action cannot be undone. The video will be removed from storage permanently.</p>
+      <div class="modal-actions">
+        <button id="confirmDelete" class="button delete">Delete</button>
+        <button class="button cancel" onclick="document.getElementById('deleteModal').style.display='none'; document.getElementById('modalOverlay').style.display='none';">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <div id="modalOverlay" class="modal-overlay"></div>
+
+  <!-- Toast notification container -->
+  <div id="toast-container"></div>
+
+{% include "html_reusables/footer_reusable.html" %}
+</body>
+</html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

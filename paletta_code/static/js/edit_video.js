@@ -127,7 +127,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       // Fetch tag suggestions (replace with actual API endpoint)
-      fetch(`/api/api/tag-suggestions/?query=${encodeURIComponent(query)}`)
+      fetch(`/api/tag-suggestions/?query=${encodeURIComponent(query)}`)
         .then((response) => response.json())
         .then((data) => {
           if (data.tags && data.tags.length > 0) {
@@ -154,8 +154,7 @@ document.addEventListener("DOMContentLoaded", function () {
             tagSuggestions.style.display = "none";
           }
         })
-        .catch((error) => {
-          console.error("Error fetching tag suggestions:", error);
+        .catch(() => {
           tagSuggestions.style.display = "none";
         });
     });
@@ -200,7 +199,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Redirect after a short delay
             setTimeout(() => {
-              window.location.href = data.redirect_url || "/upload-history/";
+              window.location.href = data.redirect_url || "/videos/my-videos/";
             }, 1500);
           } else {
             showToast(`Error: ${data.message || "Failed to update video"}`);
@@ -231,8 +230,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
           }
         })
-        .catch((error) => {
-          console.error("Error:", error);
+        .catch(() => {
           showToast("An error occurred while updating the video");
         });
     });

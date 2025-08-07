@@ -59,8 +59,7 @@ function getUserData() {
       throw new Error("User data element not found");
     }
     return JSON.parse(userDataElement.textContent);
-  } catch (error) {
-    console.error("Error parsing user data:", error);
+  } catch {
     return null;
   }
 }
@@ -78,11 +77,9 @@ function initializeProfile() {
     if (userData) {
       populateProfile(userData);
     } else {
-      console.error("User data not found or invalid");
       alert("Failed to load user profile.");
     }
-  } catch (error) {
-    console.error("Error loading user data:", error);
+  } catch {
     alert("Failed to load user profile.");
   }
 
@@ -206,8 +203,19 @@ function saveChanges() {
     body.password = password;
   }
 
+  // Determine the correct action URL based on library context
+  let actionUrl = "/profile/update/";
+
+  // Check if we're in a library context
+  const currentLibrarySlug = document.querySelector(
+    'meta[name="current-library-slug"]'
+  )?.content;
+  if (currentLibrarySlug && currentLibrarySlug !== "paletta") {
+    actionUrl = `/library/${currentLibrarySlug}/profile/update/`;
+  }
+
   // create and submit form
-  submitFormData("/profile/update/", body);
+  submitFormData(actionUrl, body);
 }
 
 /**

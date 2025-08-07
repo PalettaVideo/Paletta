@@ -1,0 +1,141 @@
+/* Main content layout styles only for favourites page */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Montserrat';
+}
+
+.layout {
+  display: flex;
+  flex-direction: row;
+  margin-top: 120px; /* Space for fixed header */
+  min-height: calc(100vh - 180px); /* Adjust for header and footer */
+}
+
+
+
+/* Main content area */
+
+
+.content {
+  flex: 1;
+  padding: 20px 40px;
+}
+
+
+/* Clip grid styles */
+.clips-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.clip {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid #ddd;
+  padding: 15px;
+  border-radius: 5px;
+  background-color: #fff;
+}
+
+.clip img {
+  width: 150px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.clip-details {
+  flex: 1;
+}
+
+.clip-details h2 {
+  font-size: 18px;
+  margin: 0 0 10px;
+}
+
+.clip-details p {
+  margin: 5px 0;
+}
+
+.tags {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  display: inline-block;
+  padding: 5px 10px;
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 15px;
+  font-size: 12px;
+}
+
+/* Button styles */
+.view-details {
+  
+  margin-top: 10px;
+  margin-right: 10px;
+}
+
+.remove {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 15px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+/* For empty favourites state */
+.no-clips {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+/* For unauthorized access message */
+.unauthorized-message {
+  text-align: center;
+  margin: 100px auto;
+  max-width: 600px;
+  padding: 40px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* Notification styles */
+.notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 15px 25px;
+  border-radius: 5px;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transform: translateY(20px);
+  opacity: 0;
+  transition: transform 0.3s, opacity 0.3s;
+  z-index: 1000;
+}
+
+.notification.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.notification.success {
+  background-color: #80B824;
+}
+
+.notification.error {
+  background-color: #e74c3c;
+}
+

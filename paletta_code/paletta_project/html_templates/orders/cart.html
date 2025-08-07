@@ -34,7 +34,7 @@
       <nav>
         <ul>
           <li><a href="{% library_specific_url 'library_profile' %}">My profile</a></li>
-          <li><a href="{% library_specific_url 'library_collection' %}">My collection</a></li>
+          <li><a href="{% library_specific_url 'library_favourites' %}">My Favourites</a></li>
           <li><a href="{% library_specific_url 'library_cart' %}" class="active">My cart</a></li>
           <li><a href="{% library_specific_url 'library_orders_list' %}">My orders</a></li>
         </ul>
@@ -59,7 +59,6 @@
               <div class="cart-item-details">
                 <h3>{{ item.video.title }}</h3>
                 <p>Resolution: {{ item.resolution }}</p>
-                <p class="cart-item-price">£{{ item.price }}</p>
               </div>
               
               <div class="cart-item-actions">
@@ -75,14 +74,10 @@
         </div>
         
         <div class="cart-summary">
-          <h3>Order Summary</h3>
-          <p>Subtotal: <span id="subtotal">£{{ total_price|default:'0.00' }}</span></p>
-          {% with vat=total_price|default:0|floatformat:2|multiply:0.2 %}
-          <p>VAT (20%): <span id="vat">£{{ vat|default:'0.00' }}</span></p>
-          <p class="total">Total: <span id="cart-total">£{{ total_price|default:0|add:vat|floatformat:2 }}</span></p>
-          {% endwith %}
+          <h3>Download Summary</h3>
+          <p>Items in cart: <span id="cart-count">{{ cart_items|length }}</span></p>
           <a href="{% library_specific_url 'library_checkout' %}">
-            <button id="checkout-button" {% if not cart_items %}disabled{% endif %}>Proceed to Checkout</button>
+            <button id="checkout-button" {% if not cart_items %}disabled{% endif %}>Request Downloads</button>
           </a>
         </div>
       </div>

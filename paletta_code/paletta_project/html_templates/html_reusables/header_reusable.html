@@ -40,6 +40,14 @@
           Upload
         </button>
       </a>
+      <a href="{% library_specific_url 'library_cart' %}" style="text-decoration: none;">
+        <button>
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+            <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12L8.1 13h7.45c.75 0 1.41-.41 1.75-1.03L21.7 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+          </svg>
+          My Cart
+        </button>
+      </a>
       <button id="centerButton">
         <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" width="24" height="24">
           <g data-name="Layer 2" id="Layer_2">
@@ -52,8 +60,8 @@
       </button>
       <div class="popup" id="popupMenu" style="display: none;">
         <a href="{% library_specific_url 'library_profile' %}">My Profile</a>
-        <a href="{% library_specific_url 'library_collection' %}">My Collection</a>
-        <a href="{% library_specific_url 'library_cart' %}">My Cart</a>
+        <a href="{% library_specific_url 'library_favourites' %}">My Favourites</a>
+        <a href="{% library_specific_url 'library_my_videos' %}"> My Videos </a>
         <a href="{% library_specific_url 'library_orders_list' %}">My Orders</a>
         <a href="{% url 'logout' %}">Log Out</a>
       </div>

@@ -50,33 +50,22 @@ fi
 
 echo "Loading initial data..."
 python manage.py shell << 'EOF'
-from videos.models import ContentType, PalettaCategory
+from videos.models import ContentType, PalettaContentType
 from libraries.models import Library
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-# Create content types (GLOBAL - available for all libraries)
-content_types = ['campus_life', 'teaching_learning', 'research_innovation', 'city_environment', 'aerial_establishing', 'people_portraits', 'culture_events', 'workspaces_facilities', 'cutaways_abstracts', 'historical_archive']
+# Create PalettaContentTypes (GLOBAL - available for all libraries)
+content_types = ['private', 'campus_life', 'teaching_learning', 'research_innovation', 'city_environment', 'aerial_establishing', 'people_portraits', 'culture_events', 'workspaces_facilities', 'cutaways_abstracts', 'historical_archive']
 
-print("Creating global content types...")
+print("Creating global Paletta content types...")
 for ct in content_types:
-    obj, created = ContentType.objects.get_or_create(code=ct)
+    obj, created = PalettaContentType.objects.get_or_create(code=ct)
     if created:
-        print(f"✓ Created ContentType: {ct} -> {obj.display_name}")
+        print(f"✓ Created PalettaContentType: {ct} -> {obj.display_name}")
     else:
-        print(f"ContentType already exists: {ct}")
-
-# Create Paletta categories  
-paletta_categories = ['people_community', 'buildings_architecture', 'classrooms_learning', 'field_trips_outdoor', 'events_conferences', 'research_innovation_spaces', 'technology_equipment', 'everyday_campus', 'urban_natural_environments', 'backgrounds_abstracts', 'private']
-
-print("Creating Paletta categories...")
-for pc in paletta_categories:
-    obj, created = PalettaCategory.objects.get_or_create(code=pc)
-    if created:
-        print(f"Created PalettaCategory: {pc}")
-    else:
-        print(f"PalettaCategory already exists: {pc}")
+        print(f"PalettaContentType already exists: {ct}")
 
 # Create default Paletta library
 admin_user = User.objects.filter(is_superuser=True).first()
@@ -87,7 +76,7 @@ if admin_user:
         defaults={
             'description': 'Default Paletta video library for educational content',
             'owner': admin_user,
-            'category_source': 'paletta_style',
+            'content_source': 'paletta_style',
             'storage_tier': 'enterprise',
             'is_active': True
         }
@@ -98,9 +87,9 @@ if admin_user:
         paletta_lib.save()
         print("Updated Paletta library owner to superuser")
     
-    # ALWAYS ensure categories are set up for the Paletta library
-    paletta_lib.setup_default_categories()
-    print("Set up default categories for Paletta library")
+    # ALWAYS ensure content types are set up for the Paletta library
+    paletta_lib.setup_default_categories()  # Creates library-specific ContentType instances
+    print("Set up default content types for Paletta library")
     
     if created:
         print("Created default Paletta library")
@@ -112,27 +101,30 @@ else:
 print("Initial data loaded successfully")
 EOF
 
-echo "Setting up categories for Paletta library..."
+echo "Setting up content types for Paletta library..."
 python manage.py shell << 'EOF'
-from videos.models import Category
+from videos.models import ContentType
 from libraries.models import Library
 
 try:
     paletta_lib = Library.objects.get(name='Paletta')
-    print("Setting up default categories...")
-    paletta_lib.setup_default_categories()
+    print("Setting up default content types...")
+    paletta_lib.setup_default_categories()  # Creates library-specific ContentType instances
     
-    category_count = Category.objects.filter(library=paletta_lib).count()
-    print(f"Paletta library now has {category_count} categories")
+    content_type_count = ContentType.objects.filter(is_active=True).count()
+    print(f"System now has {content_type_count} content types available")
     
-    if category_count >= 11:
-        print("✓ All categories created successfully!")
+    if content_type_count >= 11:
+        print("✓ All content types created successfully!")
     else:
-        print(f"⚠ Warning: Expected 11 categories, found {category_count}")
+        print(f"⚠ Warning: Expected 11 content types, found {content_type_count}")
         
 except Library.DoesNotExist:
     print("✗ Error: Paletta library not found")
 EOF
+
+echo "Setting up default images for content types..."
+python manage.py setup_content_type_images --force
 
 echo "Collecting static files..."
 python manage.py collectstatic --noinput

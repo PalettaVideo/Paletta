@@ -1,0 +1,63 @@
+{% load static %}
+{% load library_tags %}
+{% if user.is_authenticated %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %} - My Favourites</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
+  <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
+  <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
+  <meta name="user-role" content="{{ user_role|default:'user' }}">
+  <meta name="clip-store-url" content="{% library_specific_url 'library_clip_store' %}">
+  <!-- Styles -->
+  <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <!-- CSS Reusables -->
+  <link rel="stylesheet" href="{% static 'css/footer_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/header_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/button_reusable.css' %}">
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+  <!-- CSS -->
+  <link rel="stylesheet" href="{% static 'css/favourites.css' %}">
+  <!-- JS -->
+  <script src="{% static 'js/favourites.js' %}" defer></script>
+</head>
+
+<body>
+{% include "html_reusables/header_reusable.html" %}
+
+<div class="layout">
+<!-- sidebar -->
+<aside class="sidebar">
+  <nav>
+    <ul>
+        <li><a href="{% library_specific_url 'library_profile' %}">My profile</a></li>
+        <li><a href="{% library_specific_url 'library_favourites' %}" class="active">My Favourites</a></li>
+        <li><a href="{% library_specific_url 'library_cart' %}">My cart</a></li>
+        <li><a href="{% library_specific_url 'library_orders_list' %}">My orders</a></li>
+    </ul>
+  </nav>
+</aside>
+
+
+<main class="content">
+  <h1>My Favourites</h1>
+  
+  <!-- The clips-grid will be populated by JavaScript -->
+  <div class="clips-grid">
+    <!-- Empty initially, content will be dynamically loaded from localStorage -->
+  </div>
+</main>
+</div>
+
+{% csrf_token %}
+{% include "html_reusables/footer_reusable.html" %}
+</body>
+</html>
+
+{% else %}
+{% include "html_reusables/unauthorised_reusable.html" %}
+{% endif %}

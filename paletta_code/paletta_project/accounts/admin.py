@@ -20,7 +20,7 @@ class UserAdmin(BaseUserAdmin):
         (None, {'fields': ('email', 'password')}),
         (_('Personal info'), {'fields': ('first_name', 'last_name', 'institution', 'company')}),
         (_('Role'), {'fields': ('role',)}),
-        (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser')}),
         (_('Important dates'), {'fields': ('last_login', 'created_at')}),
     )
     
@@ -34,6 +34,5 @@ class UserAdmin(BaseUserAdmin):
     
     search_fields = ('email', 'first_name', 'last_name')
     ordering = ('email',)
-    filter_horizontal = ('groups', 'user_permissions',)
 
 admin.site.register(User, UserAdmin)

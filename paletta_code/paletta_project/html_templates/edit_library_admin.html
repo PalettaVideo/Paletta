@@ -58,12 +58,12 @@
             <form method="post" enctype="multipart/form-data" id="editLibraryForm" data-library-id="{{ library.id }}">
                 {% csrf_token %}
                 <input type="hidden" name="library_id" value="{{ library.id }}">
-                <input type="hidden" name="categories" id="categoriesData">
+                <input type="hidden" name="content_types" id="contentTypesData">
 
                 <div class="form-group">
             <label for="library-name">Name</label>
             <div class="input-group">
-                        <input type="text" id="libraryName" name="library_name" value="{{ library.name }}" readonly maxlength="100">
+                        <input type="text" id="libraryName" name="library_name" value="{{ library.name }}" readonly maxlength="50">
                         <button type="button" onclick="toggleEdit('libraryName', this)">Edit</button>
                     </div>
                     {% if form.library_name.errors %}
@@ -110,17 +110,17 @@
                 </div>
 
                 <div id="categoryList" class="category-list">
-                    {% if categories %}
-                        {% for category in categories %}
-                        <div class="category-item" data-id="{{ category.id }}" onclick="editCategoryModal(event, this)">
-                            <img src="{% if category.image %}{{ category.image.url }}{% else %}{% static 'picture/All.png' %}{% endif %}" alt="{{ category.display_name }}">
-                            <div class="category-name">{{ category.display_name }}</div>
-                            <div class="category-desc" style="display: none;">{{ category.description }}</div>
+                    {% if content_types %}
+                        {% for content_type in content_types %}
+                        <div class="category-item" data-id="{{ content_type.id }}" onclick="editCategoryModal(event, this)">
+                            <img src="{% if content_type.image %}{{ content_type.image.url }}{% else %}{% static 'picture/All.png' %}{% endif %}" alt="{{ content_type.display_name }}">
+                            <div class="category-name">{{ content_type.display_name }}</div>
+                            <div class="category-desc" style="display: none;">{{ content_type.description }}</div>
                             <button type="button" class="delete-btn" onclick="event.stopPropagation(); this.parentElement.remove(); checkCategoriesEmpty();">✖️</button>
                         </div>
                         {% endfor %}
                     {% endif %}
-                    <p id="no-categories-message" class="no-categories" {% if categories %}style="display: none;"{% endif %}>No categories found. Add categories to organize clips in this library.</p>
+                    <p id="no-categories-message" class="no-categories" {% if content_types %}style="display: none;"{% endif %}>No content types found. Add content types to organize clips in this library.</p>
                 </div>
             </div>
 

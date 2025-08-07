@@ -1,6 +1,8 @@
 import os
 import logging
 import boto3
+import math
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
@@ -10,22 +12,13 @@ logger = logging.getLogger(__name__)
 
 class AWSCloudStorageService:
     """
-    BACKEND-READY: AWS S3 storage service for video file management.
-    MAPPED TO: Internal service class
-    USED BY: Video upload/download workflows, admin operations
-    
-    Handles S3 operations: upload, download link generation, streaming URLs, deletion.
-    Required config: AWS_STORAGE_ENABLED, AWS credentials, bucket settings
+    AWS S3 storage service for video file management.
+    Handles S3 operations: multipart upload, download link generation, streaming URLs, deletion.
     """
     
     def __init__(self):
         """
-        BACKEND-READY: Initialize AWS S3 service with configuration validation.
-        MAPPED TO: Service instantiation
-        USED BY: All S3 operations throughout the system
-        
-        Validates AWS credentials and establishes S3 client connection.
-        Auto-disables if credentials missing or connection fails.
+        Initialize AWS S3 service with configuration validation.
         """
         # Get configuration from Django settings
         self.storage_enabled = getattr(settings, 'AWS_STORAGE_ENABLED', False)
@@ -34,8 +27,13 @@ class AWSCloudStorageService:
             self.aws_access_key = getattr(settings, 'AWS_ACCESS_KEY_ID', None)
             self.aws_secret_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None)
             self.aws_region = getattr(settings, 'AWS_REGION', 'us-east-1')
-            self.bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None) # the video bucket
+            self.bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None)
             self.download_link_expiry = getattr(settings, 'DOWNLOAD_LINK_EXPIRY_HOURS', 24)
+            
+            # Multipart upload configuration from settings
+            self.multipart_threshold = getattr(settings, 'S3_MULTIPART_THRESHOLD', 5 * 1024 * 1024)  # 5MB default
+            self.multipart_chunk_size = getattr(settings, 'S3_MULTIPART_CHUNK_SIZE', 10 * 1024 * 1024)  # 10MB default
+            self.max_concurrent_parts = getattr(settings, 'S3_MAX_CONCURRENT_PARTS', 10)  # 10 concurrent parts default
             
             # Initialize S3 client if credentials are available
             if self.aws_access_key and self.aws_secret_key and self.bucket_name:
@@ -56,146 +54,149 @@ class AWSCloudStorageService:
                 self.storage_enabled = False
                 logger.warning("AWS storage is enabled but AWS credentials are missing")
     
-    def upload_to_storage(self, video):
+    def _multipart_upload(self, video, s3_key, content_type):
         """
-        BACKEND-READY: Upload video file to AWS S3 with status tracking.
-        MAPPED TO: Internal S3 upload operation
-        USED BY: Video upload workflow, retry mechanisms
-        
-        Uploads video to S3, updates status, logs activities, optionally deletes local file.
-        Required fields: video.video_file, video.uploader, video.id
+        Multipart upload with parallel processing for large files.
+        Implements multipart upload with concurrent part uploads for better performance.
+        Supports files up to 10GB with 100MB chunks and 100 concurrent parts.
         """
-        if not self.storage_enabled:
-            logger.warning("AWS S3 storage is not enabled")
-            return False
-            
-        if not video.video_file:
-            logger.error(f"No video file to upload for video ID {video.id}")
-            old_status = video.storage_status
-            video.storage_status = 'failed'
-            video.save(update_fields=['storage_status'])
-            
-            # Log the status change
-            from .services import VideoLogService
-            VideoLogService.log_status_change(
-                video=video,
-                user=video.uploader,
-                old_status=old_status,
-                new_status='failed'
-            )
-            
-            return False
-            
         try:
-            # Update status to uploading
-            old_status = video.storage_status
-            video.storage_status = 'uploading'
-            video.save(update_fields=['storage_status'])
+            file_size = video.video_file.size
+            chunk_size = self.multipart_chunk_size
             
-            # Log the status change
-            from .services import VideoLogService
-            VideoLogService.log_status_change(
-                video=video,
-                user=video.uploader,
-                old_status=old_status,
-                new_status='uploading'
+            # Calculate number of parts
+            num_parts = math.ceil(file_size / chunk_size)
+            
+            # Validate file size limits (S3 supports up to 5TB with multipart)
+            max_file_size = 10 * 1024 * 1024 * 1024  # 10GB limit
+            if file_size > max_file_size:
+                logger.error(f"File size {file_size} bytes exceeds maximum allowed size of {max_file_size} bytes")
+                return False
+            
+            # Log upload details for large files
+            file_size_gb = file_size / (1024 * 1024 * 1024)
+            logger.info(f"Starting multipart upload for video ID {video.id}: {file_size_gb:.2f}GB, {num_parts} parts, {chunk_size / (1024*1024):.0f}MB chunks")
+            
+            # Initiate multipart upload
+            response = self.s3_client.create_multipart_upload(
+                Bucket=self.bucket_name,
+                Key=s3_key,
+                ContentType=content_type,
+                ACL='private'
             )
             
-            # Generate a unique key for the video in S3
-            file_name = os.path.basename(video.video_file.name)
-            s3_key = f"videos/user_{video.uploader.id}/{video.id}/{file_name}"
+            upload_id = response['UploadId']
+            parts = []
             
-            # Set appropriate content type based on file extension
-            content_type = 'video/' + (video.get_file_extension() or 'mp4')
+            # Upload parts in parallel with adaptive concurrency
+            max_workers = min(self.max_concurrent_parts, num_parts)
+            logger.info(f"Using {max_workers} concurrent workers for {num_parts} parts")
             
-            # Upload the file to S3 with progress monitoring
-            with video.video_file.open('rb') as file_data:
-                self.s3_client.upload_fileobj(
-                    file_data, 
-                    self.bucket_name, 
-                    s3_key,
-                    ExtraArgs={
-                        'ContentType': content_type,
-                        'ACL': 'private'  # Ensure the file is private
-                    }
-                )
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                # Submit all part upload tasks
+                future_to_part = {}
+                
+                for part_number in range(1, num_parts + 1):
+                    start_byte = (part_number - 1) * chunk_size
+                    end_byte = min(start_byte + chunk_size, file_size)
+                    
+                    future = executor.submit(
+                        self._upload_part,
+                        video,
+                        upload_id,
+                        part_number,
+                        start_byte,
+                        end_byte
+                    )
+                    future_to_part[future] = part_number
+                
+                # Collect results as they complete
+                completed_parts = 0
+                for future in as_completed(future_to_part):
+                    part_number = future_to_part[future]
+                    try:
+                        etag = future.result()
+                        parts.append({
+                            'ETag': etag,
+                            'PartNumber': part_number
+                        })
+                        completed_parts += 1
+                        
+                        # Log progress for large uploads
+                        if num_parts > 10:  # Only log progress for large files
+                            progress = (completed_parts / num_parts) * 100
+                            logger.info(f"Upload progress: {progress:.1f}% ({completed_parts}/{num_parts} parts completed)")
+                        else:
+                            logger.info(f"Completed part {part_number}/{num_parts} for video ID {video.id}")
+                            
+                    except Exception as e:
+                        logger.error(f"Part {part_number} upload failed for video ID {video.id}: {str(e)}")
+                        # Abort multipart upload on failure
+                        self.s3_client.abort_multipart_upload(
+                            Bucket=self.bucket_name,
+                            Key=s3_key,
+                            UploadId=upload_id
+                        )
+                        return False
             
-            # Update the video record with storage information
-            video.storage_url = f"s3://{self.bucket_name}/{s3_key}"
-            video.storage_reference_id = s3_key
-            old_status = video.storage_status
-            video.storage_status = 'stored'
-            video.save(update_fields=['storage_url', 'storage_reference_id', 'storage_status'])
-            
-            # Log the status change
-            VideoLogService.log_status_change(
-                video=video,
-                user=video.uploader,
-                old_status=old_status,
-                new_status='stored'
+            # Complete multipart upload
+            logger.info(f"Completing multipart upload for video ID {video.id} with {len(parts)} parts")
+            self.s3_client.complete_multipart_upload(
+                Bucket=self.bucket_name,
+                Key=s3_key,
+                UploadId=upload_id,
+                MultipartUpload={'Parts': parts}
             )
             
-            # Optionally delete the local file to save space
-            if getattr(settings, 'DELETE_LOCAL_FILE_AFTER_UPLOAD', True):
-                video.video_file.delete(save=False)
-                logger.info(f"Deleted local file for video ID {video.id}")
-            
-            logger.info(f"Successfully uploaded video ID {video.id} to AWS storage")
+            logger.info(f"Successfully completed multipart upload for video ID {video.id}: {file_size_gb:.2f}GB")
             return True
             
-        except ClientError as e:
-            error_code = e.response.get('Error', {}).get('Code', 'Unknown')
-            logger.error(f"AWS S3 error ({error_code}) uploading video ID {video.id}: {str(e)}")
-            old_status = video.storage_status
-            video.storage_status = 'failed'
-            video.save(update_fields=['storage_status'])
-            
-            # Log the status change and error
-            from .services import VideoLogService
-            VideoLogService.log_status_change(
-                video=video,
-                user=video.uploader,
-                old_status=old_status,
-                new_status='failed'
-            )
-            VideoLogService.log_error(
-                video=video,
-                user=video.uploader,
-                error_message=f"AWS S3 error ({error_code}): {str(e)}"
-            )
-            
-            return False
         except Exception as e:
-            logger.error(f"Error uploading video ID {video.id} to deep storage: {str(e)}")
-            old_status = video.storage_status
-            video.storage_status = 'failed'
-            video.save(update_fields=['storage_status'])
-            
-            # Log the status change and error
-            from .services import VideoLogService
-            VideoLogService.log_status_change(
-                video=video,
-                user=video.uploader,
-                old_status=old_status,
-                new_status='failed'
-            )
-            VideoLogService.log_error(
-                video=video,
-                user=video.uploader,
-                error_message=f"Error: {str(e)}"
-            )
-            
+            logger.error(f"Multipart upload failed for video ID {video.id}: {str(e)}")
+            # Attempt to abort multipart upload
+            try:
+                self.s3_client.abort_multipart_upload(
+                    Bucket=self.bucket_name,
+                    Key=s3_key,
+                    UploadId=upload_id
+                )
+            except:
+                pass
             return False
+    
+    def _upload_part(self, video, upload_id, part_number, start_byte, end_byte):
+        """
+        Upload a single part of a multipart upload.
+        Uploads a specific byte range of the file as a multipart part.
+        """
+        try:
+            with video.video_file.open('rb') as file_data:
+                # Seek to the start position
+                file_data.seek(start_byte)
+                
+                # Read the chunk
+                chunk = file_data.read(end_byte - start_byte)
+                
+                # Upload the part
+                response = self.s3_client.upload_part(
+                    Bucket=self.bucket_name,
+                    Key=video.storage_reference_id or f"videos/user_{video.uploader.id}/{video.id}/{os.path.basename(video.video_file.name)}",
+                    PartNumber=part_number,
+                    UploadId=upload_id,
+                    Body=chunk
+                )
+                
+                return response['ETag']
+                
+        except Exception as e:
+            logger.error(f"Part {part_number} upload failed: {str(e)}")
+            raise e
     
     def generate_download_link(self, video):
         """
-        BACKEND-READY: Generate temporary S3 download link with expiry.
-        MAPPED TO: Download request functionality
-        USED BY: Download views, email notifications
-        
+        Generate temporary S3 download link with expiry.
         Creates presigned S3 URL for video download (24h default expiry).
         Updates video model with link and expiry timestamp.
-        Required fields: video.storage_reference_id, storage_status='stored'
         """
         if not self.storage_enabled:
             logger.warning("Deep storage is not enabled")
@@ -237,13 +238,9 @@ class AWSCloudStorageService:
     
     def generate_streaming_url(self, video):
         """
-        BACKEND/FRONTEND-READY: Generate temporary S3 streaming URL.
-        MAPPED TO: Video playback functionality
-        USED BY: Video templates, API responses, serializers
-        
+        Generate temporary S3 streaming URL.
         Creates presigned S3 URL for video streaming (1h expiry).
         Used for in-browser video playback without downloads.
-        Required fields: video.storage_reference_id, storage_status='stored'
         """
         if not self.storage_enabled:
             logger.warning("Deep storage is not enabled")
@@ -278,13 +275,9 @@ class AWSCloudStorageService:
     
     def delete_from_storage(self, video):
         """
-        BACKEND-READY: Delete video and thumbnail from S3 storage.
-        MAPPED TO: Video deletion operations
-        USED BY: Admin interface, cleanup operations
-        
+        Delete video and thumbnail from S3 storage.
         Removes video from S3, clears storage metadata, resets status to pending.
         Handles both video files and associated thumbnails.
-        Required fields: video.storage_reference_id
         """
         if not self.storage_enabled:
             logger.warning("Deep storage is not enabled")
@@ -344,10 +337,7 @@ class AWSCloudStorageService:
 
 class VideoLogService:
     """
-    BACKEND-READY: Comprehensive video activity logging service.
-    MAPPED TO: Internal logging system
-    USED BY: All video operations for audit trail
-    
+    Comprehensive video activity logging service.
     Creates structured logs for uploads, downloads, errors, status changes.
     Captures IP addresses, user agents, and metadata for admin tracking.
     """
@@ -355,13 +345,9 @@ class VideoLogService:
     @staticmethod
     def log_activity(video, user, log_type, message, request=None, **kwargs):
         """
-        BACKEND-READY: Core logging method for all video activities.
-        MAPPED TO: Internal logging function
-        USED BY: All specific log methods (upload, download, error, etc.)
-        
+        Core logging method for all video activities.
         Creates VideoLog entries with metadata extraction from requests.
         Supports IP tracking and user agent capture for security auditing.
-        Required fields: video, user, log_type, message
         """
         from .models import VideoLog
         
@@ -450,13 +436,9 @@ class VideoLogService:
     @staticmethod
     def get_client_ip(request):
         """
-        BACKEND-READY: Extract client IP from HTTP request headers.
-        MAPPED TO: Internal utility function
-        USED BY: log_activity method for IP tracking
-        
+        Extract client IP from HTTP request headers.
         Handles X-Forwarded-For headers for proxy/load balancer setups.
         Falls back to REMOTE_ADDR if forwarded headers unavailable.
-        Required fields: request (HttpRequest object)
         """
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:

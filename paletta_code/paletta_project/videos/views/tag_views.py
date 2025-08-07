@@ -27,7 +27,7 @@ def assign_tags(request, video_id):
         has_permission = UserLibraryRole.objects.filter(
             user=request.user,
             library=video.library,
-            role__in=['admin', 'contributor']
+            role__in=['admin', 'user']
         ).exists()
         
         if not has_permission:
@@ -89,7 +89,7 @@ class TagsAPIView(View):
                 has_permission = UserLibraryRole.objects.filter(
                     user=request.user,
                     library=video.library,
-                    role__in=['admin', 'contributor']
+                    role__in=['admin', 'user']
                 ).exists()
                 
                 if not has_permission:

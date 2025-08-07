@@ -10,6 +10,7 @@
   <meta name="current-library-slug" content="{% if current_library %}{{ current_library.name|library_slugify }}{% else %}paletta{% endif %}">
   <meta name="current-library-id" content="{% if current_library %}{{ current_library.id }}{% else %}{% endif %}">
   <meta name="current-library-name" content="{% if current_library %}{{ current_library.name }}{% else %}Paletta{% endif %}">
+  <meta name="user-role" content="{{ user_role|default:'user' }}">
     <!-- Styles -->
     <link rel="icon" type="image/x-icon" href="{% static 'picture/logo.ico' %}">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
@@ -27,27 +28,27 @@
 
 <body>
     {% include "html_reusables/header_reusable.html" %}
+    
+    {% if user.role == 'admin' or user.role == 'owner' or user.is_superuser %}
     <div class="layout">
         <aside class="sidebar">
             <ul>
                 <li><a href="{% library_specific_url 'library_upload' %}" class="active">Upload</a></li>
-                <li><a href="{% library_specific_url 'library_upload_history' %}">History</a></li>
+                <li><a href="{% library_specific_url 'library_my_videos' %}"> My Videos</a></li>
             </ul>
         </aside>
         <main class="content">
-          <form id="upload-form" method="post" enctype="multipart/form-data" data-success-url="{% library_specific_url 'library_upload_history' %}" data-api-gateway-url="{{ API_GATEWAY_URL }}/getPresignedVideoUploadURL" data-library-id="{{ current_library.id }}" novalidate>
+          <form id="upload-form" method="post" enctype="multipart/form-data" data-success-url="{% library_specific_url 'library_my_videos' %}" data-api-gateway-url="{{ API_GATEWAY_URL }}/getPresignedVideoUploadURL" data-library-id="{{ current_library.id }}" novalidate>
             {% csrf_token %}
             <h1>Upload your clip</h1>
-            
             {% if current_library %}
             <div class="library-info" data-library-id="{{ current_library.id }}">
                 <p>Uploading to library: <strong>{{ current_library.name }}</strong></p>
                 <input type="hidden" name="library_id" value="{{ current_library.id }}">
             </div>
             {% endif %}
-            
             <div class="upload-box" id="upload-box">
-                <p>MPEG, MOV, MP4, AVI videos no larger than 256GB and no larger than 1920x1080px</p>
+                <p>MPEG, MOV, MP4, AVI videos up to 10GB</p>
                 <input type="file" id="file-input" name="video_file" accept="video/*" required style="display: none;">
                 <button type="button" class="button" id="select-file">Select Video</button>
                 <div class="preview-container" id="video-preview-container">
@@ -56,41 +57,24 @@
             </div>
             <div class="form-group">
                 <label for="title">Title</label>
-                <input type="text" id="title" name="title" maxlength="1000" required>
-                <div class="word-count" id="title-word-count">0/20 words</div>
+                <input type="text" id="title" name="title" maxlength="200" required>
+                <div class="word-count" id="title-word-count">0/200 characters</div>
             </div>
-
             <div class="form-group">
               <label for="preview-image">Upload Preview Image (Thumbnail)</label>
               <input type="file" id="preview-image" name="thumbnail" accept="image/*">
               <div class="preview-container" id="preview-container"></div>
             </div>
-
             <div class="form-group">
                 <label for="description">Description</label>
                 <textarea id="description" name="description" maxlength="6000"></textarea>
                 <div class="word-count" id="description-word-count">0/100 words</div>
             </div>
             <div class="form-group">
-                <label for="category">Category</label>
-                <div class="select-container">
-                    <div class="select-wrapper">
-                        <select id="category" name="category" required>
-                            <option value="">Select a category</option>
-                            <!-- Categories will be loaded from API via JavaScript -->
-                        </select>
-                    </div>
-                    <div class="category-info">
-                        <small>Categories are predefined by library administrators.</small>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-group">
                 <label for="content-types">Content Type</label>
                 <div class="content-types-container">
                     <div class="content-types-info">
-                        <small>Select 1-3 content types that best describe your video.</small>
+                        <small>Select the Content Type that best describes your video.</small>
                     </div>
                     <div id="content-types-error" class="error-message" style="display: none;"></div>
                     <div id="content-types-grid" class="content-types-grid">
@@ -149,10 +133,8 @@
                         <span class="tag">abstract</span>
                         <span class="tag">historical</span>
                         <span class="tag">archive</span>
-
                 </div>
             </div>
-            
             <div class="form-actions">
                 <button type="submit" class="button">Upload Clip</button>
             </div>
@@ -160,16 +142,25 @@
         </main>
     </div>
 
-</body>
-
-<!-- Modal for upload limit warning -->
-<div id="upload-limit-modal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <span class="close-button">&times;</span>
-        <h2>Upload Limit Exceeded</h2>
-        <p id="modal-message"></p>
+    <!-- Modal for upload limit warning -->
+    <div id="upload-limit-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Upload Limit Exceeded</h2>
+            <p id="modal-message"></p>
+        </div>
     </div>
-</div>
+    {% else %}
+    <div class="layout">
+        <main class="content">
+            <div class="no-upload-access" style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 40px; margin: 40px; text-align: center;">
+                <h2 style="color: #6c757d; margin-bottom: 20px;">Upload Access Restricted</h2>
+                <p style="color: #6c757d; margin: 0; font-size: 18px;">Only Admin level users can upload videos to the platform.</p>
+            </div>
+        </main>
+    </div>
+    {% endif %}
+</body>
 
 {% include "html_reusables/footer_reusable.html" %}
 

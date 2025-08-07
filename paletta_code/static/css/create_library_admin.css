@@ -20,6 +20,22 @@ main textarea {
     border-radius: 4px;
 }
 
+main textarea {
+    min-height: 120px;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.4;
+}
+
+.word-count {
+    font-size: 0.85em;
+    color: #666;
+    text-align: right;
+    margin-top: -8px;
+    margin-bottom: 10px;
+    font-style: italic;
+}
+
 .preview-container {
     margin-top: 10px;
     display: flex;

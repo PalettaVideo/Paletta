@@ -2,8 +2,12 @@ from django.views.generic import TemplateView
 from django.shortcuts import render, redirect
 from django.contrib.auth import logout
 from django.contrib import messages
-from videos.models import Category, PalettaCategory
-from videos.serializers import CategorySerializer
+from django.conf import settings
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.utils import timezone
+from videos.models import ContentType
 from libraries.models import Library
 from django.utils.text import slugify
 import logging
@@ -53,47 +57,57 @@ class HomeView(TemplateView):
         
         if request.user.is_authenticated:
             try:
-                categories = []
+                content_types = []
                 
                 if current_library:
-                    library_categories = Category.objects.filter(
+                    library_content_types = ContentType.objects.filter(
                         library=current_library, 
                         is_active=True
                     ).order_by('subject_area')
                     
-                    private_category = None
-                    other_categories = []
+                    private_content_type = None
+                    other_content_types = []
                     
-                    for lc in library_categories:
-                        cat_data = {
-                            'id': lc.id,
-                            'name': lc.display_name,
-                            'display_name': lc.display_name,
-                            'code': lc.subject_area,
-                            'type': 'library_category',
-                            'image_url': lc.image.url if lc.image else None,
+                    for ct in library_content_types:
+                        content_type_data = {
+                            'id': ct.id,
+                            'name': ct.display_name,
+                            'display_name': ct.display_name,
+                            'code': ct.subject_area,
+                            'type': 'library_content_type',
+                            'image_url': ct.image.url if ct.image else None,
                         }
                         
-                        if lc.subject_area == 'private':
-                            private_category = cat_data
+                        if ct.subject_area == 'private':
+                            private_content_type = content_type_data
                         else:
-                            other_categories.append(cat_data)
+                            other_content_types.append(content_type_data)
                     
-                    if private_category:
-                        categories.insert(0, private_category)
-                    categories.extend(other_categories)
+                    if private_content_type:
+                        content_types.insert(0, private_content_type)
+                    content_types.extend(other_content_types)
                 else:
-                    categories = []
+                    content_types = []
                     
             except Exception as e:
-                logger.error(f"Error loading categories: {str(e)}")
-                categories = []
+                logger.error(f"Error loading content types: {str(e)}")
+                content_types = []
             
             libraries = Library.objects.filter(is_active=True)
+            
+            # Add user role for permission checking
+            user_role = 'user'  # Default role
+            if request.user.is_superuser or request.user.role == 'owner':
+                user_role = 'owner'
+            elif request.user.role == 'admin':
+                user_role = 'admin'
+            
             context = {
-                'categories': categories,
+                'content_types': content_types,
                 'libraries': libraries,
                 'current_library': current_library,
+                'user_role': user_role,
+                'all_libraries': libraries,  # For sidebar
             }
             
         else:
@@ -141,13 +155,102 @@ class AboutUsView(StaticPageMixin, TemplateView):
 
 class ContactUsView(StaticPageMixin, TemplateView):
     """
-    BACKEND/FRONTEND-READY: Contact information page.
+    BACKEND/FRONTEND-READY: Contact information page with form handling.
     MAPPED TO: /contact/ URL
     USED BY: contact_us.html template
     
-    Static page with contact details and library context.
+    Handles contact form submissions and sends emails to the team.
     """
     template_name = 'contact_us.html'
+    
+    def post(self, request, *args, **kwargs):
+        """
+        BACKEND/FRONTEND-READY: Process contact form submission.
+        MAPPED TO: POST /contact/
+        USED BY: contact_us.html form submission
+        
+        Validates form data and sends notification email to the team.
+        Required fields: email, message
+        """
+        email = request.POST.get('email')
+        message = request.POST.get('message')
+        
+        if not email or not message:
+            messages.error(request, 'Please fill in all required fields.')
+            return render(request, self.template_name)
+        
+        try:
+            # Send contact form notification to team
+            self.send_contact_notification(email, message, request)
+            
+            messages.success(
+                request, 
+                'Thank you for your message! We will get back to you soon.'
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to send contact form notification: {str(e)}")
+            messages.error(request, 'Sorry, there was an error sending your message. Please try again later.')
+        
+        return render(request, self.template_name)
+    
+    def send_contact_notification(self, email, message, request):
+        """
+        Send contact form notification to the team.
+        
+        Args:
+            email: Sender's email address
+            message: Contact message content
+            request: HTTP request object
+        """
+        try:
+            # Get manager email from settings (consistent with forgot password)
+            manager_email = getattr(settings, 'MANAGER_EMAIL', 'niklaas@filmbright.com')
+            sender_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'info@filmbright.com')
+            
+            # Prepare email content
+            subject = f'New Contact Form Message - From: {email}'
+            
+            # Get sender's IP address
+            ip_address = self.get_client_ip(request)
+            
+            # Create email body
+            context = {
+                'sender_email': email,
+                'message': message,
+                'ip_address': ip_address,
+                'user_agent': request.META.get('HTTP_USER_AGENT', 'Unknown'),
+                'request_date': timezone.now().strftime('%Y-%m-%d %H:%M:%S'),
+            }
+            
+            # Render email template
+            html_message = render_to_string('accounts/emails/contact_form_notification.html', context)
+            plain_message = strip_tags(html_message)
+            
+            # Send email to manager
+            send_mail(
+                subject=subject,
+                message=plain_message,
+                from_email=sender_email,
+                recipient_list=[manager_email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+            
+            logger.info(f"Contact form notification sent to manager from {email}")
+            
+        except Exception as e:
+            logger.error(f"Failed to send contact form notification from {email}: {str(e)}")
+            raise
+    
+    def get_client_ip(self, request):
+        """Get the client's IP address."""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
 
 class QAndAView(StaticPageMixin, TemplateView):
     """

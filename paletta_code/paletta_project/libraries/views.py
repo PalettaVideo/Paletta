@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import Library, UserLibraryRole
 from .serializers import LibrarySerializer, UserLibraryRoleSerializer
-from videos.models import Category
+from videos.models import ContentType
 import base64
 from django.core.files.base import ContentFile
 from django.urls import reverse
@@ -81,16 +81,16 @@ class LibraryViewSet(viewsets.ModelViewSet):
             # Check if this is the Paletta library
             is_paletta_library = instance.is_paletta_library
             
-            # Permission check: Paletta library can only be deleted by superusers (owners)
-            if is_paletta_library and not request.user.is_superuser:
+            # Permission check: Paletta library can only be deleted by system superusers or users with owner role
+            if is_paletta_library and not (request.user.is_superuser or request.user.role == 'owner'):
                 return Response({
                     'status': 'error',
-                    'message': 'Only users with owner-level access can delete the Paletta library.'
+                    'message': 'Only users with owner-level access or System Superuser can delete the Paletta library.'
                 }, status=403)
             
             # Permission check: Other libraries can be deleted by owners or the library creator
             if not is_paletta_library:
-                is_owner = request.user.is_superuser
+                is_owner = request.user.is_superuser or request.user.role == 'owner'
                 is_creator = instance.owner == request.user
                 is_admin = UserLibraryRole.objects.filter(
                     library=instance, user=request.user, role='admin'
@@ -99,7 +99,7 @@ class LibraryViewSet(viewsets.ModelViewSet):
                 if not (is_owner or is_creator or is_admin):
                     return Response({
                         'status': 'error',
-                        'message': 'Only users with owner-level access or the library creator can delete this library.'
+                        'message': 'Only users with owner-level access or System Superuser can delete this library.'
                     }, status=403)
             
             self.perform_destroy(instance)
@@ -159,11 +159,11 @@ class LibraryViewSet(viewsets.ModelViewSet):
                     'message': 'You do not have permission to modify this library.'
                 }, status=403)
             
-            # Check if library uses custom categories
-            if library.category_source != 'custom':
+            # Check if library uses custom content types
+            if library.content_source != 'custom':
                 return Response({
                     'status': 'error',
-                    'message': 'This library does not use custom categories.'
+                    'message': 'This library does not use custom content types.'
                 }, status=400)
             
             categories_data = request.data.get('categories', [])
@@ -174,7 +174,7 @@ class LibraryViewSet(viewsets.ModelViewSet):
                 }, status=400)
             
             # Import here to avoid circular imports
-            from videos.models import Category
+            from videos.models import ContentType
             
             created_categories = []
             for category_data in categories_data:
@@ -190,8 +190,8 @@ class LibraryViewSet(viewsets.ModelViewSet):
                 if category_data.get('subject_area') == 'custom' and category_data.get('custom_name'):
                     category_kwargs['custom_name'] = category_data.get('custom_name')
                 
-                category = Category.objects.create(**category_kwargs)
-                created_categories.append(category)
+                content_type = ContentType.objects.create(**category_kwargs)
+                created_categories.append(content_type)
             
             return Response({
                 'status': 'success',
@@ -211,7 +211,7 @@ class UserLibraryRoleViewSet(viewsets.ModelViewSet):
     MAPPED TO: /api/roles/ endpoints
     USED BY: Library member management interface
     
-    Manages contributor and admin role assignments within libraries.
+    Manages user and admin role assignments within libraries.
     """
     queryset = UserLibraryRole.objects.all()
     serializer_class = UserLibraryRoleSerializer
@@ -259,18 +259,28 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
     USED BY: create_library_admin.html template
     
     Handles both GET (form display) and POST (form submission) for library creation.
+    PERMISSIONS: Only users with Owner level (superuser) can create libraries.
     """
     template_name = 'create_library_admin.html'
     
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Check if user has Owner level permissions before allowing access.
+        """
+        if not (request.user.is_superuser or request.user.role == 'owner'):
+            messages.error(request, 'Only users with Owner level access can create libraries.')
+            return redirect('home')
+        return super().dispatch(request, *args, **kwargs)
+    
     def post(self, request, *args, **kwargs):
         try:
-            # Get category source selection
-            category_source = request.POST.get('category_source', 'custom')
+            # Get content source selection
+            content_source = request.POST.get('content_source', 'custom')
             
             data = {
                 'name': request.POST.get('name'),
                 'description': request.POST.get('description'),
-                'category_source': category_source,
+                'content_source': content_source,
                 'storage_tier': request.POST.get('storage_tier', 'basic'),
             }
             
@@ -295,29 +305,40 @@ class CreateLibraryView(LoginRequiredMixin, TemplateView):
                     library.logo = logo
                     library.save()
                 
-                # Categories are automatically set up by Library.save() method
+                # Content types are automatically set up by Library.save() method
                 
                 # For custom libraries, handle any additional selected subject areas
-                if category_source == 'custom':
+                if content_source == 'custom':
                     # Get selected subject areas from checkboxes
                     custom_subject_areas = request.POST.getlist('custom_subject_areas')
                     
                     if custom_subject_areas:
-                        from videos.models import Category
+                        from videos.models import ContentType
                         
-                        # Create categories for each selected subject area
+                        # Create content types for each selected subject area
                         for subject_area in custom_subject_areas:
                             # Convert subject area code to display name
                             display_name = subject_area.replace('_', ' ').title()
                             
-                            Category.objects.get_or_create(
+                            ContentType.objects.get_or_create(
                                 subject_area=subject_area,
                                 library=library,
                                 defaults={
-                                    'description': f'{display_name} category for {library.name}',
+                                    'description': f'{display_name} content type for {library.name}',
                                     'is_active': True
                                 }
                             )
+                
+                # Automatically assign default images to content types
+                try:
+                    from django.core.management import call_command
+                    # Process all libraries to ensure consistency with deployment script
+                    call_command('setup_content_type_images', force=True)
+                except Exception as e:
+                    # Log the error but don't fail the library creation
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Failed to assign content type images: {str(e)}")
                 
                 # Create an admin role for the creator automatically
                 UserLibraryRole.objects.create(
@@ -346,7 +367,7 @@ class ManageLibrariesView(LoginRequiredMixin, TemplateView):
     MAPPED TO: /admin/manage-libraries/ URL  
     USED BY: manage_libraries.html template
     
-    Displays user's owned libraries and libraries where they have contributor roles.
+    Displays user's owned libraries and libraries where they have user roles.
     """
     template_name = 'manage_libraries.html'
     
@@ -374,7 +395,7 @@ class ManageLibrariesView(LoginRequiredMixin, TemplateView):
         context['libraries'] = all_libraries
         
         # Add user role information for permission checking
-        if self.request.user.is_superuser:
+        if self.request.user.is_superuser or self.request.user.role == 'owner':
             context['user_role'] = 'owner'
         else:
             context['user_role'] = 'user'  # Default role
@@ -387,7 +408,7 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
     MAPPED TO: /admin/edit-library/ URL
     USED BY: edit_library_admin.html template
     
-    Comprehensive library editing with categories, contributors, and settings management.
+    Comprehensive library editing with categories, users, and settings management.
     """
     template_name = 'edit_library_admin.html'
     
@@ -405,37 +426,38 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
             library = Library.objects.get(id=library_id)
             
             # Check if the user has permission to edit this library
-            if library.owner != self.request.user and not self.request.user.is_superuser:
+            if library.owner != self.request.user and not (self.request.user.is_superuser or self.request.user.role == 'owner'):
                 context['permission_error'] = True
                 context['library_name'] = library.name
                 return context
             
             context['library'] = library
             
-            # Get categories for this library - ALWAYS include all library categories (including Private)
-            categories = Category.objects.filter(library=library, is_active=True).order_by('subject_area')
+            # Get content types for this library - ALWAYS include all library content types (including Private)
+            library_content_types = ContentType.objects.filter(library=library, is_active=True).order_by('subject_area')
             
-            # Separate Private category to show it first
-            private_category = None
-            other_categories = []
+            # Separate Private content type to show it first
+            private_content_type = None
+            other_content_types = []
             
-            for category in categories:
-                if category.subject_area == 'private':
-                    private_category = category
+            for content_type in library_content_types:
+                if content_type.subject_area == 'private':
+                    private_content_type = content_type
                 else:
-                    other_categories.append(category)
+                    other_content_types.append(content_type)
             
             # Combine with Private first
-            ordered_categories = []
-            if private_category:
-                ordered_categories.append(private_category)
-            ordered_categories.extend(other_categories)
+            ordered_content_types = []
+            if private_content_type:
+                ordered_content_types.append(private_content_type)
+            ordered_content_types.extend(other_content_types)
             
-            context['categories'] = ordered_categories
+            context['content_types'] = ordered_content_types
             
-            # Get contributors for this library
-            context['contributors'] = UserLibraryRole.objects.filter(
-                library=library
+            # Get users for this library
+            context['users'] = UserLibraryRole.objects.filter(
+                library=library,
+                role='user'
             ).select_related('user')
             
         except Library.DoesNotExist:
@@ -487,119 +509,119 @@ class EditLibraryView(LoginRequiredMixin, TemplateView):
                 
             library.save()
             
-            # Process categories
-            if 'categories' in request.POST:
+            # Process content types
+            if 'content_types' in request.POST:
                 try:
-                    categories_data = json.loads(request.POST.get('categories'))
+                    content_types_data = json.loads(request.POST.get('content_types'))
                     
-                    # Keep track of existing category IDs
-                    current_categories = set(Category.objects.filter(library=library).values_list('id', flat=True))
-                    processed_categories = set()
+                    # Keep track of existing content type IDs
+                    current_content_types = set(ContentType.objects.filter(library=library).values_list('id', flat=True))
+                    processed_content_types = set()
                     
-                    for category_data in categories_data:
-                        category_id = category_data.get('id')
+                    for content_type_data in content_types_data:
+                        content_type_id = content_type_data.get('id')
                         
-                        if category_id and not category_id.startswith('temp_'):
-                            # Update existing category
+                        if content_type_id and not content_type_id.startswith('temp_'):
+                            # Update existing content type
                             try:
-                                category = Category.objects.get(id=category_id, library=library)
-                                # Note: Category name is now handled through subject_area enum
-                                category.description = category_data.get('description', category.description)
+                                content_type = ContentType.objects.get(id=content_type_id, library=library)
+                                # Note: Content type name is now handled through subject_area enum
+                                content_type.description = content_type_data.get('description', content_type.description)
                                 
                                 # Handle image if provided
-                                if 'image' in category_data and category_data['image'] and category_data['image'].startswith('data:'):
+                                if 'image' in content_type_data and content_type_data['image'] and content_type_data['image'].startswith('data:'):
                                     image_file = process_base64_image(
-                                        category_data['image'],
-                                        name=f"category_{category.display_name}"
+                                        content_type_data['image'],
+                                        name=f"content_type_{content_type.display_name}"
                                     )
-                                    category.image = image_file
+                                    content_type.image = image_file
                                     
-                                category.save()
-                                processed_categories.add(int(category_id))
+                                content_type.save()
+                                processed_content_types.add(int(content_type_id))
                                 
-                            except Category.DoesNotExist:
-                                pass  # Category might belong to another library or doesn't exist
+                            except ContentType.DoesNotExist:
+                                pass  # Content type might belong to another library or doesn't exist
                         else:
-                            # Create new category
-                            new_category = Category(
-                                subject_area=category_data.get('subject_area'),
-                                description=category_data.get('description', ''),
+                            # Create new content type
+                            new_content_type = ContentType(
+                                subject_area=content_type_data.get('subject_area'),
+                                description=content_type_data.get('description', ''),
                                 library=library
                             )
-                            new_category.save()
+                            new_content_type.save()
                             
                             # Handle image if provided
-                            if 'image' in category_data and category_data['image'] and category_data['image'].startswith('data:'):
+                            if 'image' in content_type_data and content_type_data['image'] and content_type_data['image'].startswith('data:'):
                                 image_file = process_base64_image(
-                                    category_data['image'],
-                                    name=f"category_{new_category.display_name}"
+                                    content_type_data['image'],
+                                    name=f"content_type_{new_content_type.display_name}"
                                 )
-                                new_category.image = image_file
-                                new_category.save()
+                                new_content_type.image = image_file
+                                new_content_type.save()
                                 
-                            processed_categories.add(new_category.id)
+                            processed_content_types.add(new_content_type.id)
                     
-                    # Delete categories that were removed
-                    categories_to_delete = current_categories - processed_categories
-                    if categories_to_delete:
-                        Category.objects.filter(id__in=categories_to_delete, library=library).delete()
+                    # Delete content types that were removed
+                    content_types_to_delete = current_content_types - processed_content_types
+                    if content_types_to_delete:
+                        ContentType.objects.filter(id__in=content_types_to_delete, library=library).delete()
                         
                 except json.JSONDecodeError:
                     return JsonResponse({
                         'status': 'error',
-                        'message': "Invalid category data format"
+                        'message': "Invalid content type data format"
                     }, status=400, content_type='application/json')
             
-            # Process contributors
-            if 'contributors' in request.POST:
+            # Process users
+            if 'users' in request.POST:
                 try:
-                    contributors_data = json.loads(request.POST.get('contributors'))
+                    users_data = json.loads(request.POST.get('users'))
                     
-                    # Keep track of existing contributor IDs
-                    current_contributors = set(UserLibraryRole.objects.filter(
+                    # Keep track of existing user IDs
+                    current_users = set(UserLibraryRole.objects.filter(
                         library=library, 
-                        role='contributor'
+                        role='user'
                     ).values_list('id', flat=True))
                     
-                    processed_contributors = set()
+                    processed_users = set()
                     
-                    for contributor_data in contributors_data:
-                        contributor_id = contributor_data.get('id')
+                    for user_data in users_data:
+                        user_id = user_data.get('id')
                         
-                        if contributor_id and not contributor_id.startswith('temp_'):
-                            # Existing contributor - just mark as processed
-                            processed_contributors.add(int(contributor_id))
+                        if user_id and not user_id.startswith('temp_'):
+                            # Existing user - just mark as processed
+                            processed_users.add(int(user_id))
                         else:
-                            # New contributor to add
+                            # New user to add
                             from django.contrib.auth import get_user_model
                             User = get_user_model()
                             
                             # Try to find user by email
                             try:
-                                user = User.objects.get(email=contributor_data.get('email'))
+                                user = User.objects.get(email=user_data.get('email'))
                                 
                                 # Check if user already has a role in this library
                                 if not UserLibraryRole.objects.filter(library=library, user=user).exists():
                                     role = UserLibraryRole.objects.create(
                                         library=library,
                                         user=user,
-                                        role='contributor'
+                                        role='user'
                                     )
-                                    processed_contributors.add(role.id)
+                                    processed_users.add(role.id)
                             except User.DoesNotExist:
                                 # User doesn't exist - we might want to invite them
                                 # For now, just log it
                                 pass  # User not found
                     
-                    # Remove contributors that were removed
-                    contributors_to_delete = current_contributors - processed_contributors
-                    if contributors_to_delete:
-                        UserLibraryRole.objects.filter(id__in=contributors_to_delete, library=library).delete()
+                    # Remove users that were removed
+                    users_to_delete = current_users - processed_users
+                    if users_to_delete:
+                        UserLibraryRole.objects.filter(id__in=users_to_delete, library=library).delete()
                         
                 except json.JSONDecodeError:
                     return JsonResponse({
                         'status': 'error',
-                        'message': "Invalid contributor data format"
+                        'message': "Invalid user data format"
                     }, status=400, content_type='application/json')
             
             return JsonResponse({

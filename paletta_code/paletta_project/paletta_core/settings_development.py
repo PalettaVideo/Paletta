@@ -56,6 +56,7 @@ INSTALLED_APPS = [
 
     # AWS S3 and storage
     'storages',
+    'django_ses',
 ]
 
 MIDDLEWARE = [

@@ -41,6 +41,18 @@ def lambda_handler(event, context):
                 'body': json.dumps({'error': 'Query string must include fileName and contentType.'})
             }
         
+        # Validate content type for video files
+        allowed_content_types = [
+            'video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo',
+            'video/webm', 'video/ogg', 'video/x-ms-wmv', 'video/x-flv'
+        ]
+        
+        if not content_type.startswith('video/') or content_type not in allowed_content_types:
+            return {
+                'statusCode': 400, 
+                'body': json.dumps({'error': f'Invalid content type: {content_type}. Only video files are allowed.'})
+            }
+        
         # Create a unique S3 key to prevent file overwrites
         unique_id = uuid.uuid4()
         file_extension = os.path.splitext(file_name)[1]

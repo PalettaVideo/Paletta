@@ -11,10 +11,6 @@ function initPopupMenu() {
   const popupMenu = document.getElementById("popupMenu");
 
   if (!centerButton || !popupMenu) {
-    console.error("Header elements not found:", {
-      centerButton: !!centerButton,
-      popupMenu: !!popupMenu,
-    });
     return;
   }
 

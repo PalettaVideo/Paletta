@@ -77,16 +77,10 @@ document.addEventListener("DOMContentLoaded", function () {
       title: "Paletta Style Categories",
       sections: [
         {
-          label: "Paletta Categories",
-          description:
-            "People & Community, Buildings & Architecture, Classrooms & Learning Spaces, Field Trips & Outdoor Learning, Events & Conferences, Research & Innovation Spaces, Technology & Equipment, Everyday Campus Life, Urban & Natural Environments, Backgrounds & Abstracts",
-          required: "1 per video",
-        },
-        {
           label: "Content Types",
           description:
-            "Campus Life, Teaching & Learning, Research & Innovation, City & Environment, Aerial & Establishing Shots, People & Portraits, Culture & Events, Workspaces & Facilities, Cutaways & Abstracts, Historical & Archive",
-          required: "1-3 per video",
+            "Private, Campus Life, Teaching & Learning, Research & Innovation, City & Environment, Aerial & Establishing Shots, People & Portraits, Culture & Events, Workspaces & Facilities, Cutaways & Abstracts, Historical & Archive",
+          required: "1 per video",
         },
         {
           label: "Tags",
@@ -107,8 +101,8 @@ document.addEventListener("DOMContentLoaded", function () {
         {
           label: "Content Types",
           description:
-            "Campus Life, Teaching & Learning, Research & Innovation, City & Environment, Aerial & Establishing Shots, People & Portraits, Culture & Events, Workspaces & Facilities, Cutaways & Abstracts, Historical & Archive",
-          required: "1-3 per video",
+            "Private, Campus Life, Teaching & Learning, Research & Innovation, City & Environment, Aerial & Establishing Shots, People & Portraits, Culture & Events, Workspaces & Facilities, Cutaways & Abstracts, Historical & Archive",
+          required: "1 per video",
         },
         {
           label: "Tags",
@@ -162,6 +156,32 @@ document.addEventListener("DOMContentLoaded", function () {
   // Initialize preview
   updateCategoryPreview();
 
+  // Word count functionality for description
+  const descriptionField = document.getElementById("id_description");
+  const wordCountDisplay = document.getElementById("description-word-count");
+
+  if (descriptionField && wordCountDisplay) {
+    function updateWordCount() {
+      const text = descriptionField.value;
+      const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+
+      if (wordCount === 0) {
+        wordCountDisplay.textContent =
+          "Please write 10-200 words to provide adequate context for your library";
+      } else if (wordCount < 10) {
+        wordCountDisplay.textContent = `${wordCount} words - Please add more details (minimum 10 words)`;
+      } else if (wordCount > 200) {
+        wordCountDisplay.textContent = `${wordCount} words - Please shorten your description (maximum 200 words)`;
+      } else {
+        wordCountDisplay.textContent = `${wordCount} words - Good length!`;
+      }
+    }
+
+    descriptionField.addEventListener("input", updateWordCount);
+    descriptionField.addEventListener("paste", updateWordCount);
+    updateWordCount(); // Initialize count
+  }
+
   // Form submission handling
   const libraryForm = document.getElementById("library-form");
   if (libraryForm) {
@@ -195,17 +215,7 @@ document.addEventListener("DOMContentLoaded", function () {
             "custom_categories_json",
             JSON.stringify(selectedSubjectAreas)
           );
-          console.log(
-            `Adding ${selectedSubjectAreas.length} custom categories:`,
-            selectedSubjectAreas
-          );
         }
-      }
-
-      // Debug form data
-      console.log("Form submission data:");
-      for (let pair of formData.entries()) {
-        console.log(`${pair[0]}: ${pair[1]}`);
       }
 
       try {
@@ -215,20 +225,15 @@ document.addEventListener("DOMContentLoaded", function () {
             method: "POST",
             headers: {
               "X-CSRFToken": csrftoken,
-              // Don't set Content-Type here, FormData will set it with boundary
             },
             body: formData,
           }
         );
 
-        // Debug response
-        console.log("Response status:", response.status);
-
         if (
           response.headers.get("content-type")?.includes("application/json")
         ) {
           const data = await response.json();
-          console.log("Response data:", data);
 
           if (data.status === "success") {
             // Show success message
@@ -246,14 +251,12 @@ document.addEventListener("DOMContentLoaded", function () {
             window.location.href = "/libraries/manage/";
           } else {
             const text = await response.text();
-            console.error("Server response:", text);
             alert(
               "An error occurred while creating the library. Please check your input and try again."
             );
           }
         }
       } catch (error) {
-        console.error("Error:", error);
         alert(
           "An error occurred while creating the library. Please try again."
         );
@@ -267,6 +270,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const categorySourceField = document.querySelector(
       'input[name="category_source"]:checked'
     );
+    const fileInput = document.getElementById("file-input");
 
     if (!nameField.value.trim()) {
       alert("Please enter a library name");
@@ -280,8 +284,34 @@ document.addEventListener("DOMContentLoaded", function () {
       return false;
     }
 
+    // Validate description word count
+    const descriptionWordCount = descriptionField.value
+      .trim()
+      .split(/\s+/).length;
+    if (descriptionWordCount > 200) {
+      alert(
+        "Description cannot exceed 200 words. Please shorten your description."
+      );
+      descriptionField.focus();
+      return false;
+    }
+    if (descriptionWordCount < 10) {
+      alert(
+        "Description should be at least 10 words to provide adequate context."
+      );
+      descriptionField.focus();
+      return false;
+    }
+
     if (!categorySourceField) {
       alert("Please select a category management option");
+      return false;
+    }
+
+    // Validate logo upload
+    if (!fileInput.files || fileInput.files.length === 0) {
+      alert("Please upload a logo for your library");
+      fileInput.focus();
       return false;
     }
 

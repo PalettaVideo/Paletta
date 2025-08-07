@@ -1,14 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
   const addToCartButton = document.getElementById("addToCartButton");
-  const popupOverlay = document.getElementById("popupOverlay");
-  const confirmAddToCart = document.getElementById("confirmAddToCart");
   const addToCollectionButton = document.getElementById(
     "addToCollectionButton"
   );
-
-  // Storage keys for cart and collection
-  const COLLECTION_STORAGE_KEY = "userCollection";
-  const CART_STORAGE_KEY = "userCart";
 
   // Get current library context for localStorage keys
   function getCurrentLibrarySlug() {
@@ -81,12 +75,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-    if (keysToRemove.length > 0) {
-      console.log(
-        `Cleared ${keysToRemove.length} stale localStorage entries for library switch`
-      );
-    }
-
     // Set current library slug to prevent future caching issues
     localStorage.setItem("lastLibrarySlug", currentLibrarySlug);
   }
@@ -94,21 +82,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Clear stale data and initialize localStorage for cart and collection if not present
   clearStaleLibraryData();
 
-  // Add debug logging for library context
-  const currentLibrarySlug = getCurrentLibrarySlug();
-  const currentLibraryName =
-    document.querySelector('meta[name="current-library-name"]')?.content ||
-    "Unknown";
-  const clipId =
-    document.querySelector('meta[name="clip-id"]')?.content || "Unknown";
-
-  console.log(`[VideoDetails Debug] Library context initialized:`);
-  console.log(
-    `[VideoDetails Debug] - Current library: ${currentLibraryName} (slug: ${currentLibrarySlug})`
-  );
-  console.log(`[VideoDetails Debug] - Clip ID: ${clipId}`);
-  console.log(`[VideoDetails Debug] - URL: ${window.location.pathname}`);
-
+  // Clear stale data and initialize localStorage for cart and collection if not present
   if (!localStorage.getItem(getCollectionStorageKey())) {
     localStorage.setItem(getCollectionStorageKey(), JSON.stringify([]));
   }
@@ -122,24 +96,20 @@ document.addEventListener("DOMContentLoaded", function () {
    * Set up event listeners
    */
   function setupEventListeners() {
-    // Add to cart functionality
-    if (addToCartButton && popupOverlay && confirmAddToCart) {
-      addToCartButton.addEventListener("click", () => {
-        popupOverlay.style.display = "flex";
-      });
-
-      confirmAddToCart.addEventListener("click", handleAddToCart);
-
-      popupOverlay.addEventListener("click", (event) => {
-        if (event.target === popupOverlay) {
-          popupOverlay.style.display = "none";
-        }
+    // Add to cart functionality - direct call without popup
+    if (addToCartButton) {
+      addToCartButton.addEventListener("click", function (event) {
+        event.preventDefault();
+        handleAddToCart();
       });
     }
 
     // Add to collection functionality
     if (addToCollectionButton) {
-      addToCollectionButton.addEventListener("click", handleAddToCollection);
+      addToCollectionButton.addEventListener("click", function (event) {
+        event.preventDefault();
+        handleAddToCollection();
+      });
     }
   }
 
@@ -147,16 +117,8 @@ document.addEventListener("DOMContentLoaded", function () {
    * Handle adding to cart
    */
   function handleAddToCart() {
-    const selectedResolution = document.querySelector(
-      'input[name="resolution"]:checked'
-    );
-    if (!selectedResolution) {
-      showNotification("Please select a resolution", "warning");
-      return;
-    }
-
-    const resolution = selectedResolution.value;
-    const price = selectedResolution.dataset.price;
+    // Use default resolution (no popup needed)
+    const resolution = "HD";
 
     // Get video ID using the same approach as inside_category.js
     const videoId = getVideoId();
@@ -176,10 +138,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const formData = new URLSearchParams();
     formData.append("video_id", videoId);
     formData.append("resolution", resolution);
-    formData.append("price", price);
 
-    // Send AJAX request to add to cart
-    fetch("/cart/add/", {
+    // Send AJAX request to add to cart (correct endpoint)
+    fetch("/api/orders/add-to-cart/", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -197,14 +158,11 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((data) => {
         if (data.success) {
           // Update client-side cart cache
-          updateCartCache(videoId, resolution, price);
+          updateCartCache(videoId, resolution);
 
           // Display success message
           const clipTitle = document.querySelector("h1").textContent;
           showNotification(`"${clipTitle}" added to cart (${resolution})`);
-
-          // Close the popup
-          popupOverlay.style.display = "none";
 
           // Update cart count in header if exists
           const cartCountElement = document.querySelector(".cart-count");
@@ -215,10 +173,8 @@ document.addEventListener("DOMContentLoaded", function () {
           showNotification("Error: " + (data.message || data.error), "error");
         }
       })
-      .catch((error) => {
-        console.error("Error:", error);
-        // Try to update cache anyway for offline functionality
-        updateCartCache(videoId, resolution, price);
+      .catch(() => {
+        updateCartCache(videoId, resolution);
         showNotification("Added to local cart (offline mode)", "info");
       });
   }
@@ -241,15 +197,12 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    // Log what we're sending (same as inside_category.js)
-    console.log(`Adding video ID ${videoId} to collection`);
-
     // Create URL-encoded form data
     const formData = new URLSearchParams();
     formData.append("clip_id", videoId);
 
-    // Send POST request to add to collection (same endpoint as inside_category.js)
-    fetch("/collection/add/", {
+    // Send POST request to add to collection (correct endpoint)
+    fetch("/api/orders/add-to-collection/", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -259,33 +212,30 @@ document.addEventListener("DOMContentLoaded", function () {
       credentials: "same-origin",
     })
       .then((response) => {
-        console.log(`Response status: ${response.status}`);
         if (response.ok) {
           return response.json();
         }
         throw new Error(`Network error: ${response.status}`);
       })
       .then((data) => {
-        console.log("Response data:", data);
         if (data.success) {
           // Update client-side collection cache
           updateCollectionCache(videoId);
 
           // Show success notification
           const clipTitle = document.querySelector("h1").textContent;
-          showNotification(`"${clipTitle}" added to your collection!`);
+          showNotification(`"${clipTitle}" added to your favourites!`);
         } else {
           showNotification(
-            "Error: " + (data.error || "Failed to add to collection"),
+            "Error: " + (data.error || "Failed to add to favourites"),
             "error"
           );
         }
       })
-      .catch((error) => {
-        console.error("Error adding to collection:", error);
+      .catch(() => {
         // Still try to update cache anyway for offline functionality
         updateCollectionCache(videoId);
-        showNotification("Added to local collection (offline mode)", "info");
+        showNotification("Added to local favourites (offline mode)", "info");
       });
   }
 
@@ -328,7 +278,7 @@ document.addEventListener("DOMContentLoaded", function () {
    * Update the client-side cart cache
    * Taking the best of both implementations
    */
-  function updateCartCache(videoId, resolution, price) {
+  function updateCartCache(videoId, resolution) {
     try {
       // Get current cart from localStorage
       const cart = JSON.parse(localStorage.getItem(getCartStorageKey())) || [];
@@ -347,7 +297,6 @@ document.addEventListener("DOMContentLoaded", function () {
           ...cart[existingItemIndex],
           ...videoDetails,
           resolution: resolution,
-          price: price,
           updated: new Date().toISOString(),
           quantity: (cart[existingItemIndex].quantity || 1) + 1,
         };
@@ -357,7 +306,6 @@ document.addEventListener("DOMContentLoaded", function () {
           id: videoId,
           ...videoDetails,
           resolution: resolution,
-          price: price,
           added: new Date().toISOString(),
           quantity: 1,
         });
@@ -365,8 +313,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Save back to localStorage
       localStorage.setItem(getCartStorageKey(), JSON.stringify(cart));
-
-      console.log("Cart updated in localStorage:", cart);
     } catch (error) {
       console.error("Error updating cart in localStorage:", error);
     }
@@ -411,7 +357,6 @@ document.addEventListener("DOMContentLoaded", function () {
           getCollectionStorageKey(),
           JSON.stringify(collection)
         );
-        console.log("Collection updated in localStorage:", collection);
       }
     } catch (error) {
       console.error("Error updating collection in localStorage:", error);
