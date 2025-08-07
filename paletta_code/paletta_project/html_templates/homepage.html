@@ -151,7 +151,7 @@
         <a href="{% url 'home' %}" style="text-decoration: none;">
         {% endif %}
           <div class="category private-category">
-            <img src="{% if content_type.image_url %}{{ content_type.image_url }}{% else %}{% static 'picture/main_campus.png' %}{% endif %}" 
+            <img src="{% if content_type.image_url %}{{ content_type.image_url }}{% else %}{% static 'picture/Culture&Events.png' %}{% endif %}" 
                  alt="{{ content_type.name }}" data-category="{{ content_type.name }}" class="category-image">
             <span>{{ content_type.name }}</span>
           </div>
