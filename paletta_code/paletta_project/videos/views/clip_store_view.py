@@ -2,7 +2,6 @@ from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.db.models import Count, Q
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from ..models import ContentType, Tag, Video
 import logging
 from django.utils.text import slugify
@@ -29,7 +28,7 @@ logger = logging.getLogger(__name__)
 class ClipStoreView(TemplateView):
     """View for the clip store page showing all videos."""
     template_name = 'inside_category.html'
-    paginate_by = 12
+    # No pagination: show all videos in a single vertically scrolling list
     
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
@@ -212,7 +211,6 @@ class CategoryClipView(ClipStoreView):
             search_query = self.request.GET.get('search', '')
             tags = self.request.GET.getlist('tags', [])
             sort_by = self.request.GET.get('sort_by', 'newest')
-            page = self.request.GET.get('page', 1)
             
             # Fetch videos with filters but no category filter
             videos_queryset = self.get_videos_queryset(
@@ -223,20 +221,8 @@ class CategoryClipView(ClipStoreView):
                 library=current_library  # Pass the library for filtering
             )
             
-            # Paginate results
-            paginator = Paginator(videos_queryset, self.paginate_by)
-            try:
-                videos_page = paginator.page(page)
-            except PageNotAnInteger:
-                videos_page = paginator.page(1)
-            except EmptyPage:
-                videos_page = paginator.page(paginator.num_pages)
-                
-            # Add pagination info to context
-            context['videos'] = videos_page.object_list
-            context['page_obj'] = videos_page
-            context['is_paginated'] = videos_page.has_other_pages()
-            context['paginator'] = paginator
+            # No pagination: provide full list
+            context['videos'] = videos_queryset
             
             return context
         
@@ -272,7 +258,6 @@ class CategoryClipView(ClipStoreView):
         search_query = self.request.GET.get('search', '')
         tags = self.request.GET.getlist('tags', [])
         sort_by = self.request.GET.get('sort_by', 'newest')
-        page = self.request.GET.get('page', 1)
         
         # Fetch videos with category filter
         videos_queryset = self.get_videos_queryset(
@@ -283,19 +268,7 @@ class CategoryClipView(ClipStoreView):
             library=current_library  # Pass the library for filtering
         )
         
-        # Paginate results
-        paginator = Paginator(videos_queryset, self.paginate_by)
-        try:
-            videos_page = paginator.page(page)
-        except PageNotAnInteger:
-            videos_page = paginator.page(1)
-        except EmptyPage:
-            videos_page = paginator.page(paginator.num_pages)
-            
-        # Add pagination info to context
-        context['videos'] = videos_page.object_list
-        context['page_obj'] = videos_page
-        context['is_paginated'] = videos_page.has_other_pages()
-        context['paginator'] = paginator
+        # No pagination: provide full list
+        context['videos'] = videos_queryset
         
         return context 
