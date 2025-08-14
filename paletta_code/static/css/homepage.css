@@ -117,6 +117,12 @@ main {
   line-height: 1.4;
   font-weight: normal;
 }
+ p {
+  text-align: center;
+  font-size: 20px;
+  line-height: 1.4;
+  font-weight: normal;
+}
 
 .search-bar {
   margin: 20px auto;
