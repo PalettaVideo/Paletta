@@ -162,8 +162,8 @@ main {
 }
 
 .clips-grid {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
   margin-top: 20px;
   z-index: -1
@@ -191,9 +191,7 @@ main {
   transition: transform 0.2s ease;
   margin-top: 10px;
   cursor: pointer; 
-
 }
-
 .clip h2 {
   font-size: 15px;
   margin-top: -15px;
@@ -211,8 +209,6 @@ main {
   margin-top: 15px;
   font-size: 15px;
 }
-
-
 
 
 
