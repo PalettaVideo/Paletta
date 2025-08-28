@@ -139,6 +139,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Get current URL and parameters
     const url = new URL(window.location);
     url.searchParams.set("search", query.trim());
+    // Reset page when performing a new search
+    url.searchParams.delete("page");
 
     // Redirect to the same page with search parameter
     window.location.href = url.toString();
@@ -161,6 +163,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Clear existing tags
     url.searchParams.delete("tags");
+    // Reset page when filters change
+    url.searchParams.delete("page");
 
     // Add each tag as a separate parameter for proper server-side handling
     selectedTags.forEach((tag) => {
@@ -185,6 +189,8 @@ document.addEventListener("DOMContentLoaded", function () {
       // Update URL with sort parameter
       const url = new URL(window.location);
       url.searchParams.set("sort_by", sortType);
+      // Reset page when sort changes
+      url.searchParams.delete("page");
 
       // Redirect to sorted URL
       window.location.href = url.toString();
@@ -395,15 +401,17 @@ document.addEventListener("DOMContentLoaded", function () {
    * @param {number|string} price - Price of the video
    */
   function updateCartCache(videoId, resolution, price) {
-    const videoCard = document.querySelector(`.clip[data-id="${videoId}"]`);
-    if (!videoCard) {
-      return;
-    }
+    // Resolve the enclosing clip card via the thumbnail's data-video-id
+    const thumbnail = document.querySelector(
+      `.clip-thumbnail[data-video-id="${videoId}"]`
+    );
+    const videoCard = thumbnail ? thumbnail.closest(".clip") : null;
+    if (!videoCard) return;
 
     // Create video object from DOM elements
     const videoObj = {
       id: videoId,
-      title: videoCard.querySelector(".clip-title")?.textContent || "Untitled",
+      title: videoCard.querySelector("h2")?.textContent || "Untitled",
       thumbnail: videoCard.querySelector("img")?.src || "",
       description:
         videoCard.querySelector(".clip-description")?.textContent || "",
