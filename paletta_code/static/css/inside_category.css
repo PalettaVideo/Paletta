@@ -169,6 +169,7 @@ main {
   z-index: -1
 }
 
+
 .clip {
   border: 2px solid #7bbd42;
   border-radius: 8px;
@@ -179,17 +180,20 @@ main {
 }
 
 /*adjust the layout of clip*/
+
 .clip img {
   width: 100%;
-  max-width: 100%;
-  max-height: 300px;
+  max-width: 300px;
+  max-height: 200px;
   height: auto;
   object-fit: cover;
   border-radius: 5px;
   transition: transform 0.2s ease;
   margin-top: 10px;
   cursor: pointer; 
+
 }
+
 .clip h2 {
   font-size: 15px;
   margin-top: -15px;
@@ -207,6 +211,9 @@ main {
   margin-top: 15px;
   font-size: 15px;
 }
+
+
+
 
 
 .clip svg{
