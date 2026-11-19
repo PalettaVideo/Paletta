@@ -80,14 +80,7 @@
       <div class="video-info">
         <h2>Description</h2>
         <p>{{ clip.description|default:"No description available." }}</p>
-        <!-- Content Type Display -->
-        {% if clip.content_type %}
-        <div class="content-type">
-          <strong>Content Type:</strong>
-          <span class="content-type-name">{{ clip.content_type.display_name }}</span>
-        </div>
-        {% endif %}
-        
+    
         <!-- Content Type Display -->
         {% if clip.content_type %}
         <div class="content-type">
