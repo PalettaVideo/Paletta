@@ -124,7 +124,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function handleVideoFileSelect(e) {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) return;     
+    // Automatically suggest a title from the filename.
+    if (titleInput && !titleInput.value.trim()) {
+      const filename = file.name.replace(/\.[^.]+$/, "");
+      titleInput.value = filename
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 200);
+
+      updateCharacterCount(titleInput, titleWordCount, 200);
+    }
 
     // File size validation - 10GB limit
     const maxFileSize = 10 * 1024 * 1024 * 1024; // 10GB in bytes
